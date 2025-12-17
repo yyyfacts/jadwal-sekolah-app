@@ -42,8 +42,19 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
-# 7. Set permissions agar Laravel bisa nulis log/cache/session
+# 7. PERIZINAN & STORAGE LINK (INI BAGIAN YANG DIPERBAIKI)
+# A. Buat Folder penyimpanan jika belum ada
+RUN mkdir -p /var/www/html/storage/app/public
+RUN mkdir -p /var/www/html/storage/framework/cache
+RUN mkdir -p /var/www/html/storage/framework/sessions
+RUN mkdir -p /var/www/html/storage/framework/views
+
+# B. Jalankan storage:link sebagai ROOT (Pasti berhasil)
+RUN php artisan storage:link
+
+# C. Set Permissions ke 777 (Full Akses) biar GAK ADA DRAMA Permission Denied
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # 8. Buka Port 80
 EXPOSE 80
