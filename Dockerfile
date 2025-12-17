@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     unzip \
     git \
-    && docker-php-ext-install pdo_mysql zip
+    libpng-dev \
+    && docker-php-ext-install pdo_mysql zip gd
 
 # --- TRIK SUPAYA KODINGAN PHP KAMU TIDAK PERLU DIUBAH ---
 # Kita buat "jalan pintas" (shortcut).
@@ -21,26 +22,28 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 # Wajib install ini karena solver kamu pakai ortools
 RUN pip3 install ortools --break-system-packages
 
-# 3. Aktifkan mod_rewrite Apache (Wajib buat Laravel)
+# 3. SETTING APACHE (SOLUSI 404 NOT FOUND)
+# Aktifkan mod_rewrite (Wajib buat Laravel)
 RUN a2enmod rewrite
 
-# 4. Ubah Document Root Apache ke folder public Laravel
+# Ubah Document Root Apache ke folder public Laravel
+# Ini kuncinya supaya saat buka website, dia langsung masuk ke index.php di folder public
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# 5. Copy semua file project ke dalam container
+# 4. Copy semua file project ke dalam container
 COPY . /var/www/html
 
-# 6. Install Composer (Manajer paket PHP)
+# 5. Install Composer (Manajer paket PHP)
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# 7. Jalankan install dependency Laravel
+# 6. Jalankan install dependency Laravel
 WORKDIR /var/www/html
 RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
-# 8. Set permissions agar Laravel bisa nulis log/cache
+# 7. Set permissions agar Laravel bisa nulis log/cache/session
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# 9. Buka Port 80
+# 8. Buka Port 80
 EXPOSE 80
