@@ -92,4 +92,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
+    Route::get('/tembak-db', function () {
+    try {
+        Artisan::call('migrate --force');
+        return '<h1>SUKSES! Database berhasil di-migrate. Silakan buka halaman utama.</h1>';
+    } catch (\Exception $e) {
+        return 'Gagal: ' . $e->getMessage();
+    }
+});
 });
