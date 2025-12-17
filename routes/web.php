@@ -2,8 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Hash; // <--- WAJIB ADA (Buat Reset Password)
-use App\Models\User;                 // <--- WAJIB ADA (Buat Cari User)
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 use App\Http\Controllers\GuruController;
 use App\Http\Controllers\MapelController;
 use App\Http\Controllers\KelasController;
@@ -32,21 +32,16 @@ Route::get('/fix-zain', function () {
     $password_baru = 'zain1234';
 
     try {
-        // Cek apakah user ada?
         $user = User::where('email', $email)->first();
-
         if ($user) {
-            // Kalau ada, UPDATE passwordnya
             $user->password = Hash::make($password_baru);
             $user->save();
             $pesan = "Akun DITEMUKAN. Password berhasil di-reset.";
         } else {
-            // Kalau tidak ada, BUAT BARU
             User::create([
                 'name' => 'Zain',
                 'email' => $email,
                 'password' => Hash::make($password_baru),
-                // 'role' => 'admin', // Aktifkan jika ada kolom role
             ]);
             $pesan = "Akun TIDAK ADA, berhasil dibuatkan BARU.";
         }
@@ -60,6 +55,16 @@ Route::get('/fix-zain', function () {
     }
 });
 
+// C. JALUR FIX FOTO (STORAGE LINK) <--- INI TAMBAHANNYA
+Route::get('/fix-storage', function () {
+    try {
+        Artisan::call('storage:link');
+        return '<h1>SUKSES! Jembatan Storage (Symlink) berhasil dibangun. <br> Silakan coba refresh halaman profil atau upload ulang fotonya.</h1>';
+    } catch (\Exception $e) {
+        return 'Gagal: ' . $e->getMessage();
+    }
+});
+
 // ==================================================================
 // 2. AUTHENTICATION ROUTES (GUEST)
 // ==================================================================
@@ -68,7 +73,6 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
-// Logout butuh login dulu
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
 // ==================================================================
@@ -76,7 +80,6 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 // ==================================================================
 Route::middleware(['auth'])->group(function () {
 
-    // Redirect home ke guru index
     Route::get('/', function () {
         return redirect()->route('guru.index');
     })->name('home');
@@ -128,7 +131,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [JadwalController::class, 'index'])->name('index');
     });
 
-    // GROUP: MANAJEMEN USER
+    // GROUP: USERS
     Route::prefix('users')->name('user.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');
         Route::post('/', [UserController::class, 'store'])->name('store');
