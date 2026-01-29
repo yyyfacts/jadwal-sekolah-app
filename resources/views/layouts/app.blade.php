@@ -43,6 +43,7 @@
 
     .custom-scrollbar::-webkit-scrollbar {
         width: 4px;
+        height: 4px;
     }
 
     .custom-scrollbar::-webkit-scrollbar-track {
@@ -59,22 +60,22 @@
 <body class="bg-slate-50 font-sans text-slate-800 antialiased flex flex-col min-h-screen">
 
     {{-- ========================================================= --}}
-    {{-- 1. NAVBAR UTAMA (HORIZONTAL) --}}
+    {{-- 1. NAVBAR UTAMA (STICKY) --}}
     {{-- ========================================================= --}}
-    {{-- Tambahkan x-data untuk kontrol menu mobile --}}
-    <nav x-data="{ mobileMenuOpen: false }" class="bg-[#0f172a] text-white shadow-xl sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-20">
+    <nav x-data="{ mobileMenuOpen: false }"
+        class="bg-[#0f172a] text-white shadow-xl sticky top-0 z-50 h-20 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+            <div class="flex items-center justify-between h-full">
 
-                {{-- A. LOGO & BRAND --}}
-                <div class="flex items-center gap-4">
-                    <div class="relative flex-shrink-0 group">
+                {{-- A. LOGO --}}
+                <div class="flex items-center gap-3">
+                    <a href="{{ route('dashboard') }}" class="relative flex-shrink-0 group">
                         <div
                             class="absolute inset-0 bg-blue-500 rounded-full blur opacity-20 group-hover:opacity-40 transition">
                         </div>
                         <img src="{{ asset('img/logo-sekolah.png') }}" alt="Logo"
                             class="relative w-10 h-10 object-contain p-0.5 bg-white/10 rounded-full border border-white/20">
-                    </div>
+                    </a>
                     <div class="leading-tight">
                         <h1 class="font-extrabold text-[15px] tracking-wide">SMAN 1 SAMPANG</h1>
                         <p class="text-[10px] font-bold text-slate-400 tracking-[0.15em] uppercase hidden sm:block">
@@ -83,25 +84,21 @@
                     </div>
                 </div>
 
-                {{-- B. MENU NAVIGASI (DESKTOP ONLY) --}}
+                {{-- B. MENU DESKTOP (Hidden on Mobile) --}}
                 <div class="hidden lg:flex items-center gap-1 bg-white/5 px-2 py-1.5 rounded-xl border border-white/5">
-                    <a href="{{ route('guru.index') }}"
-                        class="px-4 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs('guru.*') ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
-                        Data Guru
+                    @foreach([
+                    ['route' => 'guru.index', 'label' => 'Data Guru', 'active' => 'guru.*'],
+                    ['route' => 'mapel.index', 'label' => 'Mapel', 'active' => 'mapel.*'],
+                    ['route' => 'kelas.index', 'label' => 'Kelas', 'active' => 'kelas.*'],
+                    ['route' => 'jadwal.index', 'label' => 'Jadwal', 'active' => 'jadwal.*'],
+                    ] as $item)
+                    <a href="{{ route($item['route']) }}"
+                        class="px-4 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs($item['active']) ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
+                        {{ $item['label'] }}
                     </a>
-                    <a href="{{ route('mapel.index') }}"
-                        class="px-4 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs('mapel.*') ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
-                        Mapel
-                    </a>
-                    <a href="{{ route('kelas.index') }}"
-                        class="px-4 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs('kelas.*') ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
-                        Kelas
-                    </a>
-                    <a href="{{ route('jadwal.index') }}"
-                        class="px-4 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs('jadwal.*') ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
-                        Jadwal
-                    </a>
+                    @endforeach
 
+                    {{-- Divider --}}
                     <div class="w-px h-5 bg-white/10 mx-2"></div>
 
                     <a href="{{ route('user.index') }}"
@@ -110,71 +107,59 @@
                     </a>
                 </div>
 
-                {{-- C. USER PROFILE & HAMBURGER (KANAN) --}}
+                {{-- C. KANAN (PROFILE & HAMBURGER) --}}
                 <div class="flex items-center gap-4">
 
-                    {{-- Profile Desktop --}}
-                    <div class="hidden sm:flex items-center gap-4">
+                    {{-- Profile (Desktop Only) --}}
+                    <div class="hidden sm:flex items-center gap-3">
                         <div class="text-right leading-tight">
                             <div class="text-sm font-bold">{{ Auth::user()->name ?? 'Administrator' }}</div>
-                            <div class="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Admin</div>
+                            <div class="text-[10px] text-blue-400 font-bold uppercase">Admin</div>
                         </div>
-
-                        {{-- Dropdown Profile Desktop --}}
                         <div x-data="{ open: false }" class="relative">
                             <button @click="open = !open"
-                                class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white/20 bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md hover:scale-105 transition-all focus:outline-none">
-                                <span class="text-white font-bold text-sm tracking-tighter">
-                                    {{ substr(Auth::user()->name ?? 'A', 0, 1) }}
-                                </span>
+                                class="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white/20 bg-white/10 hover:bg-white/20 transition overflow-hidden shadow-inner">
+                                <span class="font-bold text-sm">{{ substr(Auth::user()->name ?? 'A', 0, 1) }}</span>
                             </button>
 
+                            {{-- Dropdown Profile --}}
                             <div x-show="open" @click.away="open = false" x-cloak
-                                class="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-2xl border border-slate-100 py-2 z-50 text-slate-800 transform origin-top-right transition-all"
+                                class="absolute right-0 mt-4 w-48 bg-white rounded-xl shadow-2xl py-2 text-slate-800 z-50 border border-slate-100 origin-top-right ring-1 ring-black ring-opacity-5"
                                 x-transition:enter="transition ease-out duration-200"
-                                x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
-                                x-transition:enter-end="opacity-100 scale-100 translate-y-0">
+                                x-transition:enter-start="opacity-0 scale-95"
+                                x-transition:enter-end="opacity-100 scale-100">
 
-                                <div class="px-4 py-3 border-b border-slate-50 bg-slate-50/50">
-                                    <div class="text-sm font-bold text-slate-800 truncate">{{ Auth::user()->name }}
-                                    </div>
-                                    <div class="text-[10px] text-slate-500 truncate">{{ Auth::user()->email }}</div>
+                                <div class="px-4 py-2 border-b border-slate-100 bg-slate-50/50">
+                                    <p class="text-xs text-slate-500">Login sebagai:</p>
+                                    <p class="text-sm font-bold text-slate-800 truncate">{{ Auth::user()->email }}</p>
                                 </div>
 
-                                <div class="px-2 py-1">
-                                    <a href="{{ route('profile.edit') }}"
-                                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-all font-medium">
-                                        <span>👤</span> Edit Profil
-                                    </a>
-                                    <div class="border-t border-slate-100 my-1"></div>
-                                    <form method="POST" action="{{ route('logout') }}">
-                                        @csrf
-                                        <button type="submit"
-                                            class="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-all font-medium text-left">
-                                            <span>⭕</span> Keluar Sistem
-                                        </button>
-                                    </form>
-                                </div>
+                                <a href="{{ route('profile.edit') }}"
+                                    class="block px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition">Edit
+                                    Profil</a>
+
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit"
+                                        class="w-full text-left block px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition">Keluar</button>
+                                </form>
                             </div>
                         </div>
                     </div>
 
-                    {{-- TOMBOL HAMBURGER (MOBILE) --}}
+                    {{-- Tombol Hamburger (Mobile Only) --}}
                     <div class="flex lg:hidden">
                         <button @click="mobileMenuOpen = !mobileMenuOpen"
-                            class="inline-flex items-center justify-center p-2 rounded-md text-slate-200 hover:text-white hover:bg-white/10 focus:outline-none transition">
-                            <span class="sr-only">Open main menu</span>
-                            {{-- Icon Menu --}}
-                            <svg x-show="!mobileMenuOpen" class="block h-6 w-6" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
+                            class="p-2 text-slate-300 hover:text-white transition focus:outline-none rounded-lg hover:bg-white/10">
+                            <svg x-show="!mobileMenuOpen" class="w-7 h-7" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 6h16M4 12h16M4 18h16" />
+                                    d="M4 6h16M4 12h16M4 18h16"></path>
                             </svg>
-                            {{-- Icon Close --}}
-                            <svg x-show="mobileMenuOpen" x-cloak class="block h-6 w-6" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
+                            <svg x-show="mobileMenuOpen" x-cloak class="w-7 h-7" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12" />
+                                    d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </button>
                     </div>
@@ -182,60 +167,50 @@
             </div>
         </div>
 
-        {{-- D. MOBILE MENU DROPDOWN --}}
-        <div x-show="mobileMenuOpen" x-cloak class="lg:hidden bg-[#0f172a] border-t border-white/10"
-            x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2"
-            x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150"
-            x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2">
+        {{-- D. MOBILE MENU DROPDOWN (Full Width) --}}
+        <div x-show="mobileMenuOpen" x-cloak
+            class="lg:hidden bg-[#0f172a] border-t border-white/10 shadow-2xl absolute top-20 left-0 w-full z-40 overflow-hidden"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 -translate-y-2 height-0"
+            x-transition:enter-end="opacity-100 translate-y-0 height-auto">
 
-            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                <a href="{{ route('guru.index') }}"
-                    class="block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('guru.*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
-                    Data Guru
+            <div class="px-4 py-6 space-y-2">
+                {{-- Menu List Mobile --}}
+                @foreach([
+                ['route' => 'dashboard', 'label' => 'Dashboard', 'icon' => '🏠'],
+                ['route' => 'guru.index', 'label' => 'Data Guru', 'icon' => '👨‍🏫'],
+                ['route' => 'mapel.index', 'label' => 'Mata Pelajaran', 'icon' => '📚'],
+                ['route' => 'kelas.index', 'label' => 'Data Kelas', 'icon' => '🏫'],
+                ['route' => 'jadwal.index', 'label' => 'Penjadwalan', 'icon' => '📅'],
+                ['route' => 'user.index', 'label' => 'Admin User', 'icon' => '⚙️'],
+                ] as $item)
+                <a href="{{ route($item['route']) }}"
+                    class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs($item['route']) ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                    <span class="text-xl">{{ $item['icon'] }}</span> {{ $item['label'] }}
                 </a>
-                <a href="{{ route('mapel.index') }}"
-                    class="block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('mapel.*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
-                    Mata Pelajaran
-                </a>
-                <a href="{{ route('kelas.index') }}"
-                    class="block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('kelas.*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
-                    Data Kelas
-                </a>
-                <a href="{{ route('jadwal.index') }}"
-                    class="block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('jadwal.*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
-                    Jadwal
-                </a>
-                <a href="{{ route('user.index') }}"
-                    class="block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('user.*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
-                    Admin User
-                </a>
-            </div>
+                @endforeach
 
-            {{-- Mobile User Profile Section --}}
-            <div class="pt-4 pb-4 border-t border-white/10">
-                <div class="flex items-center px-5">
-                    <div class="flex-shrink-0">
+                {{-- Divider --}}
+                <div class="border-t border-white/10 my-4 pt-4">
+                    <div class="flex items-center gap-3 px-4 mb-4">
                         <div
-                            class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">
-                            {{ substr(Auth::user()->name ?? 'A', 0, 1) }}
+                            class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold text-white border border-white/20">
+                            {{ substr(Auth::user()->name ?? 'A', 0, 1) }}</div>
+                        <div>
+                            <div class="text-white font-medium">{{ Auth::user()->name }}</div>
+                            <div class="text-xs text-slate-400">{{ Auth::user()->email }}</div>
                         </div>
                     </div>
-                    <div class="ml-3">
-                        <div class="text-base font-medium leading-none text-white">{{ Auth::user()->name }}</div>
-                        <div class="text-sm font-medium leading-none text-slate-400 mt-1">{{ Auth::user()->email }}
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-3 px-2 space-y-1">
+
                     <a href="{{ route('profile.edit') }}"
-                        class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-white hover:bg-white/10">
-                        Edit Profil
-                    </a>
+                        class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white mb-2">Edit
+                        Profil</a>
+
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit"
-                            class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-400 hover:text-red-300 hover:bg-white/10">
-                            Keluar Sistem
+                            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 font-medium transition">
+                            🚪 Keluar Sistem
                         </button>
                     </form>
                 </div>
@@ -244,42 +219,20 @@
     </nav>
 
     {{-- ========================================================= --}}
-    {{-- 2. SUB-HEADER / BREADCRUMB --}}
+    {{-- 2. CONTENT AREA --}}
     {{-- ========================================================= --}}
-    <div class="bg-white border-b border-slate-200 shadow-sm relative z-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div
-                class="flex items-center h-12 gap-2 text-xs font-medium uppercase tracking-wider text-slate-400 overflow-x-auto whitespace-nowrap">
-                <span>Pages</span>
-                <span class="text-slate-300">/</span>
-                <span class="text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                    @if(request()->routeIs('guru.*')) Data Guru
-                    @elseif(request()->routeIs('mapel.*')) Mata Pelajaran
-                    @elseif(request()->routeIs('kelas.*')) Data Kelas
-                    @elseif(request()->routeIs('jadwal.*')) Penjadwalan
-                    @elseif(request()->routeIs('user.*')) Kelola User
-                    @elseif(request()->routeIs('profile.*')) Profil Saya
-                    @else Dashboard
-                    @endif
-                </span>
-            </div>
-        </div>
-    </div>
-
-    {{-- ========================================================= --}}
-    {{-- 3. CONTENT AREA --}}
-    {{-- ========================================================= --}}
-    <main class="flex-grow max-w-7xl w-full mx-auto py-4 sm:py-8 px-4 sm:px-6 lg:px-8">
+    <main class="flex-grow max-w-7xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8">
         @yield('content')
     </main>
 
     {{-- ========================================================= --}}
-    {{-- 4. FOOTER --}}
+    {{-- 3. FOOTER --}}
     {{-- ========================================================= --}}
-    <footer class="bg-white border-t border-slate-200 py-6 mt-auto">
+    <footer class="bg-white border-t border-slate-200 py-8 mt-auto">
         <div class="max-w-7xl mx-auto px-4 text-center">
-            <p class="text-slate-400 text-xs font-medium">
-                &copy; {{ date('Y') }} SMAN 1 SAMPANG. All rights reserved.
+            <p class="text-slate-400 text-xs font-semibold tracking-wide">
+                &copy; {{ date('Y') }} SMAN 1 SAMPANG. <span class="hidden sm:inline">Sistem Penjadwalan
+                    Terintegrasi.</span>
             </p>
         </div>
     </footer>
