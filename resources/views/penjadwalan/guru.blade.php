@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-{{-- BACKGROUND (Optimized: Fixed Position) --}}
+{{-- BACKGROUND --}}
 <div class="fixed inset-0 -z-10 pointer-events-none">
     <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-50 to-slate-50"></div>
     <div class="absolute top-0 right-0 w-72 h-72 bg-indigo-300/20 rounded-full blur-3xl mix-blend-multiply opacity-70">
@@ -69,9 +69,10 @@
     {{-- MAIN CONTENT --}}
     <div class="relative z-10 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
 
-        {{-- SEARCH BAR --}}
+        {{-- SEARCH BAR (STICKY) --}}
+        {{-- top-20 disesuaikan dengan tinggi Navbar (h-20) --}}
         <div
-            class="p-4 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
+            class="sticky top-20 z-30 p-4 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white shadow-sm">
             <div class="relative w-full sm:w-96 group">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <svg class="h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" fill="none"
@@ -80,9 +81,8 @@
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                 </div>
-                {{-- OPTIMIZATION: oninput for instant search --}}
                 <input type="text" id="search-guru-main" oninput="searchMainTable()"
-                    class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-sm transition shadow-sm"
+                    class="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-sm transition shadow-sm"
                     placeholder="Cari Nama atau NIP...">
             </div>
 
@@ -96,7 +96,7 @@
         {{-- TABLE CONTAINER --}}
         <div class="overflow-x-auto custom-scrollbar">
             <table class="w-full text-left border-collapse min-w-[900px]">
-                <thead class="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
+                <thead class="bg-slate-50 border-b border-slate-200">
                     <tr>
                         <th
                             class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-16">
@@ -114,7 +114,6 @@
 
                 <tbody id="tbody-guru-main" class="divide-y divide-slate-100 bg-white">
                     @forelse($gurus as $index => $g)
-                    {{-- PERFORMANCE: Add data-filter containing Name and Code for search --}}
                     <tr class="group hover:bg-slate-50 transition-colors duration-200"
                         data-filter="{{ strtolower($g->nama_guru) }} {{ strtolower($g->kode_guru) }}">
 
@@ -293,13 +292,13 @@
         </div>
     </div>
 
-    {{-- 3. Modal Jadwal Mengajar (Fixed Layout & Scroll) --}}
+    {{-- 3. Modal Jadwal (Fixed Layout) --}}
     <div id="modaljadwal{{ $g->id }}"
         class="fixed inset-0 bg-slate-900/80 z-[99] hidden flex items-center justify-center p-2 sm:p-4 transition-opacity duration-300">
         <div
             class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-200 overflow-hidden animate-scale-in">
 
-            {{-- A. Header Modal (Tetap) --}}
+            {{-- Header --}}
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                 <div class="flex items-center gap-3">
                     <div class="p-2 bg-indigo-600 text-white rounded-lg shadow-sm">
@@ -318,13 +317,11 @@
                     class="text-slate-400 hover:text-red-500 text-3xl leading-none transition-colors">&times;</button>
             </div>
 
-            {{-- B. Body Modal (Split Layout) --}}
+            {{-- Body (Split) --}}
             <div class="flex flex-col lg:flex-row h-full overflow-hidden">
-
-                {{-- KIRI: Area Tabel (Flex Column) --}}
+                {{-- KIRI: Area Tabel --}}
                 <div class="flex-1 flex flex-col h-full border-r border-slate-100 bg-white relative min-w-0">
-
-                    {{-- 1. Search Bar (FIXED POSITION - Tidak ikut scroll) --}}
+                    {{-- Sticky Search Internal --}}
                     <div class="p-4 border-b border-slate-100 bg-white z-20 shrink-0">
                         <div class="relative group">
                             <span
@@ -340,10 +337,9 @@
                         </div>
                     </div>
 
-                    {{-- 2. Container Tabel (SCROLLABLE AREA) --}}
+                    {{-- Tabel Scrollable --}}
                     <div class="flex-1 overflow-y-auto custom-scrollbar p-0 relative bg-white">
                         <table class="w-full text-xs border-collapse">
-                            {{-- Header Tabel (Sticky di dalam area scroll) --}}
                             <thead class="bg-slate-50 text-slate-500 font-bold uppercase sticky top-0 z-10 shadow-sm">
                                 <tr>
                                     <th class="px-4 py-3 text-left border-b border-slate-100 w-[40%]">Mata Pelajaran
@@ -403,12 +399,10 @@
                                     </td>
                                 </tr>
                                 @endforeach
-                                {{-- Jika Kosong --}}
                                 @if($g->jadwals->isEmpty())
                                 <tr class="empty-row">
-                                    <td colspan="4" class="py-12 text-center text-slate-400 italic bg-slate-50/30">
-                                        Belum ada beban mengajar.
-                                    </td>
+                                    <td colspan="4" class="py-12 text-center text-slate-400 italic bg-slate-50/30">Belum
+                                        ada beban mengajar.</td>
                                 </tr>
                                 @endif
                             </tbody>
@@ -416,7 +410,7 @@
                     </div>
                 </div>
 
-                {{-- KANAN: Form Input (Fixed Width, Scrollable vertically) --}}
+                {{-- KANAN: Form --}}
                 <div
                     class="w-full lg:w-[380px] bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-200 flex flex-col h-[40vh] lg:h-full">
                     <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
@@ -804,7 +798,7 @@ function updateTableUI(guruId, jadwal, isEdit) {
             const btnEdit = row.querySelector('button[onclick^="editJadwalInline"]');
             btnEdit.setAttribute('onclick',
                 `editJadwalInline(${guruId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.kelas_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}')`
-                );
+            );
 
             row.classList.add('bg-amber-100');
             setTimeout(() => row.classList.remove('bg-amber-100'), 1500);

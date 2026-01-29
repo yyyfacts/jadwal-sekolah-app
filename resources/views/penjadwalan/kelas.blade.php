@@ -70,9 +70,9 @@
     {{-- MAIN CONTENT --}}
     <div class="relative z-10 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
 
-        {{-- SEARCH BAR --}}
+        {{-- SEARCH BAR (STICKY) --}}
         <div
-            class="p-4 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
+            class="sticky top-20 z-30 p-4 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white shadow-sm">
             <div class="relative w-full sm:w-96 group">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <svg class="h-5 w-5 text-slate-400 group-focus-within:text-purple-500 transition-colors" fill="none"
@@ -81,9 +81,8 @@
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                 </div>
-                {{-- OPTIMIZATION: oninput for instant search --}}
                 <input type="text" id="search-kelas-main" oninput="searchMainTable()"
-                    class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 text-sm transition shadow-sm"
+                    class="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 text-sm transition shadow-sm"
                     placeholder="Cari Nama Kelas atau Kode...">
             </div>
 
@@ -97,7 +96,7 @@
         {{-- TABLE CONTAINER --}}
         <div class="overflow-x-auto custom-scrollbar">
             <table class="w-full text-left border-collapse min-w-[900px]">
-                <thead class="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
+                <thead class="bg-slate-50 border-b border-slate-200">
                     <tr>
                         <th
                             class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-16">
@@ -138,7 +137,6 @@
                     $badgeBorder = 'border-emerald-100';
                     }
                     @endphp
-                    {{-- PERFORMANCE: Added data-filter for fast search --}}
                     <tr class="group hover:bg-slate-50 transition-colors duration-200"
                         data-filter="{{ strtolower($k->nama_kelas) }} {{ strtolower($k->kode_kelas) }}">
 
@@ -399,7 +397,7 @@
                 {{-- KIRI: Area Tabel (Flex Column) --}}
                 <div class="flex-1 flex flex-col h-full border-r border-slate-100 bg-white relative min-w-0">
 
-                    {{-- 1. Search Bar (FIXED POSITION - Tidak ikut scroll) --}}
+                    {{-- 1. Search Bar (FIXED POSITION) --}}
                     <div class="p-4 border-b border-slate-100 bg-white z-20 shrink-0">
                         <div class="relative group">
                             <span
@@ -418,7 +416,6 @@
                     {{-- 2. Container Tabel (SCROLLABLE AREA) --}}
                     <div class="flex-1 overflow-y-auto custom-scrollbar p-0 relative bg-white">
                         <table class="w-full text-xs border-collapse">
-                            {{-- Header Tabel (Sticky di dalam area scroll) --}}
                             <thead class="bg-slate-50 text-slate-500 font-bold uppercase sticky top-0 z-10 shadow-sm">
                                 <tr>
                                     <th class="px-4 py-3 text-left border-b border-slate-100 w-[40%]">Mata Pelajaran
@@ -475,12 +472,10 @@
                                     </td>
                                 </tr>
                                 @endforeach
-                                {{-- Jika Kosong --}}
                                 @if($k->jadwals->isEmpty())
                                 <tr class="empty-row">
-                                    <td colspan="4" class="py-12 text-center text-slate-400 italic bg-slate-50/30">
-                                        Belum ada mapel di kelas ini.
-                                    </td>
+                                    <td colspan="4" class="py-12 text-center text-slate-400 italic bg-slate-50/30">Belum
+                                        ada mapel di kelas ini.</td>
                                 </tr>
                                 @endif
                             </tbody>
@@ -488,7 +483,7 @@
                     </div>
                 </div>
 
-                {{-- KANAN: Form Input (Fixed Width, Scrollable vertically) --}}
+                {{-- KANAN: Form Input --}}
                 <div
                     class="w-full lg:w-[380px] bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-200 flex flex-col h-[40vh] lg:h-full">
                     <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">

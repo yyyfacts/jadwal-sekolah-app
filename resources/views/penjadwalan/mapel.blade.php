@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-{{-- BACKGROUND (Optimized: Fixed Position untuk performa scroll lebih mulus) --}}
+{{-- BACKGROUND (Optimized: Fixed Position) --}}
 <div class="fixed inset-0 -z-10 pointer-events-none">
     <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-50 to-slate-50"></div>
     <div class="absolute top-0 right-0 w-72 h-72 bg-blue-300/20 rounded-full blur-3xl mix-blend-multiply opacity-70">
@@ -69,9 +69,9 @@
     {{-- MAIN CONTENT --}}
     <div class="relative z-10 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
 
-        {{-- SEARCH BAR --}}
+        {{-- SEARCH BAR (STICKY) --}}
         <div
-            class="p-4 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
+            class="sticky top-20 z-30 p-4 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white shadow-sm">
             <div class="relative w-full sm:w-96 group">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <svg class="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none"
@@ -80,9 +80,8 @@
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                 </div>
-                {{-- OPTIMIZATION: oninput lebih responsif daripada onkeyup --}}
                 <input type="text" id="search-mapel-main" oninput="searchMainTable()"
-                    class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm transition shadow-sm"
+                    class="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm transition shadow-sm"
                     placeholder="Cari Nama Mapel atau Kode...">
             </div>
 
@@ -96,7 +95,7 @@
         {{-- TABLE CONTAINER --}}
         <div class="overflow-x-auto custom-scrollbar">
             <table class="w-full text-left border-collapse min-w-[900px]">
-                <thead class="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
+                <thead class="bg-slate-50 border-b border-slate-200">
                     <tr>
                         <th
                             class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-16">
@@ -114,7 +113,7 @@
 
                 <tbody id="tbody-mapel-main" class="divide-y divide-slate-100 bg-white">
                     @forelse($mapels as $index => $m)
-                    {{-- PERFORMANCE: Add data-filter for instant JS search without DOM parsing --}}
+                    {{-- PERFORMANCE: Add data-filter for instant search --}}
                     <tr class="group hover:bg-slate-50 transition-colors duration-200"
                         data-filter="{{ strtolower($m->nama_mapel) }} {{ strtolower($m->kode_mapel) }}">
 
@@ -215,7 +214,7 @@
                     </tr>
                     @endforelse
 
-                    {{-- Row Not Found (Hidden by Default) --}}
+                    {{-- Row Not Found --}}
                     <tr id="search-no-result" class="hidden">
                         <td colspan="4" class="px-6 py-12 text-center text-slate-500">
                             <div class="flex flex-col items-center">
@@ -332,7 +331,7 @@
                 {{-- KIRI: Area Tabel (Flex Column) --}}
                 <div class="flex-1 flex flex-col h-full border-r border-slate-100 bg-white relative min-w-0">
 
-                    {{-- 1. Search Bar (FIXED POSITION - Tidak ikut scroll) --}}
+                    {{-- 1. Search Bar (FIXED POSITION) --}}
                     <div class="p-4 border-b border-slate-100 bg-white z-20 shrink-0">
                         <div class="relative group">
                             <span
@@ -351,7 +350,6 @@
                     {{-- 2. Container Tabel (SCROLLABLE AREA) --}}
                     <div class="flex-1 overflow-y-auto custom-scrollbar p-0 relative bg-white">
                         <table class="w-full text-xs border-collapse">
-                            {{-- Header Tabel (Sticky di dalam area scroll) --}}
                             <thead class="bg-slate-50 text-slate-500 font-bold uppercase sticky top-0 z-10 shadow-sm">
                                 <tr>
                                     <th class="px-4 py-3 text-left border-b border-slate-100 w-[20%]">Kelas</th>
@@ -407,7 +405,6 @@
                                     </td>
                                 </tr>
                                 @endforeach
-                                {{-- Jika Kosong --}}
                                 @if($m->jadwals->isEmpty())
                                 <tr class="empty-row">
                                     <td colspan="4" class="py-12 text-center text-slate-400 italic bg-slate-50/30">
@@ -420,7 +417,7 @@
                     </div>
                 </div>
 
-                {{-- KANAN: Form Input (Fixed Width, Scrollable vertically if needed) --}}
+                {{-- KANAN: Form Input --}}
                 <div
                     class="w-full lg:w-[380px] bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-200 flex flex-col h-[40vh] lg:h-full">
                     <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
@@ -464,9 +461,9 @@
                                                     onkeyup="filterCustomDropdown('kelas', {{ $m->id }}, this)"
                                                     class="w-full p-2 text-xs border border-slate-200 rounded-lg bg-slate-50 focus:border-blue-500 outline-none">
                                             </div>
-                                            <div id="list-kelas-{{ $m->id }}" class="p-1">
+                                            <div id="list-kelas-{{ $m->id }}" class="p-1 grid grid-cols-2 gap-1">
                                                 @foreach($kelases as $k)
-                                                <div class="option-item p-2.5 hover:bg-blue-50 rounded-lg cursor-pointer text-sm font-medium text-slate-700 transition-colors"
+                                                <div class="option-item p-2 hover:bg-blue-50 rounded-lg cursor-pointer text-xs font-bold text-slate-700 text-center border border-slate-100 transition-colors"
                                                     data-value="{{ $k->id }}" data-label="{{ $k->nama_kelas }}"
                                                     onclick="selectCustomOption('kelas', {{ $m->id }}, '{{ $k->id }}', '{{ $k->nama_kelas }}')">
                                                     {{ $k->nama_kelas }}
@@ -504,7 +501,6 @@
                                                     data-value="{{ $g->id }}" data-label="{{ $g->nama_guru }}"
                                                     onclick="selectCustomOption('guru', {{ $m->id }}, '{{ $g->id }}', '{{ $g->nama_guru }}')">
                                                     <div class="font-bold text-slate-700">{{ $g->nama_guru }}</div>
-                                                    <div class="text-[10px] text-slate-400">{{ $g->kode_guru }}</div>
                                                 </div>
                                                 @endforeach
                                             </div>
@@ -549,7 +545,7 @@
 
                                     <button type="submit" id="btn-submit-{{ $m->id }}"
                                         class="w-full py-3.5 bg-slate-900 hover:bg-blue-600 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-lg hover:shadow-blue-500/30 transform active:scale-95 transition-all duration-300 mt-2">
-                                        Simpan Data
+                                        Simpan Distribusi
                                     </button>
                                 </div>
                             </form>
@@ -570,27 +566,21 @@
 // 1. SEARCH LOGIC (OPTIMIZED & FAST)
 // ==========================================================
 function searchMainTable() {
-    // Ambil input dan ubah ke lowercase
     const input = document.getElementById('search-mapel-main').value.toLowerCase();
-
-    // Ambil semua baris yang punya data-filter
     const rows = document.querySelectorAll('#tbody-mapel-main tr[data-filter]');
     const noResultRow = document.getElementById('search-no-result');
     let hasResult = false;
 
-    // Loop menggunakan data attribute (Jauh lebih cepat daripada innerText)
     rows.forEach(row => {
         const filterText = row.getAttribute('data-filter');
-        // Cek apakah input ada di dalam string filter (nama + kode)
         if (filterText && filterText.includes(input)) {
-            row.style.display = ""; // Tampilkan
+            row.style.display = "";
             hasResult = true;
         } else {
-            row.style.display = "none"; // Sembunyikan
+            row.style.display = "none";
         }
     });
 
-    // Toggle pesan "Tidak Ditemukan"
     if (noResultRow) {
         if (!hasResult && input.length > 0) {
             noResultRow.classList.remove('hidden');
@@ -619,7 +609,6 @@ function closeModal(modalID) {
     if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
-        // Reset form jika itu modal jadwal
         if (modalID.includes('modaljadwal')) {
             const id = modalID.replace('modaljadwal', '');
             resetFormJadwal(id);
@@ -627,7 +616,6 @@ function closeModal(modalID) {
     }
 }
 
-// Close modal & dropdowns when clicking outside
 window.onclick = function(event) {
     if (event.target.classList.contains('fixed')) {
         event.target.classList.add('hidden');
@@ -659,7 +647,6 @@ function toggleCustomDropdown(type, mapelId) {
     const wrapper = document.getElementById(`wrapper-${type}-${mapelId}`);
     const dropdown = document.getElementById(`dropdown-${type}-${mapelId}`);
 
-    // Close other dropdowns
     document.querySelectorAll('.custom-select-wrapper').forEach(el => {
         if (el !== wrapper) {
             el.style.zIndex = "0";
@@ -681,8 +668,8 @@ function filterCustomDropdown(type, mapelId, input) {
     const filter = input.value.toLowerCase();
     const items = document.getElementById(`list-${type}-${mapelId}`).children;
     for (let item of items) {
-        const label = item.getAttribute('data-label').toLowerCase();
-        item.style.display = label.includes(filter) ? "" : "none";
+        const label = item.getAttribute('data-label') || '';
+        item.style.display = label.toLowerCase().includes(filter) ? "" : "none";
     }
 }
 
@@ -724,22 +711,19 @@ function editJadwalInline(mapelId, jadwalId, kelasId, guruId, jam, tipe) {
     const form = document.getElementById(`form-jadwal-${mapelId}`);
     const btnSubmit = document.getElementById(`btn-submit-${mapelId}`);
 
-    // UI Change
     container.classList.add('ring-2', 'ring-amber-200');
     title.innerHTML = `<span class="text-amber-600">EDIT DISTRIBUSI</span>`;
     document.getElementById(`btn-batal-${mapelId}`).classList.remove('hidden');
 
     btnSubmit.className =
-        "w-full py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-sm transition mt-2";
+        "w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold shadow-lg transition mt-2";
     btnSubmit.innerHTML = "UPDATE";
 
-    // Set Values
     setCustomDropdownValue('kelas', mapelId, kelasId);
     setCustomDropdownValue('guru', mapelId, guruId);
     document.getElementById(`input-jam-${mapelId}`).value = jam;
     document.getElementById(`select-tipe-${mapelId}`).value = tipe;
 
-    // Override Form Action
     form.action = `/mapel/jadwal/${jadwalId}`;
     form.dataset.mode = 'edit';
     document.getElementById(`method-spoof-${mapelId}`).innerHTML = `<input type="hidden" name="_method" value="PUT">`;
@@ -756,7 +740,7 @@ function resetFormJadwal(mapelId) {
 
     const btnSubmit = document.getElementById(`btn-submit-${mapelId}`);
     btnSubmit.className =
-        "w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-bold text-sm transition mt-2 shadow-lg";
+        "w-full py-3.5 bg-slate-900 hover:bg-blue-600 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-lg transition mt-2";
     btnSubmit.innerHTML = "SIMPAN";
 
     form.reset();
@@ -814,11 +798,10 @@ function updateTableUI(mapelId, jadwal, isEdit) {
             row.querySelector('.jam-text').innerText = jadwal.jumlah_jam + ' JP';
             row.querySelector('.tipe-text').innerText = jadwal.tipe_jam;
 
-            // Update onclick params
             const btnEdit = row.querySelector('button[onclick^="editJadwalInline"]');
             btnEdit.setAttribute('onclick',
                 `editJadwalInline(${mapelId}, ${jadwal.id}, ${jadwal.kelas_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}')`
-            );
+                );
 
             row.classList.add('bg-amber-100');
             setTimeout(() => row.classList.remove('bg-amber-100'), 1500);
@@ -828,15 +811,15 @@ function updateTableUI(mapelId, jadwal, isEdit) {
         tr.id = `row-jadwal-${jadwal.id}`;
         tr.className = "hover:bg-blue-50 transition";
         tr.innerHTML = `
-            <td class="px-3 py-2 font-bold text-slate-700 align-middle kelas-text">${namaKelas}</td>
-            <td class="px-3 py-2 text-slate-600 align-middle guru-text">${namaGuru}</td>
-            <td class="px-3 py-2 text-center align-middle">
+            <td class="px-4 py-3 font-bold text-slate-700 align-middle kelas-text">${namaKelas}</td>
+            <td class="px-4 py-3 text-slate-600 align-middle guru-text">${namaGuru}</td>
+            <td class="px-4 py-3 text-center align-middle">
                 <div class="flex flex-col items-center">
-                    <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-blue-100">${jadwal.jumlah_jam} JP</span>
+                    <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-blue-100 shadow-sm">${jadwal.jumlah_jam} JP</span>
                     <span class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase">${jadwal.tipe_jam}</span>
                 </div>
             </td>
-            <td class="px-3 py-2 text-right align-middle">
+            <td class="px-4 py-3 text-right align-middle">
                 <button onclick="editJadwalInline(${mapelId}, ${jadwal.id}, ${jadwal.kelas_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}')" class="text-blue-600 hover:text-blue-800 mr-2 p-1">✏️</button>
                 <button onclick="hapusJadwal(${jadwal.id}, this)" class="text-red-500 hover:text-red-700 p-1">🗑️</button>
             </td>`;
