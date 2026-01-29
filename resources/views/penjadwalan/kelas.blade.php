@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-{{-- BACKGROUND (Optimized: Fixed Position) --}}
+{{-- BACKGROUND --}}
 <div class="fixed inset-0 -z-10 pointer-events-none">
     <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-purple-50 to-slate-50"></div>
     <div class="absolute top-0 right-0 w-72 h-72 bg-purple-300/20 rounded-full blur-3xl mix-blend-multiply opacity-70">
@@ -11,50 +11,13 @@
     </div>
 </div>
 
-<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 pb-20 pt-6">
-
-    {{-- HEADER CARD --}}
-    <div
-        class="relative z-10 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 bg-white/80 backdrop-blur-md rounded-2xl border border-white/50 shadow-sm transition-all duration-500">
-        <div>
-            <h1
-                class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-slate-800 to-purple-900 tracking-tight">
-                Data Kelas & Ruang
-            </h1>
-            <p class="text-slate-500 text-sm mt-1 font-medium">
-                Manajemen kapasitas kelas, target kurikulum, dan plotting jadwal.
-            </p>
-        </div>
-
-        <div class="flex items-center gap-4">
-            {{-- Statistik --}}
-            <div class="hidden md:flex items-center px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm">
-                <div class="flex h-2.5 w-2.5 relative mr-3">
-                    <span
-                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-purple-500"></span>
-                </div>
-                <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Kelas: <span
-                        class="font-bold text-slate-800 text-sm ml-1">{{ $kelass->count() }}</span></span>
-            </div>
-
-            {{-- Tombol Tambah --}}
-            <button onclick="openModal('modaltambah')"
-                class="relative inline-flex items-center justify-center px-6 py-2.5 overflow-hidden font-bold text-white transition-all duration-300 bg-purple-600 rounded-xl group hover:bg-purple-700 shadow-md hover:shadow-lg hover:-translate-y-0.5 whitespace-nowrap">
-                <span class="flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    <span class="text-sm uppercase tracking-wide">Tambah Kelas</span>
-                </span>
-            </button>
-        </div>
-    </div>
+{{-- CONTAINER UTAMA (Full Height minus Navbar padding) --}}
+<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-7rem)] pb-4 pt-2 flex flex-col">
 
     {{-- FLASH MESSAGE --}}
     @if(session('success'))
-    <div x-data="{ show: true }" x-show="show"
-        class="mb-6 flex items-center justify-between p-4 bg-emerald-50 border border-emerald-100 rounded-xl shadow-sm text-emerald-800">
+    <div x-data="{ show: true }" x-show="show" x-transition
+        class="mb-4 flex items-center justify-between p-4 bg-emerald-50 border border-emerald-100 rounded-xl shadow-sm text-emerald-800 shrink-0">
         <div class="flex items-center gap-3">
             <div class="p-2 bg-emerald-100 rounded-full text-emerald-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,13 +30,47 @@
     </div>
     @endif
 
-    {{-- MAIN CONTENT --}}
-    <div class="relative z-10 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+    {{-- UNIFIED CARD (Satu Card Besar) --}}
+    <div
+        class="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col flex-1 overflow-hidden">
 
-        {{-- SEARCH BAR (STICKY) --}}
-        <div
-            class="sticky top-20 z-30 p-4 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white shadow-sm">
-            <div class="relative w-full sm:w-96 group">
+        {{-- 1. HEADER SECTION (FIXED) --}}
+        <div class="p-6 border-b border-slate-100 bg-white/50 shrink-0 z-20">
+
+            {{-- Baris 1: Judul & Tombol Tambah --}}
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div>
+                    <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+                        <span class="w-2 h-6 bg-purple-600 rounded-full"></span>
+                        Data Kelas & Ruang
+                    </h1>
+                    <p class="text-slate-500 text-sm mt-1 font-medium ml-4">
+                        Manajemen kapasitas, target kurikulum, dan plotting.
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div
+                        class="hidden md:flex items-center px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm">
+                        <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total: <span
+                                class="text-purple-600 text-sm ml-1">{{ $kelass->count() }}</span></span>
+                    </div>
+
+                    <button onclick="openModal('modaltambah')"
+                        class="relative inline-flex items-center justify-center px-6 py-2.5 overflow-hidden font-bold text-white transition-all duration-300 bg-purple-600 rounded-xl group hover:bg-purple-700 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:-translate-y-0.5">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            <span class="text-sm uppercase tracking-wide">Tambah</span>
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Baris 2: Search Bar --}}
+            <div class="relative group max-w-2xl">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <svg class="h-5 w-5 text-slate-400 group-focus-within:text-purple-500 transition-colors" fill="none"
                         stroke="currentColor" viewBox="0 0 24 24">
@@ -82,44 +79,39 @@
                     </svg>
                 </div>
                 <input type="text" id="search-kelas-main" oninput="searchMainTable()"
-                    class="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 text-sm transition shadow-sm"
+                    class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 text-sm transition shadow-sm"
                     placeholder="Cari Nama Kelas atau Kode...">
-            </div>
-
-            <div class="flex items-center gap-2.5 px-4 py-2 bg-purple-50 border border-purple-100 rounded-lg">
-                <span class="text-[11px] text-purple-900 font-bold uppercase tracking-widest">
-                    Tahun Ajaran {{ date('Y') }}/{{ date('Y')+1 }}
-                </span>
             </div>
         </div>
 
-        {{-- TABLE CONTAINER --}}
-        <div class="overflow-x-auto custom-scrollbar">
-            <table class="w-full text-left border-collapse min-w-[900px]">
-                <thead class="bg-slate-50 border-b border-slate-200">
+        {{-- 2. TABLE SECTION (SCROLLABLE AREA) --}}
+        <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white">
+            <table class="w-full text-left border-collapse min-w-[800px]">
+                <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
                     <tr>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-16">
+                            class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-16 border-b border-slate-200">
                             #</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-[30%]">
+                        <th
+                            class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-[30%] border-b border-slate-200">
                             Identitas Kelas</th>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-[25%]">
+                            class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-[25%] border-b border-slate-200">
                             Beban & Kapasitas</th>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-[40%]">
+                            class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-[40%] border-b border-slate-200">
                             Aksi & Plotting</th>
                     </tr>
                 </thead>
 
-                <tbody id="tbody-kelas-main" class="divide-y divide-slate-100 bg-white">
+                <tbody id="tbody-kelas-main" class="divide-y divide-slate-100">
                     @forelse($kelass as $index => $k)
                     @php
                     $totalJam = $k->jadwals->sum('jumlah_jam');
                     $maxJam = $k->max_jam ?? 50;
                     $percentage = $maxJam > 0 ? ($totalJam / $maxJam) * 100 : 0;
 
-                    // Theme Logic
+                    // Theme Logic untuk Progress Bar
                     $themeColor = 'purple';
                     $badgeBg = 'bg-purple-50';
                     $badgeText = 'text-purple-700';
@@ -137,19 +129,20 @@
                     $badgeBorder = 'border-emerald-100';
                     }
                     @endphp
-                    <tr class="group hover:bg-slate-50 transition-colors duration-200"
+                    <tr class="group hover:bg-purple-50/40 transition-colors duration-200"
                         data-filter="{{ strtolower($k->nama_kelas) }} {{ strtolower($k->kode_kelas) }}">
 
                         {{-- NOMOR --}}
                         <td class="px-6 py-4 text-center">
-                            <span class="font-mono text-slate-400 text-sm">{{ $index + 1 }}</span>
+                            <span
+                                class="font-mono text-slate-400 text-sm group-hover:text-purple-500 font-bold transition-colors">{{ $index + 1 }}</span>
                         </td>
 
                         {{-- IDENTITAS --}}
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-4">
                                 <div
-                                    class="h-10 w-10 shrink-0 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-sm border border-purple-200 shadow-sm">
+                                    class="h-11 w-11 shrink-0 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm ring-1 ring-purple-50">
                                     {{ substr($k->nama_kelas, 0, 1) }}
                                 </div>
                                 <div>
@@ -158,7 +151,7 @@
                                         {{ $k->nama_kelas }}
                                     </div>
                                     <span
-                                        class="inline-flex items-center px-2 py-0.5 mt-1 rounded text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200 font-mono">
+                                        class="inline-flex items-center px-2 py-0.5 mt-1 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 font-mono tracking-wide group-hover:border-purple-200 group-hover:text-purple-600 transition-colors">
                                         {{ $k->kode_kelas }}
                                     </span>
                                 </div>
@@ -169,12 +162,12 @@
                         <td class="px-6 py-4 text-center align-middle">
                             <div class="flex flex-col items-center gap-2">
                                 <span
-                                    class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold {{ $badgeBg }} {{ $badgeText }} border {{ $badgeBorder }}">
+                                    class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold {{ $badgeBg }} {{ $badgeText }} border {{ $badgeBorder }} shadow-sm">
                                     {{ $totalJam }} / {{ $maxJam }} JP
                                 </span>
                                 <div
-                                    class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
-                                    <div class="h-full bg-{{ $themeColor }}-500 rounded-full"
+                                    class="w-28 h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                                    <div class="h-full bg-{{ $themeColor }}-500 rounded-full transition-all duration-500"
                                         style="width: {{ min($percentage, 100) }}%"></div>
                                 </div>
                             </div>
@@ -185,7 +178,7 @@
                             <div class="flex items-center justify-center gap-2">
                                 <button onclick="openModal('modaljadwal{{ $k->id }}')"
                                     class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-purple-600 text-white text-xs font-bold rounded-lg shadow-sm transition-all hover:-translate-y-0.5">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                     </svg>
@@ -195,7 +188,7 @@
                                 <div class="w-px h-6 bg-slate-200 mx-1"></div>
 
                                 <button onclick="openModal('edit{{ $k->id }}')"
-                                    class="p-2 text-amber-500 bg-amber-50 hover:bg-amber-100 border border-amber-100 rounded-lg transition"
+                                    class="p-2 text-amber-500 bg-white border border-slate-200 hover:border-amber-200 hover:bg-amber-50 rounded-lg transition shadow-sm"
                                     title="Edit">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -208,7 +201,7 @@
                                     onsubmit="return confirm('Hapus kelas {{ $k->nama_kelas }}?')" class="inline">
                                     @csrf @method('DELETE')
                                     <button type="submit"
-                                        class="p-2 text-slate-400 hover:text-red-500 bg-slate-50 hover:bg-red-50 border border-slate-200 rounded-lg transition"
+                                        class="p-2 text-slate-400 hover:text-red-500 bg-white border border-slate-200 hover:border-red-200 hover:bg-red-50 rounded-lg transition shadow-sm"
                                         title="Hapus">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -222,8 +215,16 @@
                     </tr>
                     @empty
                     <tr id="no-data-row">
-                        <td colspan="4" class="px-6 py-12 text-center text-slate-400">
-                            Belum ada data kelas.
+                        <td colspan="4" class="px-6 py-20 text-center text-slate-400">
+                            <div class="flex flex-col items-center justify-center opacity-50">
+                                <svg class="w-12 h-12 mb-3 text-slate-300" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                                    </path>
+                                </svg>
+                                <span class="text-sm font-medium">Belum ada data kelas.</span>
+                            </div>
                         </td>
                     </tr>
                     @endforelse
@@ -245,7 +246,9 @@
             </table>
         </div>
 
-        <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-between items-center">
+        {{-- 3. FOOTER SECTION --}}
+        <div
+            class="bg-slate-50 border-t border-slate-200 px-6 py-3 flex justify-between items-center shrink-0 rounded-b-3xl">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sistem Penjadwalan v2.1</span>
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Secure Data</span>
         </div>
@@ -258,31 +261,35 @@
     {{-- 1. Modal Tambah Kelas --}}
     <div id="modaltambah"
         class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-scale-in">
+        <div
+            class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-scale-in border border-white/20">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-slate-800">Tambah Kelas</h3>
+                <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                    <span class="w-1.5 h-5 bg-purple-600 rounded-full"></span>
+                    Tambah Kelas
+                </h3>
                 <button onclick="closeModal('modaltambah')"
-                    class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+                    class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
             </div>
             <form action="{{ route('kelas.store') }}" method="POST" class="p-6 space-y-4">
                 @csrf
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Kelas</label>
                     <input type="text" name="nama_kelas"
-                        class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 outline-none text-sm"
+                        class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-purple-500 outline-none text-sm transition"
                         placeholder="Contoh: X IPA 1" required>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kode Kelas</label>
                         <input type="text" name="kode_kelas"
-                            class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 outline-none font-mono uppercase text-sm"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-purple-500 outline-none font-mono uppercase text-sm transition"
                             placeholder="X-I1" required>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kapasitas (JP)</label>
                         <input type="number" name="max_jam" value="50"
-                            class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 outline-none text-center font-bold text-sm"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-purple-500 outline-none text-center font-bold text-sm transition"
                             required>
                     </div>
                 </div>
@@ -305,7 +312,8 @@
                     </div>
                 </div>
                 <button type="submit"
-                    class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg shadow-md transition">SIMPAN</button>
+                    class="w-full bg-slate-900 hover:bg-purple-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">SIMPAN
+                    DATA</button>
             </form>
         </div>
     </div>
@@ -314,31 +322,34 @@
     {{-- 2. Modal Edit --}}
     <div id="edit{{ $k->id }}"
         class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
             <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
-                <h3 class="font-bold text-amber-800">Edit Data Kelas</h3>
+                <h3 class="font-bold text-amber-800 flex items-center gap-2">
+                    <span class="w-1.5 h-5 bg-amber-500 rounded-full"></span>
+                    Edit Data Kelas
+                </h3>
                 <button onclick="closeModal('edit{{ $k->id }}')"
-                    class="text-amber-400 hover:text-amber-600 text-2xl">&times;</button>
+                    class="text-amber-400 hover:text-amber-600 text-2xl leading-none">&times;</button>
             </div>
             <form action="{{ route('kelas.update', $k->id) }}" method="POST" class="p-6 space-y-4">
                 @csrf @method('PUT')
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Kelas</label>
                     <input type="text" name="nama_kelas" value="{{ $k->nama_kelas }}"
-                        class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-amber-500 outline-none text-sm"
+                        class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition"
                         required>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kode</label>
                         <input type="text" name="kode_kelas" value="{{ $k->kode_kelas }}"
-                            class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-amber-500 outline-none font-mono uppercase text-sm"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none font-mono uppercase text-sm transition"
                             required>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Max JP</label>
                         <input type="number" name="max_jam" value="{{ $k->max_jam ?? 50 }}"
-                            class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-amber-500 outline-none text-center font-bold text-sm"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-center font-bold text-sm transition"
                             required>
                     </div>
                 </div>
@@ -361,7 +372,7 @@
                     </div>
                 </div>
                 <button type="submit"
-                    class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-lg shadow-md transition">UPDATE</button>
+                    class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">UPDATE</button>
             </form>
         </div>
     </div>
@@ -397,7 +408,7 @@
                 {{-- KIRI: Area Tabel (Flex Column) --}}
                 <div class="flex-1 flex flex-col h-full border-r border-slate-100 bg-white relative min-w-0">
 
-                    {{-- 1. Search Bar (FIXED POSITION) --}}
+                    {{-- 1. Search Bar (FIXED POSITION - Tidak ikut scroll) --}}
                     <div class="p-4 border-b border-slate-100 bg-white z-20 shrink-0">
                         <div class="relative group">
                             <span
@@ -416,6 +427,7 @@
                     {{-- 2. Container Tabel (SCROLLABLE AREA) --}}
                     <div class="flex-1 overflow-y-auto custom-scrollbar p-0 relative bg-white">
                         <table class="w-full text-xs border-collapse">
+                            {{-- Header Tabel (Sticky di dalam area scroll) --}}
                             <thead class="bg-slate-50 text-slate-500 font-bold uppercase sticky top-0 z-10 shadow-sm">
                                 <tr>
                                     <th class="px-4 py-3 text-left border-b border-slate-100 w-[40%]">Mata Pelajaran
@@ -472,10 +484,12 @@
                                     </td>
                                 </tr>
                                 @endforeach
+                                {{-- Jika Kosong --}}
                                 @if($k->jadwals->isEmpty())
                                 <tr class="empty-row">
-                                    <td colspan="4" class="py-12 text-center text-slate-400 italic bg-slate-50/30">Belum
-                                        ada mapel di kelas ini.</td>
+                                    <td colspan="4" class="py-12 text-center text-slate-400 italic bg-slate-50/30">
+                                        Belum ada mapel di kelas ini.
+                                    </td>
                                 </tr>
                                 @endif
                             </tbody>
@@ -483,7 +497,7 @@
                     </div>
                 </div>
 
-                {{-- KANAN: Form Input --}}
+                {{-- KANAN: Form Input (Fixed Width, Scrollable vertically) --}}
                 <div
                     class="w-full lg:w-[380px] bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-200 flex flex-col h-[40vh] lg:h-full">
                     <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
@@ -533,6 +547,7 @@
                                                     data-value="{{ $m->id }}" data-label="{{ $m->nama_mapel }}"
                                                     onclick="selectCustomOption('mapel', {{ $k->id }}, '{{ $m->id }}', '{{ $m->nama_mapel }}')">
                                                     <div class="font-bold text-slate-700">{{ $m->nama_mapel }}</div>
+                                                    <div class="text-[10px] text-slate-400">{{ $m->kode_mapel }}</div>
                                                 </div>
                                                 @endforeach
                                             </div>
@@ -629,7 +644,7 @@
 @push('scripts')
 <script>
 // ==========================================================
-// 1. SEARCH LOGIC (OPTIMIZED)
+// 1. SEARCH LOGIC (OPTIMIZED & FAST)
 // ==========================================================
 function searchMainTable() {
     const input = document.getElementById('search-kelas-main').value.toLowerCase();
@@ -657,7 +672,7 @@ function searchMainTable() {
 }
 
 // ==========================================================
-// 2. MODAL UTILS
+// 2. MODAL & DROPDOWN UTILS
 // ==========================================================
 const csrfNode = document.querySelector('meta[name="csrf-token"]');
 const CSRF_TOKEN = csrfNode ? csrfNode.content : '';
@@ -694,7 +709,7 @@ window.onclick = function(event) {
 }
 
 // ==========================================================
-// 3. SEARCH INTERNAL TABLE
+// 3. SEARCH INTERNAL TABLE (MODAL)
 // ==========================================================
 function searchTable(kelasId) {
     const filter = document.getElementById('search-' + kelasId).value.toLowerCase();
@@ -707,7 +722,7 @@ function searchTable(kelasId) {
 }
 
 // ==========================================================
-// 4. CUSTOM DROPDOWN
+// 4. CUSTOM DROPDOWN LOGIC
 // ==========================================================
 function toggleCustomDropdown(type, kelasId) {
     const wrapper = document.getElementById(`wrapper-${type}-${kelasId}`);
@@ -861,13 +876,13 @@ function updateTableUI(kelasId, jadwal, isEdit) {
         if (row) {
             row.querySelector('.mapel-text').innerText = mapelName;
             row.querySelector('.guru-text').innerText = guruName;
-            row.querySelector('.jam-text').innerText = jadwal.jumlah_jam + ' Jam';
+            row.querySelector('.jam-text').innerText = jadwal.jumlah_jam + ' JP';
             row.querySelector('.tipe-text').innerText = jadwal.tipe_jam;
 
             const btnEdit = row.querySelector('button[onclick^="editJadwalInline"]');
             btnEdit.setAttribute('onclick',
                 `editJadwalInline(${kelasId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}')`
-            );
+                );
 
             row.classList.add('bg-amber-100');
             setTimeout(() => row.classList.remove('bg-amber-100'), 1500);
@@ -877,11 +892,11 @@ function updateTableUI(kelasId, jadwal, isEdit) {
         tr.id = `row-jadwal-${jadwal.id}`;
         tr.className = "hover:bg-purple-50 transition";
         tr.innerHTML = `
-            <td class="px-4 py-3 font-bold text-slate-700 mapel-text align-middle">${mapelName}</td>
+            <td class="px-4 py-3 font-bold text-slate-700 align-middle mapel-text">${mapelName}</td>
             <td class="px-4 py-3 text-slate-600 guru-text align-middle font-medium">${guruName}</td>
             <td class="px-4 py-3 text-center align-middle">
                 <div class="flex flex-col items-center">
-                    <span class="bg-white border border-slate-200 text-purple-600 py-0.5 px-2 rounded-full font-bold text-[10px] jam-text shadow-sm">${jadwal.jumlah_jam} Jam</span>
+                    <span class="bg-white border border-slate-200 text-purple-600 py-0.5 px-2 rounded-full font-bold text-[10px] jam-text shadow-sm">${jadwal.jumlah_jam} JP</span>
                     <span class="text-[9px] text-slate-400 uppercase mt-1 font-bold tracking-wider tipe-text">${jadwal.tipe_jam}</span>
                 </div>
             </td>
