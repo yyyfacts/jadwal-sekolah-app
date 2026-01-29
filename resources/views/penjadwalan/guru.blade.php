@@ -4,7 +4,7 @@
 {{-- BACKGROUND --}}
 <div class="fixed inset-0 -z-10 pointer-events-none">
     <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-50 to-slate-50"></div>
-    <div class="absolute top-0 right-0 w-72 h-72 bg-blue-300/20 rounded-full blur-3xl mix-blend-multiply opacity-70">
+    <div class="absolute top-0 right-0 w-72 h-72 bg-indigo-300/20 rounded-full blur-3xl mix-blend-multiply opacity-70">
     </div>
     <div class="absolute top-20 left-20 w-72 h-72 bg-cyan-300/20 rounded-full blur-3xl mix-blend-multiply opacity-70">
     </div>
@@ -33,18 +33,18 @@
     <div
         class="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col flex-1 overflow-hidden">
 
-        {{-- 1. HEADER SECTON (FIXED - Judul & Search Gabung Disini) --}}
+        {{-- 1. HEADER SECTION (FIXED - Judul & Search Gabung Disini) --}}
         <div class="p-6 border-b border-slate-100 bg-white/50 shrink-0 z-20">
 
             {{-- Baris 1: Judul & Tombol Tambah --}}
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
                     <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
-                        <span class="w-2 h-6 bg-blue-600 rounded-full"></span>
-                        Bank Mata Pelajaran
+                        <span class="w-2 h-6 bg-indigo-600 rounded-full"></span>
+                        Bank Data Guru
                     </h1>
                     <p class="text-slate-500 text-sm mt-1 font-medium ml-4">
-                        Manajemen kurikulum dan distribusi pengajar.
+                        Manajemen profil pengajar, NIP, dan beban jam.
                     </p>
                 </div>
 
@@ -52,11 +52,11 @@
                     <div
                         class="hidden md:flex items-center px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm">
                         <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total: <span
-                                class="text-blue-600 text-sm ml-1">{{ $mapels->count() }}</span></span>
+                                class="text-indigo-600 text-sm ml-1">{{ $gurus->count() }}</span></span>
                     </div>
 
                     <button onclick="openModal('modaltambah')"
-                        class="relative inline-flex items-center justify-center px-6 py-2.5 overflow-hidden font-bold text-white transition-all duration-300 bg-blue-600 rounded-xl group hover:bg-blue-700 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5">
+                        class="relative inline-flex items-center justify-center px-6 py-2.5 overflow-hidden font-bold text-white transition-all duration-300 bg-indigo-600 rounded-xl group hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-0.5">
                         <span class="flex items-center gap-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -71,15 +71,15 @@
             {{-- Baris 2: Search Bar --}}
             <div class="relative group max-w-2xl">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none"
+                    <svg class="h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" fill="none"
                         stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                 </div>
-                <input type="text" id="search-mapel-main" oninput="searchMainTable()"
-                    class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm transition shadow-sm"
-                    placeholder="Cari Nama Mapel atau Kode...">
+                <input type="text" id="search-guru-main" oninput="searchMainTable()"
+                    class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-sm transition shadow-sm"
+                    placeholder="Cari Nama Guru atau NIP...">
             </div>
         </div>
 
@@ -93,59 +93,59 @@
                             #</th>
                         <th
                             class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-[35%] border-b border-slate-200">
-                            Identitas Mapel</th>
+                            Profil Guru</th>
                         <th
                             class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-[25%] border-b border-slate-200">
-                            Status Distribusi</th>
+                            Beban Mengajar</th>
                         <th
                             class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-[35%] border-b border-slate-200">
-                            Aksi</th>
+                            Aksi & Jadwal</th>
                     </tr>
                 </thead>
 
-                <tbody id="tbody-mapel-main" class="divide-y divide-slate-100">
-                    @forelse($mapels as $index => $m)
-                    <tr class="group hover:bg-blue-50/40 transition-colors duration-200"
-                        data-filter="{{ strtolower($m->nama_mapel) }} {{ strtolower($m->kode_mapel) }}">
+                <tbody id="tbody-guru-main" class="divide-y divide-slate-100">
+                    @forelse($gurus as $index => $g)
+                    <tr class="group hover:bg-indigo-50/40 transition-colors duration-200"
+                        data-filter="{{ strtolower($g->nama_guru) }} {{ strtolower($g->kode_guru) }}">
 
                         {{-- NOMOR --}}
                         <td class="px-6 py-4 text-center">
                             <span
-                                class="font-mono text-slate-400 text-sm group-hover:text-blue-500 font-bold transition-colors">{{ $index + 1 }}</span>
+                                class="font-mono text-slate-400 text-sm group-hover:text-indigo-500 font-bold transition-colors">{{ $index + 1 }}</span>
                         </td>
 
-                        {{-- IDENTITAS --}}
+                        {{-- PROFIL --}}
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-4">
                                 <div
-                                    class="h-11 w-11 shrink-0 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm ring-1 ring-blue-50">
-                                    {{ substr($m->nama_mapel, 0, 1) }}
+                                    class="h-11 w-11 shrink-0 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm ring-1 ring-indigo-50">
+                                    {{ substr($g->nama_guru, 0, 1) }}
                                 </div>
                                 <div>
                                     <div
-                                        class="font-bold text-slate-800 text-sm group-hover:text-blue-700 transition-colors">
-                                        {{ $m->nama_mapel }}
+                                        class="font-bold text-slate-800 text-sm group-hover:text-indigo-700 transition-colors">
+                                        {{ $g->nama_guru }}
                                     </div>
                                     <span
-                                        class="inline-flex items-center px-2 py-0.5 mt-1 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 font-mono tracking-wide group-hover:border-blue-200 group-hover:text-blue-600 transition-colors">
-                                        {{ $m->kode_mapel }}
+                                        class="inline-flex items-center px-2 py-0.5 mt-1 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 font-mono tracking-wide group-hover:border-indigo-200 group-hover:text-indigo-600 transition-colors">
+                                        {{ $g->kode_guru }}
                                     </span>
                                 </div>
                             </div>
                         </td>
 
-                        {{-- STATUS --}}
+                        {{-- BEBAN --}}
                         <td class="px-6 py-4 text-center">
-                            @if($m->total_jam_terdistribusi > 0)
+                            @if($g->total_jam_mengajar > 0)
                             <div
-                                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700">
-                                <div class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
-                                <span class="text-xs font-bold">{{ $m->total_jam_terdistribusi }} JP Total</span>
+                                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700">
+                                <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></div>
+                                <span class="text-xs font-bold">{{ $g->total_jam_mengajar }} Jam</span>
                             </div>
                             @else
                             <div
                                 class="inline-flex items-center px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-slate-400 text-xs font-medium italic">
-                                Belum ada kelas
+                                0 Jam
                             </div>
                             @endif
                         </td>
@@ -153,28 +153,19 @@
                         {{-- AKSI --}}
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-center gap-2">
-                                <button onclick="openModal('modaljadwal{{ $m->id }}')"
-                                    class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-blue-600 text-white text-xs font-bold rounded-lg shadow-sm transition-all hover:-translate-y-0.5">
+                                <button onclick="openModal('modaljadwal{{ $g->id }}')"
+                                    class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-sm transition-all hover:-translate-y-0.5">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
                                         </path>
                                     </svg>
-                                    Distribusi
+                                    Jadwal
                                 </button>
 
                                 <div class="w-px h-6 bg-slate-200 mx-1"></div>
 
-                                <a href="{{ route('mapel.waktuKosong', $m->id) }}"
-                                    class="p-2 text-rose-500 bg-white border border-slate-200 hover:border-rose-200 hover:bg-rose-50 rounded-lg transition shadow-sm"
-                                    title="Blok Jam">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                </a>
-
-                                <button onclick="openModal('edit{{ $m->id }}')"
+                                <button onclick="openModal('edit{{ $g->id }}')"
                                     class="p-2 text-amber-500 bg-white border border-slate-200 hover:border-amber-200 hover:bg-amber-50 rounded-lg transition shadow-sm"
                                     title="Edit">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,8 +175,8 @@
                                     </svg>
                                 </button>
 
-                                <form action="{{ route('mapel.destroy', $m->id) }}" method="POST"
-                                    onsubmit="return confirm('Hapus permanen mapel ini?')" class="inline">
+                                <form action="{{ route('guru.destroy', $g->id) }}" method="POST"
+                                    onsubmit="return confirm('Hapus data {{ $g->nama_guru }}?')" class="inline">
                                     @csrf @method('DELETE')
                                     <button type="submit"
                                         class="p-2 text-slate-400 hover:text-red-500 bg-white border border-slate-200 hover:border-red-200 hover:bg-red-50 rounded-lg transition shadow-sm"
@@ -207,16 +198,16 @@
                                 <svg class="w-12 h-12 mb-3 text-slate-300" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
                                     </path>
                                 </svg>
-                                <span class="text-sm font-medium">Belum ada mata pelajaran.</span>
+                                <span class="text-sm font-medium">Belum ada data guru.</span>
                             </div>
                         </td>
                     </tr>
                     @endforelse
 
-                    {{-- Row Not Found (Hidden by Default) --}}
+                    {{-- Row Not Found --}}
                     <tr id="search-no-result" class="hidden">
                         <td colspan="4" class="px-6 py-12 text-center text-slate-500">
                             <div class="flex flex-col items-center">
@@ -225,7 +216,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                 </svg>
-                                <p>Mapel tidak ditemukan.</p>
+                                <p>Guru tidak ditemukan.</p>
                             </div>
                         </td>
                     </tr>
@@ -252,57 +243,57 @@
             class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-scale-in border border-white/20">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <h3 class="font-bold text-slate-800 flex items-center gap-2">
-                    <span class="w-1.5 h-5 bg-blue-600 rounded-full"></span>
-                    Tambah Mapel
+                    <span class="w-1.5 h-5 bg-indigo-600 rounded-full"></span>
+                    Tambah Guru
                 </h3>
                 <button onclick="closeModal('modaltambah')"
                     class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
             </div>
-            <form action="{{ route('mapel.store') }}" method="POST" class="p-6 space-y-5">
+            <form action="{{ route('guru.store') }}" method="POST" class="p-6 space-y-5">
                 @csrf
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Mapel</label>
-                    <input type="text" name="nama_mapel"
-                        class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none text-sm transition"
-                        placeholder="Contoh: Matematika" required>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Lengkap</label>
+                    <input type="text" name="nama_guru"
+                        class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition"
+                        placeholder="Contoh: Budi Santoso, S.Pd" required>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kode Mapel</label>
-                    <input type="text" name="kode_mapel"
-                        class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none font-mono uppercase text-sm transition"
-                        placeholder="MTK" required>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">NIP / Kode Guru</label>
+                    <input type="text" name="kode_guru"
+                        class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none font-mono uppercase text-sm transition"
+                        placeholder="GR-01" required>
                 </div>
                 <button type="submit"
-                    class="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">SIMPAN
+                    class="w-full bg-slate-900 hover:bg-indigo-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">SIMPAN
                     DATA</button>
             </form>
         </div>
     </div>
 
-    @foreach($mapels as $m)
+    @foreach($gurus as $g)
     {{-- 2. Modal Edit --}}
-    <div id="edit{{ $m->id }}"
+    <div id="edit{{ $g->id }}"
         class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
             <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
                 <h3 class="font-bold text-amber-800 flex items-center gap-2">
                     <span class="w-1.5 h-5 bg-amber-500 rounded-full"></span>
-                    Edit Mapel
+                    Edit Guru
                 </h3>
-                <button onclick="closeModal('edit{{ $m->id }}')"
+                <button onclick="closeModal('edit{{ $g->id }}')"
                     class="text-amber-400 hover:text-amber-600 text-2xl leading-none">&times;</button>
             </div>
-            <form action="{{ route('mapel.update', $m->id) }}" method="POST" class="p-6 space-y-5">
+            <form action="{{ route('guru.update', $g->id) }}" method="POST" class="p-6 space-y-5">
                 @csrf @method('PUT')
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Mapel</label>
-                    <input type="text" name="nama_mapel" value="{{ $m->nama_mapel }}"
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Guru</label>
+                    <input type="text" name="nama_guru" value="{{ $g->nama_guru }}"
                         class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition"
                         required>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kode</label>
-                    <input type="text" name="kode_mapel" value="{{ $m->kode_mapel }}"
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kode / NIP</label>
+                    <input type="text" name="kode_guru" value="{{ $g->kode_guru }}"
                         class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none font-mono uppercase text-sm transition"
                         required>
                 </div>
@@ -312,8 +303,8 @@
         </div>
     </div>
 
-    {{-- 3. Modal Distribusi (Fixed Layout & Scroll) --}}
-    <div id="modaljadwal{{ $m->id }}"
+    {{-- 3. Modal Jadwal Mengajar (Fixed Layout & Scroll) --}}
+    <div id="modaljadwal{{ $g->id }}"
         class="fixed inset-0 bg-slate-900/80 z-[99] hidden flex items-center justify-center p-2 sm:p-4 transition-opacity duration-300">
         <div
             class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-200 overflow-hidden animate-scale-in">
@@ -321,19 +312,19 @@
             {{-- A. Header Modal (Tetap) --}}
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                 <div class="flex items-center gap-3">
-                    <div class="p-2 bg-blue-600 text-white rounded-lg shadow-sm">
+                    <div class="p-2 bg-indigo-600 text-white rounded-lg shadow-sm">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
                             </path>
                         </svg>
                     </div>
                     <div>
-                        <h3 class="font-bold text-lg text-slate-800">{{ $m->nama_mapel }}</h3>
-                        <p class="text-xs text-slate-500">{{ $m->kode_mapel }}</p>
+                        <h3 class="font-bold text-lg text-slate-800">{{ $g->nama_guru }}</h3>
+                        <p class="text-xs text-slate-500">{{ $g->kode_guru }}</p>
                     </div>
                 </div>
-                <button onclick="closeModal('modaljadwal{{ $m->id }}')"
+                <button onclick="closeModal('modaljadwal{{ $g->id }}')"
                     class="text-slate-400 hover:text-red-500 text-3xl leading-none transition-colors">&times;</button>
             </div>
 
@@ -347,15 +338,15 @@
                     <div class="p-4 border-b border-slate-100 bg-white z-20 shrink-0">
                         <div class="relative group">
                             <span
-                                class="absolute left-3 top-2.5 text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                                class="absolute left-3 top-2.5 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                 </svg>
                             </span>
-                            <input type="text" id="search-{{ $m->id }}" oninput="searchTable({{ $m->id }})"
-                                placeholder="Cari Kelas atau Guru..."
-                                class="w-full border border-slate-200 bg-slate-50/50 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/50 focus:bg-white focus:border-blue-500 outline-none transition-all">
+                            <input type="text" id="search-{{ $g->id }}" oninput="searchTable({{ $g->id }})"
+                                placeholder="Cari Mapel atau Kelas..."
+                                class="w-full border border-slate-200 bg-slate-50/50 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500/50 focus:bg-white focus:border-indigo-500 outline-none transition-all">
                         </div>
                     </div>
 
@@ -364,25 +355,29 @@
                         <table class="w-full text-xs border-collapse">
                             <thead class="bg-slate-50 text-slate-500 font-bold uppercase sticky top-0 z-10 shadow-sm">
                                 <tr>
+                                    <th class="px-4 py-3 text-left border-b border-slate-100 w-[40%]">Mata Pelajaran
+                                    </th>
                                     <th class="px-4 py-3 text-left border-b border-slate-100 w-[20%]">Kelas</th>
-                                    <th class="px-4 py-3 text-left border-b border-slate-100 w-[40%]">Guru Pengampu</th>
                                     <th class="px-4 py-3 text-center border-b border-slate-100 w-[20%]">Jam</th>
                                     <th class="px-4 py-3 text-right border-b border-slate-100 w-[20%]">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody id="tbody-mapel-{{ $m->id }}" class="divide-y divide-slate-50">
-                                @foreach($m->jadwals as $jadwal)
+                            <tbody id="tbody-guru-{{ $g->id }}" class="divide-y divide-slate-50">
+                                @foreach($g->jadwals as $jadwal)
                                 <tr id="row-jadwal-{{ $jadwal->id }}"
-                                    class="hover:bg-blue-50/50 transition duration-150 group">
-                                    <td class="px-4 py-3 font-bold text-slate-700 align-middle kelas-text">
+                                    class="hover:bg-indigo-50/50 transition duration-150 group">
+                                    <td class="px-4 py-3 font-bold text-slate-700 align-middle mapel-text">
+                                        {{ $jadwal->mapel->nama_mapel ?? '-' }}
+                                        <div class="text-[10px] font-normal text-slate-400 mt-0.5">
+                                            {{ $jadwal->mapel->kode_mapel ?? '' }}</div>
+                                    </td>
+                                    <td class="px-4 py-3 text-slate-600 align-middle kelas-text font-medium">
                                         {{ $jadwal->kelas->nama_kelas ?? '-' }}</td>
-                                    <td class="px-4 py-3 text-slate-600 align-middle guru-text">
-                                        {{ $jadwal->guru->nama_guru ?? '-' }}</td>
                                     <td class="px-4 py-3 text-center align-middle">
                                         <div class="flex flex-col items-center">
                                             <span
-                                                class="bg-white text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-blue-100 shadow-sm">{{ $jadwal->jumlah_jam }}
-                                                JP</span>
+                                                class="bg-white text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-indigo-100 shadow-sm">{{ $jadwal->jumlah_jam }}
+                                                Jam</span>
                                             <span
                                                 class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">{{ $jadwal->tipe_jam }}</span>
                                         </div>
@@ -391,8 +386,8 @@
                                         <div
                                             class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button
-                                                onclick="editJadwalInline({{ $m->id }}, {{ $jadwal->id }}, {{ $jadwal->kelas_id }}, {{ $jadwal->guru_id }}, {{ $jadwal->jumlah_jam }}, '{{ $jadwal->tipe_jam }}')"
-                                                class="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition"
+                                                onclick="editJadwalInline({{ $g->id }}, {{ $jadwal->id }}, {{ $jadwal->mapel_id }}, {{ $jadwal->kelas_id }}, {{ $jadwal->jumlah_jam }}, '{{ $jadwal->tipe_jam }}')"
+                                                class="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded-lg transition"
                                                 title="Edit">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
@@ -417,11 +412,10 @@
                                     </td>
                                 </tr>
                                 @endforeach
-                                @if($m->jadwals->isEmpty())
+                                @if($g->jadwals->isEmpty())
                                 <tr class="empty-row">
-                                    <td colspan="4" class="py-12 text-center text-slate-400 italic bg-slate-50/30">
-                                        Belum ada data distribusi.
-                                    </td>
+                                    <td colspan="4" class="py-12 text-center text-slate-400 italic bg-slate-50/30">Belum
+                                        ada beban mengajar.</td>
                                 </tr>
                                 @endif
                             </tbody>
@@ -433,32 +427,68 @@
                 <div
                     class="w-full lg:w-[380px] bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-200 flex flex-col h-[40vh] lg:h-full">
                     <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                        <div id="form-container-{{ $m->id }}"
+                        <div id="form-container-{{ $g->id }}"
                             class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm transition-all duration-300">
                             <div class="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
-                                <h4 id="form-title-{{ $m->id }}"
+                                <h4 id="form-title-{{ $g->id }}"
                                     class="font-extrabold text-slate-700 text-xs uppercase tracking-widest flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                                    Input Distribusi
+                                    <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                                    Input Jadwal
                                 </h4>
-                                <button id="btn-batal-{{ $m->id }}" type="button"
-                                    onclick="resetFormJadwal({{ $m->id }})"
+                                <button id="btn-batal-{{ $g->id }}" type="button"
+                                    onclick="resetFormJadwal({{ $g->id }})"
                                     class="hidden text-[10px] font-bold text-red-500 hover:bg-red-50 px-2 py-1 rounded transition uppercase">Batal</button>
                             </div>
 
-                            <form id="form-jadwal-{{ $m->id }}" action="{{ route('mapel.simpanJadwal', $m->id) }}"
-                                method="POST" onsubmit="handleFormJadwal(event, this, {{ $m->id }})">
-                                <div id="method-spoof-{{ $m->id }}"></div>
+                            <form id="form-jadwal-{{ $g->id }}" action="{{ route('guru.simpanJadwal', $g->id) }}"
+                                method="POST" onsubmit="handleFormJadwal(event, this, {{ $g->id }})">
+                                <div id="method-spoof-{{ $g->id }}"></div>
                                 <div class="space-y-5">
+                                    {{-- Dropdown Mapel --}}
+                                    <div class="relative custom-select-wrapper" id="wrapper-mapel-{{ $g->id }}">
+                                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Mata
+                                            Pelajaran</label>
+                                        <input type="hidden" name="mapel_id" id="real-input-mapel-{{ $g->id }}"
+                                            required>
+                                        <button type="button" onclick="toggleCustomDropdown('mapel', {{ $g->id }})"
+                                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-left text-sm flex justify-between items-center hover:bg-white hover:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all">
+                                            <span id="display-mapel-{{ $g->id }}"
+                                                class="text-slate-500 font-medium">Pilih Mapel...</span>
+                                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </button>
+                                        <div id="dropdown-mapel-{{ $g->id }}"
+                                            class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-xl mt-1 max-h-56 overflow-y-auto animate-scale-in">
+                                            <div class="sticky top-0 bg-white p-2 border-b border-slate-100">
+                                                <input type="text" placeholder="Cari..."
+                                                    onkeyup="filterCustomDropdown('mapel', {{ $g->id }}, this)"
+                                                    class="w-full p-2 text-xs border border-slate-200 rounded-lg bg-slate-50 focus:border-indigo-500 outline-none">
+                                            </div>
+                                            <div id="list-mapel-{{ $g->id }}" class="p-1">
+                                                @foreach($mapels as $m)
+                                                <div class="option-item p-2.5 hover:bg-indigo-50 rounded-lg cursor-pointer text-sm border-b border-slate-50 last:border-0 transition-colors"
+                                                    data-value="{{ $m->id }}" data-label="{{ $m->nama_mapel }}"
+                                                    onclick="selectCustomOption('mapel', {{ $g->id }}, '{{ $m->id }}', '{{ $m->nama_mapel }}')">
+                                                    <div class="font-bold text-slate-700">{{ $m->nama_mapel }}</div>
+                                                    <div class="text-[10px] text-slate-400">{{ $m->kode_mapel }}</div>
+                                                </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     {{-- Dropdown Kelas --}}
-                                    <div class="relative custom-select-wrapper" id="wrapper-kelas-{{ $m->id }}">
+                                    <div class="relative custom-select-wrapper" id="wrapper-kelas-{{ $g->id }}">
                                         <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Kelas
                                             Tujuan</label>
-                                        <input type="hidden" name="kelas_id" id="real-input-kelas-{{ $m->id }}"
+                                        <input type="hidden" name="kelas_id" id="real-input-kelas-{{ $g->id }}"
                                             required>
-                                        <button type="button" onclick="toggleCustomDropdown('kelas', {{ $m->id }})"
-                                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-left text-sm flex justify-between items-center hover:bg-white hover:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all">
-                                            <span id="display-kelas-{{ $m->id }}"
+                                        <button type="button" onclick="toggleCustomDropdown('kelas', {{ $g->id }})"
+                                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-left text-sm flex justify-between items-center hover:bg-white hover:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all">
+                                            <span id="display-kelas-{{ $g->id }}"
                                                 class="text-slate-500 font-medium">Pilih Kelas...</span>
                                             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
@@ -466,53 +496,19 @@
                                                     d="M19 9l-7 7-7-7"></path>
                                             </svg>
                                         </button>
-                                        <div id="dropdown-kelas-{{ $m->id }}"
+                                        <div id="dropdown-kelas-{{ $g->id }}"
                                             class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-xl mt-1 max-h-56 overflow-y-auto animate-scale-in">
                                             <div class="sticky top-0 bg-white p-2 border-b border-slate-100">
                                                 <input type="text" placeholder="Cari..."
-                                                    onkeyup="filterCustomDropdown('kelas', {{ $m->id }}, this)"
-                                                    class="w-full p-2 text-xs border border-slate-200 rounded-lg bg-slate-50 focus:border-blue-500 outline-none">
+                                                    onkeyup="filterCustomDropdown('kelas', {{ $g->id }}, this)"
+                                                    class="w-full p-2 text-xs border border-slate-200 rounded-lg bg-slate-50 focus:border-indigo-500 outline-none">
                                             </div>
-                                            <div id="list-kelas-{{ $m->id }}" class="p-1 grid grid-cols-2 gap-1">
-                                                @foreach($kelases as $k)
-                                                <div class="option-item p-2 hover:bg-blue-50 rounded-lg cursor-pointer text-xs font-bold text-slate-700 text-center border border-slate-100 transition-colors"
+                                            <div id="list-kelas-{{ $g->id }}" class="p-1 grid grid-cols-2 gap-1">
+                                                @foreach($kelass as $k)
+                                                <div class="option-item p-2 hover:bg-indigo-50 rounded-lg cursor-pointer text-xs font-bold text-slate-700 text-center border border-slate-100 transition-colors"
                                                     data-value="{{ $k->id }}" data-label="{{ $k->nama_kelas }}"
-                                                    onclick="selectCustomOption('kelas', {{ $m->id }}, '{{ $k->id }}', '{{ $k->nama_kelas }}')">
+                                                    onclick="selectCustomOption('kelas', {{ $g->id }}, '{{ $k->id }}', '{{ $k->nama_kelas }}')">
                                                     {{ $k->nama_kelas }}
-                                                </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {{-- Dropdown Guru --}}
-                                    <div class="relative custom-select-wrapper" id="wrapper-guru-{{ $m->id }}">
-                                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Guru
-                                            Pengampu</label>
-                                        <input type="hidden" name="guru_id" id="real-input-guru-{{ $m->id }}" required>
-                                        <button type="button" onclick="toggleCustomDropdown('guru', {{ $m->id }})"
-                                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-left text-sm flex justify-between items-center hover:bg-white hover:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all">
-                                            <span id="display-guru-{{ $m->id }}"
-                                                class="text-slate-500 font-medium">Pilih Guru...</span>
-                                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 9l-7 7-7-7"></path>
-                                            </svg>
-                                        </button>
-                                        <div id="dropdown-guru-{{ $m->id }}"
-                                            class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-xl mt-1 max-h-56 overflow-y-auto animate-scale-in">
-                                            <div class="sticky top-0 bg-white p-2 border-b border-slate-100">
-                                                <input type="text" placeholder="Cari..."
-                                                    onkeyup="filterCustomDropdown('guru', {{ $m->id }}, this)"
-                                                    class="w-full p-2 text-xs border border-slate-200 rounded-lg bg-slate-50 focus:border-blue-500 outline-none">
-                                            </div>
-                                            <div id="list-guru-{{ $m->id }}" class="p-1">
-                                                @foreach($gurus as $g)
-                                                <div class="option-item p-2.5 hover:bg-blue-50 rounded-lg cursor-pointer text-sm border-b border-slate-50 last:border-0 transition-colors"
-                                                    data-value="{{ $g->id }}" data-label="{{ $g->nama_guru }}"
-                                                    onclick="selectCustomOption('guru', {{ $m->id }}, '{{ $g->id }}', '{{ $g->nama_guru }}')">
-                                                    <div class="font-bold text-slate-700">{{ $g->nama_guru }}</div>
                                                 </div>
                                                 @endforeach
                                             </div>
@@ -526,8 +522,8 @@
                                                 class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Total
                                                 Jam</label>
                                             <div class="relative">
-                                                <input type="number" name="jumlah_jam" id="input-jam-{{ $m->id }}"
-                                                    class="w-full pl-4 pr-8 py-3 bg-slate-50 border border-slate-200 rounded-xl text-center font-bold text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
+                                                <input type="number" name="jumlah_jam" id="input-jam-{{ $g->id }}"
+                                                    class="w-full pl-4 pr-8 py-3 bg-slate-50 border border-slate-200 rounded-xl text-center font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition"
                                                     min="1" max="10" required>
                                                 <span
                                                     class="absolute right-3 top-3.5 text-[10px] text-slate-400 font-bold">JP</span>
@@ -537,8 +533,8 @@
                                             <label
                                                 class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Tipe</label>
                                             <div class="relative">
-                                                <select name="tipe_jam" id="select-tipe-{{ $m->id }}"
-                                                    class="w-full pl-3 pr-8 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none appearance-none cursor-pointer transition">
+                                                <select name="tipe_jam" id="select-tipe-{{ $g->id }}"
+                                                    class="w-full pl-3 pr-8 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none appearance-none cursor-pointer transition">
                                                     <option value="single">Single (1x)</option>
                                                     <option value="double">Double (2x)</option>
                                                     <option value="triple">Triple (3x)</option>
@@ -555,9 +551,9 @@
                                         </div>
                                     </div>
 
-                                    <button type="submit" id="btn-submit-{{ $m->id }}"
-                                        class="w-full py-3.5 bg-slate-900 hover:bg-blue-600 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-lg hover:shadow-blue-500/30 transform active:scale-95 transition-all duration-300 mt-2">
-                                        Simpan Distribusi
+                                    <button type="submit" id="btn-submit-{{ $g->id }}"
+                                        class="w-full py-3.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-lg hover:shadow-indigo-500/30 transform active:scale-95 transition-all duration-300 mt-2">
+                                        Simpan Jadwal
                                     </button>
                                 </div>
                             </form>
@@ -578,8 +574,8 @@
 // 1. SEARCH LOGIC (OPTIMIZED & FAST)
 // ==========================================================
 function searchMainTable() {
-    const input = document.getElementById('search-mapel-main').value.toLowerCase();
-    const rows = document.querySelectorAll('#tbody-mapel-main tr[data-filter]');
+    const input = document.getElementById('search-guru-main').value.toLowerCase();
+    const rows = document.querySelectorAll('#tbody-guru-main tr[data-filter]');
     const noResultRow = document.getElementById('search-no-result');
     let hasResult = false;
 
@@ -642,9 +638,9 @@ window.onclick = function(event) {
 // ==========================================================
 // 3. SEARCH INTERNAL TABLE (MODAL)
 // ==========================================================
-function searchTable(mapelId) {
-    const filter = document.getElementById('search-' + mapelId).value.toLowerCase();
-    const rows = document.getElementById('tbody-mapel-' + mapelId).getElementsByTagName('tr');
+function searchTable(guruId) {
+    const filter = document.getElementById('search-' + guruId).value.toLowerCase();
+    const rows = document.getElementById('tbody-guru-' + guruId).getElementsByTagName('tr');
 
     for (let row of rows) {
         const text = row.innerText.toLowerCase();
@@ -655,9 +651,9 @@ function searchTable(mapelId) {
 // ==========================================================
 // 4. CUSTOM DROPDOWN LOGIC
 // ==========================================================
-function toggleCustomDropdown(type, mapelId) {
-    const wrapper = document.getElementById(`wrapper-${type}-${mapelId}`);
-    const dropdown = document.getElementById(`dropdown-${type}-${mapelId}`);
+function toggleCustomDropdown(type, guruId) {
+    const wrapper = document.getElementById(`wrapper-${type}-${guruId}`);
+    const dropdown = document.getElementById(`dropdown-${type}-${guruId}`);
 
     document.querySelectorAll('.custom-select-wrapper').forEach(el => {
         if (el !== wrapper) {
@@ -676,39 +672,39 @@ function toggleCustomDropdown(type, mapelId) {
     }
 }
 
-function filterCustomDropdown(type, mapelId, input) {
+function filterCustomDropdown(type, guruId, input) {
     const filter = input.value.toLowerCase();
-    const items = document.getElementById(`list-${type}-${mapelId}`).children;
+    const items = document.getElementById(`list-${type}-${guruId}`).children;
     for (let item of items) {
-        const label = item.getAttribute('data-label').toLowerCase();
-        item.style.display = label.includes(filter) ? "" : "none";
+        const label = item.getAttribute('data-label') || '';
+        item.style.display = label.toLowerCase().includes(filter) ? "" : "none";
     }
 }
 
-function selectCustomOption(type, mapelId, value, label) {
-    document.getElementById(`real-input-${type}-${mapelId}`).value = value;
-    const display = document.getElementById(`display-${type}-${mapelId}`);
+function selectCustomOption(type, guruId, value, label) {
+    document.getElementById(`real-input-${type}-${guruId}`).value = value;
+    const display = document.getElementById(`display-${type}-${guruId}`);
     display.innerText = label;
     display.classList.remove('text-slate-500');
     display.classList.add('text-slate-800');
 
-    document.getElementById(`dropdown-${type}-${mapelId}`).classList.add('hidden');
-    document.getElementById(`wrapper-${type}-${mapelId}`).style.zIndex = "0";
+    document.getElementById(`dropdown-${type}-${guruId}`).classList.add('hidden');
+    document.getElementById(`wrapper-${type}-${guruId}`).style.zIndex = "0";
 }
 
-function setCustomDropdownValue(type, mapelId, value) {
-    const list = document.getElementById(`list-${type}-${mapelId}`);
+function setCustomDropdownValue(type, guruId, value) {
+    const list = document.getElementById(`list-${type}-${guruId}`);
     if (!list) return;
     const option = list.querySelector(`.option-item[data-value="${value}"]`);
-    if (option) selectCustomOption(type, mapelId, value, option.getAttribute('data-label'));
+    if (option) selectCustomOption(type, guruId, value, option.getAttribute('data-label'));
 }
 
-function resetCustomDropdown(type, mapelId) {
-    const input = document.getElementById(`real-input-${type}-${mapelId}`);
+function resetCustomDropdown(type, guruId) {
+    const input = document.getElementById(`real-input-${type}-${guruId}`);
     if (input) input.value = '';
-    const display = document.getElementById(`display-${type}-${mapelId}`);
+    const display = document.getElementById(`display-${type}-${guruId}`);
     if (display) {
-        display.innerText = type === 'kelas' ? 'Pilih Kelas...' : 'Pilih Guru...';
+        display.innerText = type === 'mapel' ? 'Pilih Mapel...' : 'Pilih Kelas...';
         display.classList.add('text-slate-500');
         display.classList.remove('text-slate-800');
     }
@@ -717,57 +713,54 @@ function resetCustomDropdown(type, mapelId) {
 // ==========================================================
 // 5. AJAX (EDIT & DELETE)
 // ==========================================================
-function editJadwalInline(mapelId, jadwalId, kelasId, guruId, jam, tipe) {
-    const container = document.getElementById(`form-container-${mapelId}`);
-    const title = document.getElementById(`form-title-${mapelId}`);
-    const form = document.getElementById(`form-jadwal-${mapelId}`);
-    const btnSubmit = document.getElementById(`btn-submit-${mapelId}`);
+function editJadwalInline(guruId, jadwalId, mapelId, kelasId, jam, tipe) {
+    const container = document.getElementById(`form-container-${guruId}`);
+    const title = document.getElementById(`form-title-${guruId}`);
+    const form = document.getElementById(`form-jadwal-${guruId}`);
+    const btnSubmit = document.getElementById(`btn-submit-${guruId}`);
 
-    // UI Change
     container.classList.add('ring-2', 'ring-amber-200');
     title.innerHTML = `<span class="text-amber-600">EDIT DISTRIBUSI</span>`;
-    document.getElementById(`btn-batal-${mapelId}`).classList.remove('hidden');
+    document.getElementById(`btn-batal-${guruId}`).classList.remove('hidden');
 
     btnSubmit.className =
         "w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold shadow-lg transition mt-2";
     btnSubmit.innerHTML = "UPDATE";
 
-    // Set Values
-    setCustomDropdownValue('kelas', mapelId, kelasId);
-    setCustomDropdownValue('guru', mapelId, guruId);
-    document.getElementById(`input-jam-${mapelId}`).value = jam;
-    document.getElementById(`select-tipe-${mapelId}`).value = tipe;
+    setCustomDropdownValue('mapel', guruId, mapelId);
+    setCustomDropdownValue('kelas', guruId, kelasId);
+    document.getElementById(`input-jam-${guruId}`).value = jam;
+    document.getElementById(`select-tipe-${guruId}`).value = tipe;
 
-    // Override Form Action
-    form.action = `/mapel/jadwal/${jadwalId}`;
+    form.action = `/guru/jadwal/${jadwalId}`;
     form.dataset.mode = 'edit';
-    document.getElementById(`method-spoof-${mapelId}`).innerHTML = `<input type="hidden" name="_method" value="PUT">`;
+    document.getElementById(`method-spoof-${guruId}`).innerHTML = `<input type="hidden" name="_method" value="PUT">`;
 }
 
-function resetFormJadwal(mapelId) {
-    const container = document.getElementById(`form-container-${mapelId}`);
-    const form = document.getElementById(`form-jadwal-${mapelId}`);
+function resetFormJadwal(guruId) {
+    const container = document.getElementById(`form-container-${guruId}`);
+    const form = document.getElementById(`form-jadwal-${guruId}`);
     if (!container || !form) return;
 
     container.classList.remove('ring-2', 'ring-amber-200');
-    document.getElementById(`form-title-${mapelId}`).innerHTML = `INPUT DISTRIBUSI`;
-    document.getElementById(`btn-batal-${mapelId}`).classList.add('hidden');
+    document.getElementById(`form-title-${guruId}`).innerHTML = `INPUT JADWAL`;
+    document.getElementById(`btn-batal-${guruId}`).classList.add('hidden');
 
-    const btnSubmit = document.getElementById(`btn-submit-${mapelId}`);
+    const btnSubmit = document.getElementById(`btn-submit-${guruId}`);
     btnSubmit.className =
-        "w-full py-3.5 bg-slate-900 hover:bg-blue-600 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-lg transition mt-2";
+        "w-full py-3.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-lg transition mt-2";
     btnSubmit.innerHTML = "SIMPAN";
 
     form.reset();
-    resetCustomDropdown('kelas', mapelId);
-    resetCustomDropdown('guru', mapelId);
+    resetCustomDropdown('mapel', guruId);
+    resetCustomDropdown('kelas', guruId);
 
-    form.action = `/mapel/${mapelId}/jadwal`;
+    form.action = `/guru/${guruId}/jadwal`;
     delete form.dataset.mode;
-    document.getElementById(`method-spoof-${mapelId}`).innerHTML = '';
+    document.getElementById(`method-spoof-${guruId}`).innerHTML = '';
 }
 
-async function handleFormJadwal(e, form, mapelId) {
+async function handleFormJadwal(e, form, guruId) {
     e.preventDefault();
     const btn = form.querySelector('button[type="submit"]');
     const oldText = btn.innerHTML;
@@ -786,8 +779,8 @@ async function handleFormJadwal(e, form, mapelId) {
         const json = await res.json();
 
         if (res.ok && json.success) {
-            updateTableUI(mapelId, json.jadwal, form.dataset.mode === 'edit');
-            resetFormJadwal(mapelId);
+            updateTableUI(guruId, json.jadwal, form.dataset.mode === 'edit');
+            resetFormJadwal(guruId);
         } else {
             alert(json.message || "Gagal menyimpan.");
         }
@@ -800,22 +793,24 @@ async function handleFormJadwal(e, form, mapelId) {
     }
 }
 
-function updateTableUI(mapelId, jadwal, isEdit) {
-    const tbody = document.getElementById(`tbody-mapel-${mapelId}`);
+function updateTableUI(guruId, jadwal, isEdit) {
+    const tbody = document.getElementById(`tbody-guru-${guruId}`);
+    const namaMapel = jadwal.mapel?.nama_mapel || '-';
+    const kodeMapel = jadwal.mapel?.kode_mapel || '';
     const namaKelas = jadwal.kelas?.nama_kelas || '-';
-    const namaGuru = jadwal.guru?.nama_guru || '-';
 
     if (isEdit) {
         const row = document.getElementById(`row-jadwal-${jadwal.id}`);
         if (row) {
+            row.querySelector('.mapel-text').innerHTML =
+                `${namaMapel} <div class="text-[10px] font-normal text-slate-400 mt-0.5">${kodeMapel}</div>`;
             row.querySelector('.kelas-text').innerText = namaKelas;
-            row.querySelector('.guru-text').innerText = namaGuru;
-            row.querySelector('.jam-text').innerText = jadwal.jumlah_jam + ' JP';
+            row.querySelector('.jam-text').innerText = jadwal.jumlah_jam + ' Jam';
             row.querySelector('.tipe-text').innerText = jadwal.tipe_jam;
 
             const btnEdit = row.querySelector('button[onclick^="editJadwalInline"]');
             btnEdit.setAttribute('onclick',
-                `editJadwalInline(${mapelId}, ${jadwal.id}, ${jadwal.kelas_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}')`
+                `editJadwalInline(${guruId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.kelas_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}')`
             );
 
             row.classList.add('bg-amber-100');
@@ -824,18 +819,18 @@ function updateTableUI(mapelId, jadwal, isEdit) {
     } else {
         const tr = document.createElement('tr');
         tr.id = `row-jadwal-${jadwal.id}`;
-        tr.className = "hover:bg-blue-50 transition";
+        tr.className = "hover:bg-indigo-50 transition";
         tr.innerHTML = `
-            <td class="px-3 py-2 font-bold text-slate-700 align-middle kelas-text">${namaKelas}</td>
-            <td class="px-3 py-2 text-slate-600 align-middle guru-text">${namaGuru}</td>
-            <td class="px-3 py-2 text-center align-middle">
+            <td class="px-4 py-3 font-bold text-slate-700 align-middle mapel-text">${namaMapel}<div class="text-[10px] font-normal text-slate-400 mt-0.5">${kodeMapel}</div></td>
+            <td class="px-4 py-3 text-slate-600 align-middle kelas-text font-medium">${namaKelas}</td>
+            <td class="px-4 py-3 text-center align-middle">
                 <div class="flex flex-col items-center">
-                    <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-blue-100">${jadwal.jumlah_jam} JP</span>
-                    <span class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase">${jadwal.tipe_jam}</span>
+                    <span class="bg-white text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-indigo-100 shadow-sm">${jadwal.jumlah_jam} Jam</span>
+                    <span class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">${jadwal.tipe_jam}</span>
                 </div>
             </td>
-            <td class="px-3 py-2 text-right align-middle">
-                <button onclick="editJadwalInline(${mapelId}, ${jadwal.id}, ${jadwal.kelas_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}')" class="text-blue-600 hover:text-blue-800 mr-2 p-1">✏️</button>
+            <td class="px-4 py-3 text-right align-middle">
+                <button onclick="editJadwalInline(${guruId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.kelas_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}')" class="text-indigo-600 hover:text-indigo-800 mr-2 p-1">✏️</button>
                 <button onclick="hapusJadwal(${jadwal.id}, this)" class="text-red-500 hover:text-red-700 p-1">🗑️</button>
             </td>`;
         tbody.appendChild(tr);
@@ -843,9 +838,9 @@ function updateTableUI(mapelId, jadwal, isEdit) {
 }
 
 async function hapusJadwal(id, btn) {
-    if (!confirm("Hapus distribusi ini?")) return;
+    if (!confirm("Hapus jadwal ini?")) return;
     try {
-        const res = await fetch(`/mapel/jadwal/${id}`, {
+        const res = await fetch(`/guru/jadwal/${id}`, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': CSRF_TOKEN,
