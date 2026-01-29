@@ -69,7 +69,8 @@
 
                 {{-- A. LOGO --}}
                 <div class="flex items-center gap-3">
-                    <a href="{{ route('dashboard') }}" class="relative flex-shrink-0 group">
+                    {{-- PERBAIKAN: Menggunakan url('/') agar tidak error route not found --}}
+                    <a href="{{ url('/') }}" class="relative flex-shrink-0 group">
                         <div
                             class="absolute inset-0 bg-blue-500 rounded-full blur opacity-20 group-hover:opacity-40 transition">
                         </div>
@@ -175,9 +176,8 @@
             x-transition:enter-end="opacity-100 translate-y-0 height-auto">
 
             <div class="px-4 py-6 space-y-2">
-                {{-- Menu List Mobile --}}
+                {{-- Menu List Mobile (Dashboard dihapus agar tidak error) --}}
                 @foreach([
-                ['route' => 'dashboard', 'label' => 'Dashboard', 'icon' => '🏠'],
                 ['route' => 'guru.index', 'label' => 'Data Guru', 'icon' => '👨‍🏫'],
                 ['route' => 'mapel.index', 'label' => 'Mata Pelajaran', 'icon' => '📚'],
                 ['route' => 'kelas.index', 'label' => 'Data Kelas', 'icon' => '🏫'],
