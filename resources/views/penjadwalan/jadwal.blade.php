@@ -3,7 +3,7 @@
 @php
 $hariList = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
 
-// Definisi Waktu (Sama seperti sebelumnya)
+// DATA WAKTU
 $jadwalWaktu = [
 'Senin' => [
 0=>'07.00-07.45', 1=>'07.45-08.25', 2=>'08.25-09.05', 3=>'09.05-09.45',
@@ -88,18 +88,24 @@ return $jadwalWaktu['Default'][$jam] ?? '-';
                 {{-- HEADER UTAMA --}}
                 <thead>
                     <tr>
-                        {{-- Sticky Corners (Z-Index 50) --}}
+                        {{-- Sticky Corners (Perbaikan Lebar Kolom) --}}
+                        {{-- HARI: w-12 (3rem / 48px) --}}
                         <th
                             class="sticky top-0 left-0 z-50 bg-slate-100 border-b border-r border-slate-300 p-3 w-12 text-center text-slate-700 font-bold shadow-sm">
-                            HARI</th>
+                            HARI
+                        </th>
+                        {{-- JAM: w-14 (3.5rem / 56px) - Diperlebar agar angka 10 muat --}}
                         <th
-                            class="sticky top-0 left-12 z-50 bg-slate-100 border-b border-r border-slate-300 p-3 w-10 text-center text-slate-700 font-bold shadow-sm">
-                            JAM</th>
+                            class="sticky top-0 left-12 z-50 bg-slate-100 border-b border-r border-slate-300 p-3 w-14 text-center text-slate-700 font-bold shadow-sm">
+                            JAM
+                        </th>
+                        {{-- WAKTU: w-24, left digeser jadi 6.5rem (12 + 14 tailwind scale approx) --}}
                         <th
-                            class="sticky top-0 left-[5.5rem] z-50 bg-slate-100 border-b border-r border-slate-300 p-3 w-24 text-center text-slate-700 font-bold shadow-sm">
-                            WAKTU</th>
+                            class="sticky top-0 left-[6.5rem] z-50 bg-slate-100 border-b border-r border-slate-300 p-3 w-24 text-center text-slate-700 font-bold shadow-sm">
+                            WAKTU
+                        </th>
 
-                        {{-- Header Kelas (Sticky Top - Z-Index 40) --}}
+                        {{-- Header Kelas --}}
                         @foreach($kelass as $kelas)
                         <th
                             class="sticky top-0 z-40 bg-slate-50 border-b border-r border-slate-300 p-3 min-w-[140px] text-slate-700 font-bold shadow-sm">
@@ -114,8 +120,12 @@ return $jadwalWaktu['Default'][$jam] ?? '-';
                     @php
                     $maxJam = 10;
                     $startJam = ($hari == 'Senin' || $hari == 'Jumat') ? 0 : 1;
-                    // +1 baris istirahat jika bukan Jumat
-                    $rowSpan = ($maxJam - $startJam) + 1 + (($hari != 'Jumat') ? 1 : 0);
+
+                    // PERBAIKAN LOGIC ROWSPAN:
+                    // Jika bukan Jumat, ada 2 kali istirahat (jam 4 dan 8), jadi +2
+                    // Jika Jumat, tidak ada baris istirahat di dalam loop (biasanya), jadi +0 (atau sesuaikan jika ada)
+                    $jumlahIstirahat = ($hari != 'Jumat') ? 2 : 0;
+                    $rowSpan = ($maxJam - $startJam) + 1 + $jumlahIstirahat;
                     @endphp
 
                     @for($jam = $startJam; $jam <= $maxJam; $jam++) <tr
@@ -131,15 +141,15 @@ return $jadwalWaktu['Default'][$jam] ?? '-';
                         </td>
                         @endif
 
-                        {{-- KOLOM JAM (Sticky Left) --}}
+                        {{-- KOLOM JAM (Sticky Left - Diperlebar w-14) --}}
                         <td
-                            class="sticky left-12 z-20 bg-slate-50 border-r border-b border-slate-200 text-center font-bold text-slate-500 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                            class="sticky left-12 z-20 bg-slate-50 border-r border-b border-slate-200 text-center font-bold text-slate-500 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] w-14">
                             {{ $jam }}
                         </td>
 
-                        {{-- KOLOM WAKTU (Sticky Left) --}}
+                        {{-- KOLOM WAKTU (Sticky Left - Digeser left-[6.5rem]) --}}
                         <td
-                            class="sticky left-[5.5rem] z-20 bg-slate-50 border-r border-b border-slate-200 text-center font-mono text-[10px] text-slate-500 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                            class="sticky left-[6.5rem] z-20 bg-slate-50 border-r border-b border-slate-200 text-center font-mono text-[10px] text-slate-500 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
                             {{ getWaktu($hari, $jam, $jadwalWaktu) }}
                         </td>
 
@@ -178,7 +188,6 @@ return $jadwalWaktu['Default'][$jam] ?? '-';
                                         class="bg-slate-800 text-white text-[10px] py-1.5 px-3 rounded shadow-xl text-center">
                                         <div class="font-bold">{{ $data['kode_mapel'] }}</div>
                                         <div class="opacity-80">{{ $data['kode_guru'] }}</div>
-                                        {{-- Arrow --}}
                                         <div
                                             class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800">
                                         </div>
@@ -195,11 +204,14 @@ return $jadwalWaktu['Default'][$jam] ?? '-';
                         @if(($jam == 4 || $jam == 8) && $hari != 'Jumat')
                         <tr class="bg-orange-50">
                             {{-- Sticky Placeholders --}}
+                            {{-- Jam: w-14 --}}
                             <td
-                                class="sticky left-12 z-20 bg-orange-100 border-r border-b border-orange-200 text-center font-bold text-orange-800 text-[10px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
-                                IST</td>
+                                class="sticky left-12 z-20 bg-orange-100 border-r border-b border-orange-200 text-center font-bold text-orange-800 text-[10px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] w-14">
+                                IST
+                            </td>
+                            {{-- Waktu: left-[6.5rem] --}}
                             <td
-                                class="sticky left-[5.5rem] z-20 bg-orange-100 border-r border-b border-orange-200 text-center font-mono text-[10px] text-orange-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                                class="sticky left-[6.5rem] z-20 bg-orange-100 border-r border-b border-orange-200 text-center font-mono text-[10px] text-orange-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
                                 {{ $jam == 4 ? '10.30-10.45' : '13.30-13.50' }}
                             </td>
                             {{-- Label Istirahat --}}
@@ -239,13 +251,11 @@ return $jadwalWaktu['Default'][$jam] ?? '-';
     text-orientation: mixed;
 }
 
-/* Pattern garis miring untuk sel kosong */
 .bg-striped {
     background-image: linear-gradient(45deg, #f1f5f9 25%, #f8fafc 25%, #f8fafc 50%, #f1f5f9 50%, #f1f5f9 75%, #f8fafc 75%, #f8fafc 100%);
     background-size: 10px 10px;
 }
 
-/* Style Tombol Helper */
 .btn-primary {
     @apply bg-indigo-600 hover: bg-indigo-700 text-white px-4 py-2 rounded-lg shadow font-bold flex items-center gap-2 text-sm transition;
 }
@@ -254,7 +264,6 @@ return $jadwalWaktu['Default'][$jam] ?? '-';
     @apply bg-emerald-600 hover: bg-emerald-700 text-white px-4 py-2 rounded-lg shadow font-bold flex items-center gap-2 text-sm transition;
 }
 
-/* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
     width: 8px;
     height: 8px;
