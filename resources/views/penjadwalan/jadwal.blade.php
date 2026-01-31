@@ -49,14 +49,17 @@
                 <div class="absolute inset-0 flex items-center justify-center text-2xl">🧠</div>
             </div>
             <h3 class="text-lg font-bold text-slate-800">Sedang Mengoptimasi...</h3>
-            <p class="text-slate-500 text-sm mt-2">AI sedang mencari kombinasi terbaik. Mohon tunggu.</p>
+            <p class="text-slate-500 text-sm mt-2">AI sedang mencari kombinasi terbaik. Mohon tunggu (Maks 10 menit).
+            </p>
         </div>
     </div>
 
-    {{-- Notifikasi --}}
+    {{-- AREA NOTIFIKASI --}}
+
+    {{-- 1. Sukses --}}
     @if(session('success'))
     <div x-data="{ show: true }" x-show="show"
-        class="mb-6 bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-sm flex items-start gap-3">
+        class="mb-6 bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-sm flex items-start gap-3 animate-fade-in-down">
         <div class="bg-emerald-100 p-2 rounded-full text-emerald-600">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -70,32 +73,75 @@
     </div>
     @endif
 
-    {{-- Container Tabel dengan Sticky Behavior --}}
+    {{-- 2. Error / Gagal (Misal Infeasible) --}}
+    @if(session('error'))
+    <div x-data="{ show: true }" x-show="show"
+        class="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 shadow-sm flex items-start gap-3 animate-fade-in-down">
+        <div class="bg-red-100 p-2 rounded-full text-red-600">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                </path>
+            </svg>
+        </div>
+        <div class="flex-1">
+            <h3 class="font-bold text-red-900">Gagal Mengenerate Jadwal</h3>
+            <p class="text-red-700 text-sm mt-1">
+                {{ session('error') }}
+            </p>
+            <p class="text-red-600 text-xs mt-2 italic">
+                Tips: Coba kurangi constraint/batasan guru atau pastikan jumlah jam guru mencukupi slot yang tersedia.
+            </p>
+        </div>
+        <button @click="show = false" class="text-red-400 hover:text-red-700 font-bold text-lg">&times;</button>
+    </div>
+    @endif
+
+    {{-- LOGIKA EMPTY STATE: Cek apakah ada data kelas/jadwal --}}
+    @if($kelass->isEmpty())
+    <div class="text-center py-20 bg-white rounded-xl border border-dashed border-slate-300">
+        <div class="text-5xl mb-4">📂</div>
+        <h3 class="text-lg font-bold text-slate-700">Data Kelas Masih Kosong</h3>
+        <p class="text-slate-500">Silakan input data kelas terlebih dahulu.</p>
+    </div>
+    @else
+
+    {{-- Container Tabel --}}
     <div class="bg-white shadow-md rounded-xl border border-slate-200 overflow-hidden mb-10">
-        {{-- max-h-[80vh] untuk memicu scrollbar internal jika data sangat panjang --}}
+        {{-- max-h-[80vh] untuk scrollbar --}}
         <div class="overflow-auto custom-scrollbar relative" style="max-height: 80vh;">
             <table class="w-full text-xs border-separate border-spacing-0 min-w-[1000px]">
                 <thead>
-                    {{-- Judul Tabel Utama --}}
+                    {{-- 
+                             PERBAIKAN STICKY HEADER:
+                             1. Row pertama (Judul) diberi height fix (h-14).
+                             2. Z-index row pertama harus paling tinggi (z-[60]).
+                        --}}
                     <tr>
                         <th colspan="{{ 3 + $kelass->count() }}"
-                            class="p-4 bg-slate-800 text-white font-bold text-center text-base uppercase tracking-wider sticky top-0 z-[60]">
+                            class="h-14 p-4 bg-slate-800 text-white font-bold text-center text-base uppercase tracking-wider sticky top-0 z-[60] border-b border-slate-700 shadow-md">
                             Jadwal Pelajaran Tahun Ajaran {{ date('Y') }}/{{ date('Y')+1 }}
                         </th>
                     </tr>
-                    {{-- Header Kolom --}}
+
+                    {{-- 
+                             3. Row kedua (Kolom Header) diberi 'top-[56px]' karena height row pertama adalah 56px (h-14).
+                             4. Z-index lebih rendah dari judul tapi lebih tinggi dari isi tabel (z-[50]).
+                        --}}
                     <tr class="bg-slate-100 text-slate-800 font-bold text-center uppercase shadow-sm">
-                        {{-- Sticky Top di bawah judul (top-14 menyesuaikan tinggi baris pertama) --}}
                         <th
-                            class="p-3 border-b border-r border-slate-300 w-16 sticky top-[56px] left-0 z-[70] bg-slate-200">
-                            Hari</th>
-                        <th class="p-3 border-b border-r border-slate-300 w-10 sticky top-[56px] z-50 bg-slate-100">Jam
+                            class="p-3 border-b border-r border-slate-300 w-16 sticky top-[56px] left-0 z-[55] bg-slate-200 shadow-sm">
+                            Hari
                         </th>
-                        <th class="p-3 border-b border-r border-slate-300 w-24 sticky top-[56px] z-50 bg-slate-100">
-                            Waktu</th>
+                        <th class="p-3 border-b border-r border-slate-300 w-10 sticky top-[56px] z-[50] bg-slate-100">
+                            Jam
+                        </th>
+                        <th class="p-3 border-b border-r border-slate-300 w-24 sticky top-[56px] z-[50] bg-slate-100">
+                            Waktu
+                        </th>
                         @foreach($kelass as $kelas)
                         <th
-                            class="p-3 border-b border-r border-slate-300 min-w-[140px] sticky top-[56px] z-40 bg-slate-100">
+                            class="p-3 border-b border-r border-slate-300 min-w-[140px] sticky top-[56px] z-[40] bg-slate-100">
                             {{ $kelas->nama_kelas }}
                         </th>
                         @endforeach
@@ -152,6 +198,7 @@
                             {{ $w }}
                         </td>
 
+                        {{-- KONTEN UTAMA JADWAL --}}
                         @if($jam == 0)
                         <td colspan="{{ $kelass->count() }}"
                             class="p-2 border-b border-slate-200 bg-indigo-50 text-center text-xs font-bold text-indigo-700 tracking-widest uppercase">
@@ -174,6 +221,9 @@
                                     {{ $data['guru'] }}
                                 </span>
                             </div>
+                            @else
+                            {{-- Jika Controller belum mengirim data 'KOSONG', ini fallback --}}
+                            <span class="text-slate-300 text-[9px]">-</span>
                             @endif
                         </td>
                         @endforeach
@@ -185,7 +235,8 @@
                         <tr class="bg-amber-100/50">
                             <td
                                 class="p-1 border-r border-b border-slate-200 text-center font-bold text-amber-800 text-[10px]">
-                                IST</td>
+                                IST
+                            </td>
                             <td
                                 class="p-1 border-r border-b border-slate-200 text-center text-[10px] font-mono font-bold text-slate-700">
                                 {{ $jam==4 ? '10.30-10.45' : '13.30-13.50' }}
@@ -207,12 +258,13 @@
             </table>
         </div>
     </div>
+    @endif
 </div>
 @endsection
 
 @push('scripts')
 <style>
-/* Membuat teks hari tegak/vertikal di layar kecil jika perlu */
+/* Membuat teks hari tegak/vertikal di layar kecil */
 .vertical-text {
     writing-mode: vertical-lr;
     transform: rotate(180deg);
@@ -226,7 +278,6 @@
     }
 }
 
-/* Custom Scrollbar agar lebih cantik */
 .custom-scrollbar::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -245,7 +296,7 @@
     background: #94a3b8;
 }
 
-/* Menghilangkan gap putih pada sticky header */
+/* Memperbaiki Sticky Header agar background tidak transparan saat discroll */
 th.sticky,
 td.sticky {
     background-clip: padding-box;
@@ -264,6 +315,22 @@ td.sticky {
     to {
         opacity: 1;
         transform: scale(1);
+    }
+}
+
+.animate-fade-in-down {
+    animation: fadeInDown 0.5s ease-out;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 </style>
