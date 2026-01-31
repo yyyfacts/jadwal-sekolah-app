@@ -15,11 +15,14 @@ use App\Exports\JadwalExport;
 
 class JadwalController extends Controller
 {
+    /**
+     * Menampilkan Grid Jadwal
+     */
     public function index()
     {
         $kelass = Kelas::orderBy('nama_kelas')->get();
 
-        // Ambil data jadwal yang sudah ada hari & jam-nya
+        // Ambil data jadwal yang sudah valid (punya hari & jam)
         $rawJadwals = Jadwal::with(['guru', 'mapel', 'kelas'])
             ->whereNotNull('hari')
             ->whereNotNull('jam')
@@ -31,7 +34,7 @@ class JadwalController extends Controller
         // 1. Inisialisasi grid kosong (Semua diset NULL dulu)
         foreach ($kelass as $k) {
             foreach ($hariList as $h) {
-                // Kita siapkan sampai jam 10 atau 11 sesuai kebutuhan view
+                // Siapkan slot sampai jam 11 untuk keamanan array
                 for ($j = 0; $j <= 11; $j++) {
                     $jadwals[$k->id][$h][$j] = null;
                 }
@@ -52,7 +55,7 @@ class JadwalController extends Controller
 
             for ($i = 0; $i < $durasi; $i++) {
                 $jamSekarang = $row->jam + $i;
-                // Pastikan tidak error offset jika jam melebihi batas
+                // Pastikan tidak error offset
                 if ($jamSekarang <= 11) {
                     $jadwals[$row->kelas_id][$row->hari][$jamSekarang] = [
                         'id' => $row->id,
@@ -67,33 +70,34 @@ class JadwalController extends Controller
             }
         }
 
-        // 3. LOGIKA TAMBAHAN: SCANNING & LABELING JAM BOLONG
-        // Ini menjawab request: "JIKA MASIH BOLONG DIKASI KOMENT"
+        // 3. LOGIKA SCANNING "BOLONG" (GAP DETECTION)
+        // Memberi label merah pada jam kosong agar ketahuan
         foreach ($kelass as $k) {
             foreach ($hariList as $h) {
-                
-                // Tentukan range jam efektif belajar (sesuaikan dengan sekolah Anda)
-                // Senin & Jumat biasanya mulai jam 0 (Upacara/Senam), lainnya jam 1
-                $startJam = ($h == 'Senin' || $h == 'Jumat') ? 1 : 1; 
-                $endJam = ($h == 'Jumat') ? 8 : 10; // Contoh: Jumat pulang jam 8, lainnya jam 10
+
+                // Konfigurasi Range Jam Sekolah
+                // Senin-Kamis: Jam 1 s.d 10
+                // Jumat: Jam 1 s.d 8 (atau sesuaikan dengan kebutuhan visual)
+                $startJam = 1;
+                $endJam = ($h == 'Jumat') ? 8 : 10;
 
                 for ($j = $startJam; $j <= $endJam; $j++) {
-                    
-                    // Lewati jam istirahat agar tidak ditandai "KOSONG" (Sesuaikan jam istirahat Anda)
-                    // Contoh: Jam ke-4 dan ke-8 adalah istirahat
-                    if ($j == 4 || $j == 8) continue;
 
-                    // Jika slot di array masih NULL, berarti ini BOLONG
+                    // SKIP Jam Istirahat (Misal jam 4 dan 8)
+                    // Jangan tandai istirahat sebagai "KOSONG"
+                    if ($j == 4 || $j == 8)
+                        continue;
+
+                    // Jika slot masih NULL, berarti BOLONG
                     if (($jadwals[$k->id][$h][$j] ?? null) === null) {
-                        
                         $jadwals[$k->id][$h][$j] = [
                             'id' => null,
-                            'mapel' => 'JAM KOSONG',   // <-- Label Komentar
+                            'mapel' => 'JAM KOSONG',   // <-- Teks yang muncul di tabel
                             'guru' => 'Tidak ada KBM',
                             'kode_mapel' => '',
                             'kode_guru' => '',
-                            // Styling: Merah putus-putus agar terlihat sebagai warning/kosong
-                            'color' => 'bg-red-50 text-red-500 border-red-300 border-dashed italic opacity-80', 
+                            // Styling Visual: Merah Putus-putus
+                            'color' => 'bg-red-50 text-red-500 border-red-300 border-dashed italic opacity-75',
                             'tipe' => 'empty'
                         ];
                     }
@@ -104,12 +108,15 @@ class JadwalController extends Controller
         return view('penjadwalan.jadwal', compact('kelass', 'jadwals'));
     }
 
+    /**
+     * Proses Generate AI (Solver Python)
+     */
     public function generate(Request $request)
     {
-        set_time_limit(600);
+        set_time_limit(600); // Set timeout 10 menit
 
         try {
-            // 1. DATA GURU & WAKTU SIBUK GURU
+            // 1. DATA GURU & WAKTU SIBUK
             $gurus = Guru::with('waktuKosong')->get()->map(function ($guru) {
                 return [
                     'id' => $guru->id,
@@ -120,7 +127,7 @@ class JadwalController extends Controller
                 ];
             });
 
-            // 2. DATA MAPEL & WAKTU SIBUK MAPEL
+            // 2. DATA MAPEL CONSTRAINT
             $mapelConstraints = Mapel::whereHas('waktuKosong')->with('waktuKosong')->get()->map(function ($m) {
                 return [
                     'id' => $m->id,
@@ -130,32 +137,53 @@ class JadwalController extends Controller
                 ];
             });
 
-            // 3. DATA BEBAN MENGAJAR
-            $assignments = Jadwal::with(['mapel', 'guru', 'kelas'])->get()->map(function ($j) {
+            // 3. DATA ASSIGNMENTS (BEBAN MENGAJAR)
+            // Kita ambil raw data dulu untuk perhitungan
+            $rawAssignments = Jadwal::all();
+
+            $assignments = $rawAssignments->map(function ($j) {
                 return [
                     'id' => $j->id,
                     'guru_id' => $j->guru_id,
                     'kelas_id' => $j->kelas_id,
                     'mapel_id' => $j->mapel_id,
-                    'jumlah_jam' => $j->jumlah_jam, 
+                    'jumlah_jam' => $j->jumlah_jam,
                     'tipe_jam' => $j->tipe_jam,
                 ];
             });
 
-            // 4. DATA KELAS & LIMIT JAM
-            $kelassData = Kelas::all()->map(function ($k) {
-                $limitHarian = $k->limit_harian ?? 10;
-                $limitJumat = $k->limit_jumat ?? 7;
+            // 4. DATA KELAS & LIMIT JAM (DINAMIS - SOLUSI AGAR TIDAK BOLONG)
+            $kelassData = Kelas::all()->map(function ($k) use ($rawAssignments) {
+
+                // A. Hitung Total Jam Per Minggu untuk Kelas ini
+                $totalJamMingguan = $rawAssignments->where('kelas_id', $k->id)->sum('jumlah_jam');
+
+                // B. Hitung Kapasitas Senin-Kamis (4 hari x 10 jam = 40 jam)
+                $maxHarian = 10;
+                $kapasitasSeninKamis = $maxHarian * 4;
+
+                // C. Hitung Sisa Jam untuk Jumat
+                $sisaUntukJumat = $totalJamMingguan - $kapasitasSeninKamis;
+
+                // D. Tentukan Limit Jumat
+                // Jika sisa < 0 (total jam < 40), Jumat minimal 4 jam (opsional)
+                // Jika sisa 8 jam (total 48), Jumat jadi 8.
+                // Jika sisa 10 jam (total 50), Jumat jadi 10.
+                $limitJumat = max(4, min($sisaUntukJumat, 11));
+
+                // Pastikan tidak negatif jika beban jam sangat sedikit
+                if ($sisaUntukJumat <= 0)
+                    $limitJumat = 5; // Default minimal
 
                 return [
                     'id' => $k->id,
                     'nama_kelas' => $k->nama_kelas,
-                    'limit_harian' => $limitHarian,
-                    'limit_jumat' => $limitJumat
+                    'limit_harian' => $maxHarian, // Biasanya 10
+                    'limit_jumat' => $limitJumat  // Dinamis sesuai beban
                 ];
             });
-            
-            // Susun data untuk dikirim ke Python
+
+            // Susun Payload JSON
             $dataInput = [
                 'gurus' => $gurus,
                 'kelass' => $kelassData,
@@ -163,32 +191,34 @@ class JadwalController extends Controller
                 'mapel_constraints' => $mapelConstraints
             ];
 
-            // Simpan JSON
+            // Simpan JSON Input
             $jsonPath = storage_path('app/input_solver.json');
             file_put_contents($jsonPath, json_encode($dataInput));
 
-            // Jalankan Python
+            // Eksekusi Script Python
             $scriptPath = base_path('python/scheduler.py');
             if (!file_exists($scriptPath)) {
-                return redirect()->route('jadwal.index')->with('error', 'Script Python tidak ditemukan.');
+                return redirect()->route('jadwal.index')->with('error', 'Script Python tidak ditemukan di folder python/.');
             }
 
             $process = new Process(['python', $scriptPath, $jsonPath]);
             $process->setTimeout(600);
             $process->run();
 
+            // Cek Error Python
             if (!$process->isSuccessful()) {
                 throw new ProcessFailedException($process);
             }
 
+            // Baca Output
             $output = $process->getOutput();
             $result = json_decode($output, true);
 
             if (!$result) {
-                return redirect()->route('jadwal.index')->with('error', 'Output Python kosong/invalid.');
+                return redirect()->route('jadwal.index')->with('error', 'Output Python kosong atau format JSON salah.');
             }
 
-            // Simpan Hasil jika Sukses
+            // Proses Hasil
             if (isset($result['status']) && ($result['status'] === 'OPTIMAL' || $result['status'] === 'FEASIBLE')) {
                 DB::beginTransaction();
                 try {
@@ -205,11 +235,11 @@ class JadwalController extends Controller
                     throw $e;
                 }
             } else {
-                return redirect()->route('jadwal.index')->with('error', 'Gagal: ' . ($result['message'] ?? 'Infeasible'));
+                return redirect()->route('jadwal.index')->with('error', 'Gagal Generate: ' . ($result['message'] ?? 'Solusi tidak ditemukan (Infeasible). Coba kurangi constraint.'));
             }
 
         } catch (\Exception $e) {
-            return redirect()->route('jadwal.index')->with('error', 'Error: ' . $e->getMessage());
+            return redirect()->route('jadwal.index')->with('error', 'System Error: ' . $e->getMessage());
         }
     }
 
