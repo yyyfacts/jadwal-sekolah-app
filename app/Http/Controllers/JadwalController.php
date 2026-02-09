@@ -6,6 +6,7 @@ use App\Models\Jadwal;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Mapel;
+use App\Models\TahunPelajaran; // <--- TAMBAHAN 1: Import Model Tahun
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Process;
@@ -71,20 +72,13 @@ class JadwalController extends Controller
         }
 
         // 3. LOGIKA SCANNING "BOLONG" (GAP DETECTION)
-        // Memberi label merah pada jam kosong agar ketahuan
         foreach ($kelass as $k) {
             foreach ($hariList as $h) {
-
-                // Konfigurasi Range Jam Sekolah
-                // Senin-Kamis: Jam 1 s.d 10
-                // Jumat: Jam 1 s.d 8 (atau sesuaikan dengan kebutuhan visual)
                 $startJam = 1;
                 $endJam = ($h == 'Jumat') ? 8 : 10;
 
                 for ($j = $startJam; $j <= $endJam; $j++) {
-
-                    // SKIP Jam Istirahat (Misal jam 4 dan 8)
-                    // Jangan tandai istirahat sebagai "KOSONG"
+                    // SKIP Jam Istirahat
                     if ($j == 4 || $j == 8)
                         continue;
 
@@ -92,11 +86,10 @@ class JadwalController extends Controller
                     if (($jadwals[$k->id][$h][$j] ?? null) === null) {
                         $jadwals[$k->id][$h][$j] = [
                             'id' => null,
-                            'mapel' => 'JAM KOSONG',   // <-- Teks yang muncul di tabel
+                            'mapel' => 'JAM KOSONG',
                             'guru' => 'Tidak ada KBM',
                             'kode_mapel' => '',
                             'kode_guru' => '',
-                            // Styling Visual: Merah Putus-putus
                             'color' => 'bg-red-50 text-red-500 border-red-300 border-dashed italic opacity-75',
                             'tipe' => 'empty'
                         ];
@@ -105,7 +98,14 @@ class JadwalController extends Controller
             }
         }
 
-        return view('penjadwalan.jadwal', compact('kelass', 'jadwals'));
+        // --- TAMBAHAN 2: AMBIL TAHUN PELAJARAN AKTIF ---
+        $tahunAktif = TahunPelajaran::getActive();
+        $judulTahun = $tahunAktif
+            ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}"
+            : date('Y') . '/' . (date('Y') + 1);
+
+        // Kirim variabel $judulTahun ke view
+        return view('penjadwalan.jadwal', compact('kelass', 'jadwals', 'judulTahun'));
     }
 
     /**
@@ -138,7 +138,6 @@ class JadwalController extends Controller
             });
 
             // 3. DATA ASSIGNMENTS (BEBAN MENGAJAR)
-            // Kita ambil raw data dulu untuk perhitungan
             $rawAssignments = Jadwal::all();
 
             $assignments = $rawAssignments->map(function ($j) {
@@ -152,34 +151,22 @@ class JadwalController extends Controller
                 ];
             });
 
-            // 4. DATA KELAS & LIMIT JAM (DINAMIS - SOLUSI AGAR TIDAK BOLONG)
+            // 4. DATA KELAS & LIMIT JAM (DINAMIS)
             $kelassData = Kelas::all()->map(function ($k) use ($rawAssignments) {
-
-                // A. Hitung Total Jam Per Minggu untuk Kelas ini
                 $totalJamMingguan = $rawAssignments->where('kelas_id', $k->id)->sum('jumlah_jam');
-
-                // B. Hitung Kapasitas Senin-Kamis (4 hari x 10 jam = 40 jam)
                 $maxHarian = 10;
                 $kapasitasSeninKamis = $maxHarian * 4;
-
-                // C. Hitung Sisa Jam untuk Jumat
                 $sisaUntukJumat = $totalJamMingguan - $kapasitasSeninKamis;
-
-                // D. Tentukan Limit Jumat
-                // Jika sisa < 0 (total jam < 40), Jumat minimal 4 jam (opsional)
-                // Jika sisa 8 jam (total 48), Jumat jadi 8.
-                // Jika sisa 10 jam (total 50), Jumat jadi 10.
                 $limitJumat = max(4, min($sisaUntukJumat, 11));
 
-                // Pastikan tidak negatif jika beban jam sangat sedikit
                 if ($sisaUntukJumat <= 0)
-                    $limitJumat = 5; // Default minimal
+                    $limitJumat = 5;
 
                 return [
                     'id' => $k->id,
                     'nama_kelas' => $k->nama_kelas,
-                    'limit_harian' => $maxHarian, // Biasanya 10
-                    'limit_jumat' => $limitJumat  // Dinamis sesuai beban
+                    'limit_harian' => $maxHarian,
+                    'limit_jumat' => $limitJumat
                 ];
             });
 
@@ -205,12 +192,10 @@ class JadwalController extends Controller
             $process->setTimeout(600);
             $process->run();
 
-            // Cek Error Python
             if (!$process->isSuccessful()) {
                 throw new ProcessFailedException($process);
             }
 
-            // Baca Output
             $output = $process->getOutput();
             $result = json_decode($output, true);
 
@@ -235,7 +220,7 @@ class JadwalController extends Controller
                     throw $e;
                 }
             } else {
-                return redirect()->route('jadwal.index')->with('error', 'Gagal Generate: ' . ($result['message'] ?? 'Solusi tidak ditemukan (Infeasible). Coba kurangi constraint.'));
+                return redirect()->route('jadwal.index')->with('error', 'Gagal Generate: ' . ($result['message'] ?? 'Solusi tidak ditemukan (Infeasible).'));
             }
 
         } catch (\Exception $e) {
@@ -243,8 +228,28 @@ class JadwalController extends Controller
         }
     }
 
+    /**
+     * Export Excel Dinamis
+     */
     public function export()
     {
-        return Excel::download(new JadwalExport, 'Jadwal_Pelajaran.xlsx');
+        // --- TAMBAHAN 3: LOGIKA NAMA FILE EXCEL SESUAI TAHUN ---
+        $tahunAktif = TahunPelajaran::getActive();
+
+        $fileName = 'Jadwal_Pelajaran_';
+
+        if ($tahunAktif) {
+            // Contoh hasil: Jadwal_Pelajaran_2025-2026_Ganjil.xlsx
+            // Ganti slash '/' jadi '-' agar nama file valid
+            $cleanTahun = str_replace(['/', '\\'], '-', $tahunAktif->tahun);
+            $fileName .= "{$cleanTahun}_{$tahunAktif->semester}";
+        } else {
+            // Fallback jika belum ada tahun aktif
+            $fileName .= date('Y');
+        }
+
+        $fileName .= '.xlsx';
+
+        return Excel::download(new JadwalExport, $fileName);
     }
 }

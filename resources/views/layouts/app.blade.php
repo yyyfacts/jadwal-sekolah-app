@@ -69,7 +69,6 @@
 
                 {{-- A. LOGO --}}
                 <div class="flex items-center gap-3">
-                    {{-- PERBAIKAN: Menggunakan url('/') agar tidak error route not found --}}
                     <a href="{{ url('/') }}" class="relative flex-shrink-0 group">
                         <div
                             class="absolute inset-0 bg-blue-500 rounded-full blur opacity-20 group-hover:opacity-40 transition">
@@ -87,23 +86,70 @@
 
                 {{-- B. MENU DESKTOP (Hidden on Mobile) --}}
                 <div class="hidden lg:flex items-center gap-1 bg-white/5 px-2 py-1.5 rounded-xl border border-white/5">
-                    @foreach([
-                    ['route' => 'guru.index', 'label' => 'Data Guru', 'active' => 'guru.*'],
-                    ['route' => 'mapel.index', 'label' => 'Mapel', 'active' => 'mapel.*'],
-                    ['route' => 'kelas.index', 'label' => 'Kelas', 'active' => 'kelas.*'],
-                    ['route' => 'jadwal.index', 'label' => 'Jadwal', 'active' => 'jadwal.*'],
-                    ] as $item)
-                    <a href="{{ route($item['route']) }}"
-                        class="px-4 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs($item['active']) ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
-                        {{ $item['label'] }}
+
+                    {{-- 1. MENU DASHBOARD --}}
+                    <a href="{{ url('/') }}"
+                        class="px-4 py-2 rounded-lg text-sm font-medium transition-all {{ request()->is('/') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
+                        Dashboard
                     </a>
-                    @endforeach
+
+                    {{-- 2. DROPDOWN DATA MASTER --}}
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" @click.away="open = false"
+                            class="flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs('guru.*') || request()->routeIs('mapel.*') || request()->routeIs('kelas.*') || request()->routeIs('tahun-pelajaran.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
+                            Data Master
+                            <svg class="w-4 h-4 ml-1 opacity-70" :class="{'rotate-180': open}" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+
+                        {{-- Isi Dropdown --}}
+                        <div x-show="open" x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 translate-y-2"
+                            x-transition:enter-end="opacity-100 translate-y-0" x-cloak
+                            class="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl py-1 text-slate-800 z-50 border border-slate-100 ring-1 ring-black ring-opacity-5">
+
+                            <div class="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Data
+                                Akademik</div>
+
+                            <a href="{{ route('guru.index') }}"
+                                class="block px-4 py-2 text-sm hover:bg-slate-50 hover:text-blue-600 {{ request()->routeIs('guru.*') ? 'text-blue-600 font-bold bg-slate-50' : '' }}">
+                                Data Guru
+                            </a>
+                            <a href="{{ route('mapel.index') }}"
+                                class="block px-4 py-2 text-sm hover:bg-slate-50 hover:text-blue-600 {{ request()->routeIs('mapel.*') ? 'text-blue-600 font-bold bg-slate-50' : '' }}">
+                                Mata Pelajaran
+                            </a>
+                            <a href="{{ route('kelas.index') }}"
+                                class="block px-4 py-2 text-sm hover:bg-slate-50 hover:text-blue-600 {{ request()->routeIs('kelas.*') ? 'text-blue-600 font-bold bg-slate-50' : '' }}">
+                                Data Kelas
+                            </a>
+
+                            <div class="border-t border-slate-100 my-1"></div>
+                            <div class="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                Konfigurasi</div>
+
+                            <a href="{{ route('tahun-pelajaran.index') }}"
+                                class="block px-4 py-2 text-sm hover:bg-slate-50 hover:text-blue-600 {{ request()->routeIs('tahun-pelajaran.*') ? 'text-blue-600 font-bold bg-slate-50' : '' }}">
+                                Tahun Pelajaran
+                            </a>
+                        </div>
+                    </div>
+
+                    {{-- 3. MENU JADWAL --}}
+                    <a href="{{ route('jadwal.index') }}"
+                        class="px-4 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs('jadwal.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
+                        Jadwal Pelajaran
+                    </a>
 
                     {{-- Divider --}}
                     <div class="w-px h-5 bg-white/10 mx-2"></div>
 
+                    {{-- 4. MENU ADMIN USER --}}
                     <a href="{{ route('user.index') }}"
-                        class="px-4 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs('user.*') ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
+                        class="px-4 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs('user.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
                         Admin User
                     </a>
                 </div>
@@ -168,7 +214,7 @@
             </div>
         </div>
 
-        {{-- D. MOBILE MENU DROPDOWN (Full Width) --}}
+        {{-- D. MOBILE MENU DROPDOWN --}}
         <div x-show="mobileMenuOpen" x-cloak
             class="lg:hidden bg-[#0f172a] border-t border-white/10 shadow-2xl absolute top-20 left-0 w-full z-40 overflow-hidden"
             x-transition:enter="transition ease-out duration-300"
@@ -176,19 +222,55 @@
             x-transition:enter-end="opacity-100 translate-y-0 height-auto">
 
             <div class="px-4 py-6 space-y-2">
-                {{-- Menu List Mobile (Dashboard dihapus agar tidak error) --}}
-                @foreach([
-                ['route' => 'guru.index', 'label' => 'Data Guru', 'icon' => '👨‍🏫'],
-                ['route' => 'mapel.index', 'label' => 'Mata Pelajaran', 'icon' => '📚'],
-                ['route' => 'kelas.index', 'label' => 'Data Kelas', 'icon' => '🏫'],
-                ['route' => 'jadwal.index', 'label' => 'Penjadwalan', 'icon' => '📅'],
-                ['route' => 'user.index', 'label' => 'Admin User', 'icon' => '⚙️'],
-                ] as $item)
-                <a href="{{ route($item['route']) }}"
-                    class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs($item['route']) ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
-                    <span class="text-xl">{{ $item['icon'] }}</span> {{ $item['label'] }}
+
+                {{-- Dashboard --}}
+                <a href="{{ url('/') }}"
+                    class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->is('/') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                    <span class="text-xl">🏠</span> Dashboard
                 </a>
-                @endforeach
+
+                {{-- Mobile Dropdown: Data Master --}}
+                <div x-data="{ expanded: false }"
+                    class="rounded-xl overflow-hidden {{ request()->routeIs('guru.*') || request()->routeIs('mapel.*') || request()->routeIs('kelas.*') || request()->routeIs('tahun-pelajaran.*') ? 'bg-white/5 border border-white/10' : '' }}">
+                    <button @click="expanded = !expanded"
+                        class="w-full flex items-center justify-between px-4 py-3.5 text-base font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all">
+                        <div class="flex items-center gap-4">
+                            <span class="text-xl">📂</span> Data Master
+                        </div>
+                        <svg class="w-5 h-5 transition-transform" :class="{'rotate-180': expanded}" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
+                        </svg>
+                    </button>
+
+                    <div x-show="expanded" class="bg-black/20 pb-2">
+                        <a href="{{ route('guru.index') }}"
+                            class="block pl-14 pr-4 py-2.5 text-sm {{ request()->routeIs('guru.*') ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-white' }}">Data
+                            Guru</a>
+                        <a href="{{ route('mapel.index') }}"
+                            class="block pl-14 pr-4 py-2.5 text-sm {{ request()->routeIs('mapel.*') ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-white' }}">Mata
+                            Pelajaran</a>
+                        <a href="{{ route('kelas.index') }}"
+                            class="block pl-14 pr-4 py-2.5 text-sm {{ request()->routeIs('kelas.*') ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-white' }}">Data
+                            Kelas</a>
+                        <a href="{{ route('tahun-pelajaran.index') }}"
+                            class="block pl-14 pr-4 py-2.5 text-sm {{ request()->routeIs('tahun-pelajaran.*') ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-white' }}">Tahun
+                            Pelajaran</a>
+                    </div>
+                </div>
+
+                {{-- Jadwal --}}
+                <a href="{{ route('jadwal.index') }}"
+                    class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('jadwal.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                    <span class="text-xl">📅</span> Penjadwalan
+                </a>
+
+                {{-- Admin User --}}
+                <a href="{{ route('user.index') }}"
+                    class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('user.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                    <span class="text-xl">⚙️</span> Admin User
+                </a>
 
                 {{-- Divider --}}
                 <div class="border-t border-white/10 my-4 pt-4">

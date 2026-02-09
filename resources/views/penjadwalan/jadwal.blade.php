@@ -113,35 +113,33 @@
             <table class="w-full text-xs border-separate border-spacing-0 min-w-[1000px]">
                 <thead>
                     {{-- 
-                             PERBAIKAN STICKY HEADER:
-                             1. Row pertama (Judul) diberi height fix (h-14).
-                             2. Z-index row pertama harus paling tinggi (z-[60]).
-                        --}}
+                        STICKY HEADER FIX:
+                        Navbar tinggi = 5rem (h-20/80px).
+                        Judul sticky di top-20 (80px).
+                        Header kolom sticky di top-[8.5rem] (80px navbar + 56px judul).
+                    --}}
                     <tr>
                         <th colspan="{{ 3 + $kelass->count() }}"
-                            class="h-14 p-4 bg-slate-800 text-white font-bold text-center text-base uppercase tracking-wider sticky top-0 z-[60] border-b border-slate-700 shadow-md">
-                            Jadwal Pelajaran Tahun Ajaran {{ date('Y') }}/{{ date('Y')+1 }}
+                            class="h-14 p-4 bg-slate-800 text-white font-bold text-center text-base uppercase tracking-wider sticky top-20 z-[60] border-b border-slate-700 shadow-md">
+                            {{-- DINAMIS: Menggunakan variabel dari Controller --}}
+                            Jadwal Pelajaran Tahun Ajaran {{ $judulTahun ?? date('Y').'/'.(date('Y')+1) }}
                         </th>
                     </tr>
 
-                    {{-- 
-                             3. Row kedua (Kolom Header) diberi 'top-[56px]' karena height row pertama adalah 56px (h-14).
-                             4. Z-index lebih rendah dari judul tapi lebih tinggi dari isi tabel (z-[50]).
-                        --}}
                     <tr class="bg-slate-100 text-slate-800 font-bold text-center uppercase shadow-sm">
                         <th
-                            class="p-3 border-b border-r border-slate-300 w-16 sticky top-[56px] left-0 z-[55] bg-slate-200 shadow-sm">
+                            class="p-3 border-b border-r border-slate-300 w-16 sticky top-[8.5rem] left-0 z-[55] bg-slate-200 shadow-sm">
                             Hari
                         </th>
-                        <th class="p-3 border-b border-r border-slate-300 w-10 sticky top-[56px] z-[50] bg-slate-100">
+                        <th class="p-3 border-b border-r border-slate-300 w-10 sticky top-[8.5rem] z-[50] bg-slate-100">
                             Jam
                         </th>
-                        <th class="p-3 border-b border-r border-slate-300 w-24 sticky top-[56px] z-[50] bg-slate-100">
+                        <th class="p-3 border-b border-r border-slate-300 w-24 sticky top-[8.5rem] z-[50] bg-slate-100">
                             Waktu
                         </th>
                         @foreach($kelass as $kelas)
                         <th
-                            class="p-3 border-b border-r border-slate-300 min-w-[140px] sticky top-[56px] z-[40] bg-slate-100">
+                            class="p-3 border-b border-r border-slate-300 min-w-[140px] sticky top-[8.5rem] z-[40] bg-slate-100">
                             {{ $kelas->nama_kelas }}
                         </th>
                         @endforeach
