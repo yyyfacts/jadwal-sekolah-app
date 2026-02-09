@@ -139,9 +139,14 @@
             @php $idxLegenda++; @endphp
             </tr>
 
-            @for($jam = $startJam + 1; $jam <= $maxJam; $jam++) @php // Cek Baris Istirahat $isIstirahat=($jam==4 ||
-                $jam==8) && $hari !='Jumat' ; @endphp @if(($jam==4 && $hari !='Jumat' ) || ($jam==7 && $hari=='Jumat' ))
-                @endif <tr height="30">
+            @for($jam = $startJam + 1; $jam <= $maxJam; $jam++)
+                @php
+                    // Cek Baris Istirahat
+                    $isIstirahat = ($jam == 4 || $jam == 8) && $hari != 'Jumat';
+                @endphp
+                @if(($jam == 4 && $hari != 'Jumat') || ($jam == 7 && $hari == 'Jumat'))
+                @endif
+                <tr height="30">
                 <td style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-weight: bold;">
                     {{ $jam }}
                 </td>
