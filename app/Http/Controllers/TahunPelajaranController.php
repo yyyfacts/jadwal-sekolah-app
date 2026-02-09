@@ -16,7 +16,7 @@ class TahunPelajaranController extends Controller
         // Mengambil data urut dari yang terbaru
         $tahuns = TahunPelajaran::orderBy('created_at', 'desc')->get();
 
-        return view('data_master.tahun_pelajaran', compact('tahuns'));
+        return view('penjadwalan.tahun_pelajaran', compact('tahuns'));
     }
 
     /**
