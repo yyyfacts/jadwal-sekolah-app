@@ -11,24 +11,24 @@ use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\TahunPelajaranController;
+use App\Http\Controllers\TahunPelajaranController; 
 
 // ==================================================================
 // 1. RUTE KHUSUS DEPLOY & DEBUG (PUBLIC)
 // ==================================================================
 
-// Rute ini WAJIB dijalankan setelah upload file baru untuk sinkronisasi
+// [PERBAIKAN PENTING DISINI]
 Route::get('/tembak-db', function () {
     try {
-        // 1. Migrate Database (Membuat tabel baru jika belum ada)
+        // 1. Perbaiki Database (Membuat tabel yang hilang)
         Artisan::call('migrate --force');
         
-        // 2. Clear Cache Route & Config (Memperbaiki error "Route not defined")
-        Artisan::call('route:clear');
+        // 2. Perbaiki Route Error (Hapus ingatan lama server)
+        Artisan::call('route:clear');   // <--- INI KUNCINYA
         Artisan::call('config:clear');
         Artisan::call('view:clear');
         
-        return '<h1>SUKSES! <br>1. Database Migrated. <br>2. Route Cache Cleared. <br>3. View Cache Cleared.</h1>';
+        return '<h1>SUKSES! <br>✅ Database Migrated. <br>✅ Route Cache DIBERSIHKAN. <br>✅ View Cache DIBERSIHKAN. <br><br>Silakan coba menu yang error tadi sekarang.</h1>';
     } catch (\Exception $e) {
         return 'Gagal: ' . $e->getMessage();
     }
@@ -118,20 +118,34 @@ Route::middleware(['auth'])->group(function () {
     // GROUP: DATA MASTER (MAPEL)
     // --------------------------------------------------------------
     Route::prefix('mapel')->name('mapel.')->group(function () {
+        // CRUD Mapel
         Route::get('/', [MapelController::class, 'index'])->name('index');
         Route::post('/', [MapelController::class, 'store'])->name('store');
         Route::put('/{id}', [MapelController::class, 'update'])->name('update');
         Route::delete('/{id}', [MapelController::class, 'destroy'])->name('destroy');
+        
+        // Rute Khusus Mapel (Waktu Kosong & Jadwal)
+        Route::get('/{id}/waktu-kosong', [MapelController::class, 'waktuKosongForm'])->name('waktuKosong');
+        Route::post('/{id}/waktu-kosong', [MapelController::class, 'simpanWaktuKosong'])->name('simpanWaktuKosong');
+        Route::post('/{id}/jadwal', [MapelController::class, 'simpanJadwal'])->name('simpanJadwal');
+        Route::put('/jadwal/{id}', [MapelController::class, 'updateJadwal'])->name('updateJadwal');
+        Route::delete('/jadwal/{id}', [MapelController::class, 'hapusJadwal'])->name('hapusJadwal');
     });
 
     // --------------------------------------------------------------
     // GROUP: DATA MASTER (KELAS)
     // --------------------------------------------------------------
     Route::prefix('kelas')->name('kelas.')->group(function () {
+        // CRUD Kelas
         Route::get('/', [KelasController::class, 'index'])->name('index');
         Route::post('/', [KelasController::class, 'store'])->name('store');
         Route::put('/{id}', [KelasController::class, 'update'])->name('update');
         Route::delete('/{id}', [KelasController::class, 'destroy'])->name('destroy');
+
+        // Rute Khusus Kelas (Jadwal)
+        Route::post('/{id}/jadwal', [KelasController::class, 'simpanJadwal'])->name('simpanJadwal');
+        Route::put('/jadwal/{id}', [KelasController::class, 'updateJadwal'])->name('updateJadwal');
+        Route::delete('/jadwal/{id}', [KelasController::class, 'hapusJadwal'])->name('hapusJadwal');
     });
 
     // --------------------------------------------------------------
