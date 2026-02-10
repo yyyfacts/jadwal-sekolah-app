@@ -1,7 +1,7 @@
 <table>
     <thead>
         <tr>
-            {{-- Perbaikan: Menghitung colspan dinamis dan menangani variabel judulTahun agar tidak error jika null --}}
+            {{-- Perbaikan: Menghitung colspan dinamis (3 kolom awal + jumlah kelas + 6 kolom legenda/gap) --}}
             <th colspan="{{ 3 + $kelass->count() + 6 }}" height="50"
                 style="font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; text-align: center; vertical-align: middle; border: 2px solid #000000; background-color: #ffffff; color: #000000;">
                 JADWAL PELAJARAN SMA NEGERI 1 SAMPANG TAHUN AJARAN
@@ -71,7 +71,7 @@
         // Hitung Rowspan: Jumlah jam + Jumlah istirahat
         $rowCount = ($maxJam - $startJam + 1);
         if($hari != 'Jumat') {
-        $rowCount += 1; // Tambah 1 baris untuk istirahat (Senin-Kamis)
+        $rowCount += 1; // Ditambah 1 baris untuk istirahat (Senin-Kamis)
         }
         @endphp
 
@@ -109,10 +109,11 @@
             @foreach($kelass as $kelas)
             @php $data = $jadwals[$kelas->id][$hari][$jam] ?? null; @endphp
             @if($data)
+            {{-- Menggunakan Null Coalescing (??) agar tidak error jika key tidak ada --}}
             <td
-                style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-weight: bold; font-size: 10px; background-color: #{{ isset($data['color']) && $data['color'] != 'bg-white' ? 'd9e1f2' : 'ffffff' }}">
-                {{ $data['kode_mapel'] }}<br>
-                <span style="font-size: 8px; color: #555;">{{ $data['kode_guru'] }}</span>
+                style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-weight: bold; font-size: 10px; background-color: #{{ isset($data['color']) && $data['color'] != 'ffffff' ? 'd9e1f2' : 'ffffff' }}">
+                {{ $data['kode_mapel'] ?? '-' }}<br>
+                <span style="font-size: 8px; color: #555;">{{ $data['kode_guru'] ?? '-' }}</span>
             </td>
             @else
             <td style="border: 1px solid #000000; background-color: #ffffff;"></td>

@@ -4,35 +4,33 @@
 <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
 
     {{-- Header Section --}}
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
             <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Jadwal Pelajaran Terpadu</h1>
-            <p class="text-slate-500 text-sm mt-1">Generate otomatis jadwal anti-bentrok menggunakan AI Solver.</p>
+            <p class="text-slate-500 text-sm mt-1">Tahun Ajaran {{ $judulTahun ?? date('Y').'/'.(date('Y')+1) }}</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
-            {{-- Tombol Download Excel --}}
             <a href="{{ route('jadwal.export') }}"
-                class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-lg shadow-sm font-bold transition flex items-center gap-2 text-sm">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg shadow-sm font-bold transition flex items-center gap-2 text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                 </svg>
                 Export Excel
             </a>
 
-            {{-- Tombol Generate AI --}}
             <form action="{{ route('jadwal.generate') }}" method="POST" onsubmit="showLoading()">
                 @csrf
                 <button type="button"
                     onclick="if(confirm('Generate ulang akan menimpa jadwal lama. Lanjut?')) this.form.submit()"
-                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg shadow-sm font-bold transition flex items-center gap-2 text-sm">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow-sm font-bold transition flex items-center gap-2 text-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z">
                         </path>
                     </svg>
-                    Jalankan Solver AI
+                    Auto Generate AI
                 </button>
             </form>
         </div>
@@ -49,103 +47,87 @@
                 <div class="absolute inset-0 flex items-center justify-center text-2xl">🧠</div>
             </div>
             <h3 class="text-lg font-bold text-slate-800">Sedang Mengoptimasi...</h3>
-            <p class="text-slate-500 text-sm mt-2">AI sedang mencari kombinasi terbaik. Mohon tunggu (Maks 10 menit).
-            </p>
+            <p class="text-slate-500 text-sm mt-2">Mohon tunggu sebentar.</p>
         </div>
     </div>
 
-    {{-- AREA NOTIFIKASI --}}
-
-    {{-- 1. Sukses --}}
+    {{-- Notifikasi --}}
     @if(session('success'))
-    <div x-data="{ show: true }" x-show="show"
-        class="mb-6 bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-sm flex items-start gap-3 animate-fade-in-down">
-        <div class="bg-emerald-100 p-2 rounded-full text-emerald-600">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-        </div>
-        <div class="flex-1">
-            <h3 class="font-bold text-emerald-900">Generate Berhasil!</h3>
-            <p class="text-emerald-700 text-sm mt-1">{{ session('success') }}</p>
-        </div>
-        <button @click="show = false" class="text-emerald-400 hover:text-emerald-700 font-bold text-lg">&times;</button>
+    <div
+        class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-lg flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        {{ session('success') }}
     </div>
     @endif
-
-    {{-- 2. Error / Gagal (Misal Infeasible) --}}
     @if(session('error'))
-    <div x-data="{ show: true }" x-show="show"
-        class="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 shadow-sm flex items-start gap-3 animate-fade-in-down">
-        <div class="bg-red-100 p-2 rounded-full text-red-600">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
-                </path>
-            </svg>
-        </div>
-        <div class="flex-1">
-            <h3 class="font-bold text-red-900">Gagal Mengenerate Jadwal</h3>
-            <p class="text-red-700 text-sm mt-1">
-                {{ session('error') }}
-            </p>
-            <p class="text-red-600 text-xs mt-2 italic">
-                Tips: Coba kurangi constraint/batasan guru atau pastikan jumlah jam guru mencukupi slot yang tersedia.
-            </p>
-        </div>
-        <button @click="show = false" class="text-red-400 hover:text-red-700 font-bold text-lg">&times;</button>
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        {{ session('error') }}
     </div>
     @endif
 
-    {{-- LOGIKA EMPTY STATE: Cek apakah ada data kelas/jadwal --}}
     @if($kelass->isEmpty())
     <div class="text-center py-20 bg-white rounded-xl border border-dashed border-slate-300">
         <div class="text-5xl mb-4">📂</div>
-        <h3 class="text-lg font-bold text-slate-700">Data Kelas Masih Kosong</h3>
-        <p class="text-slate-500">Silakan input data kelas terlebih dahulu.</p>
+        <h3 class="text-lg font-bold text-slate-700">Data Kelas Kosong</h3>
     </div>
     @else
 
-    {{-- Container Tabel --}}
-    <div class="bg-white shadow-md rounded-xl border border-slate-200 overflow-hidden mb-10">
-        {{-- max-h-[80vh] untuk scrollbar --}}
-        <div class="overflow-auto custom-scrollbar relative" style="max-height: 80vh;">
-            <table class="w-full text-xs border-separate border-spacing-0 min-w-[1000px]">
+    {{-- CONTAINER TABEL --}}
+    <div
+        class="bg-white shadow-xl rounded-xl border border-slate-200 overflow-hidden flex flex-col h-[calc(100vh-200px)]">
+
+        {{-- WRAPPER SCROLL --}}
+        <div class="overflow-auto custom-scrollbar flex-1 relative">
+            <table class="w-full text-xs border-separate border-spacing-0">
                 <thead>
                     {{-- 
-                        STICKY HEADER FIX:
-                        Navbar tinggi = 5rem (h-20/80px).
-                        Judul sticky di top-20 (80px).
-                        Header kolom sticky di top-[8.5rem] (80px navbar + 56px judul).
+                        HEADER 1: JUDUL BESAR 
+                        Sticky di top-0. Z-Index paling tinggi.
                     --}}
                     <tr>
                         <th colspan="{{ 3 + $kelass->count() }}"
-                            class="h-14 p-4 bg-slate-800 text-white font-bold text-center text-base uppercase tracking-wider sticky top-20 z-[60] border-b border-slate-700 shadow-md">
-                            {{-- DINAMIS: Menggunakan variabel dari Controller --}}
-                            Jadwal Pelajaran Tahun Ajaran {{ $judulTahun ?? date('Y').'/'.(date('Y')+1) }}
+                            class="sticky top-0 left-0 z-[60] h-12 bg-slate-800 text-white font-bold text-center uppercase tracking-wider border-b border-slate-700 shadow-md">
+                            Jadwal Pelajaran
                         </th>
                     </tr>
 
-                    <tr class="bg-slate-100 text-slate-800 font-bold text-center uppercase shadow-sm">
+                    {{-- 
+                        HEADER 2: NAMA KELAS & KOLOM WAKTU 
+                        Sticky di top-12 (48px) karena header atas tingginya h-12.
+                        Menggunakan 'box-shadow' untuk border bawah agar tetap terlihat saat scroll.
+                    --}}
+                    <tr>
+                        {{-- Kolom Hari & Jam (Sticky Kiri & Atas = Pojok Mati) --}}
                         <th
-                            class="p-3 border-b border-r border-slate-300 w-16 sticky top-[8.5rem] left-0 z-[55] bg-slate-200 shadow-sm">
-                            Hari
+                            class="sticky top-12 left-0 z-[55] w-12 p-3 bg-slate-100 text-slate-700 font-bold border-r border-slate-300 border-b border-slate-300 shadow-[inset_-1px_-1px_0_rgba(203,213,225,1)]">
+                            HARI
                         </th>
-                        <th class="p-3 border-b border-r border-slate-300 w-10 sticky top-[8.5rem] z-[50] bg-slate-100">
-                            Jam
+                        <th
+                            class="sticky top-12 left-12 z-[55] w-10 p-3 bg-slate-100 text-slate-700 font-bold border-r border-slate-300 border-b border-slate-300 shadow-[inset_-1px_-1px_0_rgba(203,213,225,1)]">
+                            JP
                         </th>
-                        <th class="p-3 border-b border-r border-slate-300 w-24 sticky top-[8.5rem] z-[50] bg-slate-100">
-                            Waktu
+                        <th
+                            class="sticky top-12 left-[5.5rem] z-[55] w-28 p-3 bg-slate-100 text-slate-700 font-bold border-r border-slate-300 border-b border-slate-300 shadow-[inset_-1px_-1px_0_rgba(203,213,225,1)]">
+                            WAKTU
                         </th>
+
+                        {{-- Header Kelas (Scrollable Horizontal, Sticky Vertikal) --}}
                         @foreach($kelass as $kelas)
                         <th
-                            class="p-3 border-b border-r border-slate-300 min-w-[140px] sticky top-[8.5rem] z-[40] bg-slate-100">
+                            class="sticky top-12 z-[50] min-w-[140px] p-3 bg-slate-50 text-slate-800 font-bold border-r border-slate-200 border-b border-slate-300 text-center shadow-[0_1px_0_rgba(203,213,225,1)]">
                             {{ $kelas->nama_kelas }}
                         </th>
                         @endforeach
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-200">
+
+                <tbody class="bg-white">
                     @php
                     $hariList = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
                     $waktu = [
@@ -170,24 +152,29 @@
                     $rowSpanTotal = $baseRows + $istirahatRows;
                     @endphp
 
-                    @for($jam = $startJam; $jam <= $maxJam; $jam++) <tr class="hover:bg-slate-50 transition">
-                        {{-- Kolom Hari (Sticky Left & Span) --}}
+                    @for($jam = $startJam; $jam <= $maxJam; $jam++) <tr
+                        class="hover:bg-slate-50 transition-colors group">
+
+                        {{-- KOLOM HARI (Sticky Horizontal) --}}
                         @if($jam == $startJam)
                         <td rowspan="{{ $rowSpanTotal }}"
-                            class="p-3 border-r border-b border-slate-300 bg-slate-50 font-bold text-center align-middle uppercase text-slate-700 sticky left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                            <div class="vertical-text">{{ $hari }}</div>
+                            class="sticky left-0 z-[45] p-0 bg-white border-r border-b border-slate-300 align-middle text-center shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                            <div
+                                class="vertical-text font-bold text-slate-700 uppercase tracking-widest text-xs h-full flex items-center justify-center bg-slate-50 w-full py-4">
+                                {{ $hari }}
+                            </div>
                         </td>
                         @endif
 
-                        {{-- Info Jam --}}
+                        {{-- INFO JAM (Sticky Horizontal) --}}
                         <td
-                            class="p-2 border-r border-b border-slate-200 text-center font-bold text-slate-500 bg-slate-50/50">
+                            class="sticky left-12 z-[40] p-2 bg-slate-50 border-r border-b border-slate-200 text-center font-bold text-slate-500 text-[10px]">
                             {{ $jam }}
                         </td>
 
-                        {{-- Info Waktu --}}
+                        {{-- INFO WAKTU (Sticky Horizontal) --}}
                         <td
-                            class="p-2 border-r border-b border-slate-200 text-center text-[10px] font-mono text-slate-600 bg-white">
+                            class="sticky left-[5.5rem] z-[40] p-2 bg-white border-r border-b border-slate-200 text-center text-[10px] font-mono text-slate-600 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
                             @php
                             if($hari == 'Senin') $w = $waktu['Senin'][$jam] ?? '-';
                             elseif($hari == 'Jumat') $w = $waktu['Jumat'][$jam] ?? '-';
@@ -196,7 +183,7 @@
                             {{ $w }}
                         </td>
 
-                        {{-- KONTEN UTAMA JADWAL --}}
+                        {{-- ISI JADWAL --}}
                         @if($jam == 0)
                         <td colspan="{{ $kelass->count() }}"
                             class="p-2 border-b border-slate-200 bg-indigo-50 text-center text-xs font-bold text-indigo-700 tracking-widest uppercase">
@@ -207,49 +194,54 @@
                         @else
                         @foreach($kelass as $kelas)
                         @php $data = $jadwals[$kelas->id][$hari][$jam] ?? null; @endphp
-                        <td
-                            class="p-1 border-r border-b border-slate-200 text-center align-middle h-16 {{ $data ? $data['color'] : 'bg-white' }} hover:brightness-95 transition relative group">
+
+                        <td class="p-1 border-r border-b border-slate-200 text-center align-middle h-14 relative 
+                                        {{ $data ? $data['color'] : 'bg-white' }} 
+                                        {{-- Efek Hover Cell --}}
+                                        hover:brightness-95 transition-all">
+
                             @if($data)
-                            <div class="flex flex-col justify-center overflow-hidden">
-                                <span
-                                    class="font-extrabold text-slate-800 text-[10px] leading-tight line-clamp-2 uppercase">
+                            <div class="flex flex-col justify-center h-full w-full">
+                                <span class="font-bold text-slate-800 text-[10px] leading-tight line-clamp-1">
                                     {{ $data['mapel'] }}
                                 </span>
-                                <span class="text-[9px] text-slate-600 leading-tight mt-1 font-medium italic">
-                                    {{ $data['guru'] }}
+                                <span class="text-[9px] text-slate-500 leading-tight mt-0.5 line-clamp-1 italic">
+                                    {{ Str::limit($data['guru'], 15) }}
                                 </span>
                             </div>
                             @else
-                            {{-- Jika Controller belum mengirim data 'KOSONG', ini fallback --}}
-                            <span class="text-slate-300 text-[9px]">-</span>
+                            <span class="text-slate-200 text-[8px]">-</span>
                             @endif
                         </td>
                         @endforeach
                         @endif
                         </tr>
 
-                        {{-- Baris Istirahat --}}
+                        {{-- BARIS ISTIRAHAT --}}
                         @if(($jam == 4 || $jam == 8) && $hari != 'Jumat')
-                        <tr class="bg-amber-100/50">
+                        <tr class="bg-amber-50">
+                            {{-- Hari sudah rowspan --}}
                             <td
-                                class="p-1 border-r border-b border-slate-200 text-center font-bold text-amber-800 text-[10px]">
+                                class="sticky left-12 z-[40] p-1 border-r border-b border-amber-200 bg-amber-100 text-center font-bold text-amber-800 text-[10px]">
                                 IST
                             </td>
                             <td
-                                class="p-1 border-r border-b border-slate-200 text-center text-[10px] font-mono font-bold text-slate-700">
+                                class="sticky left-[5.5rem] z-[40] p-1 border-r border-b border-amber-200 bg-amber-50 text-center text-[10px] font-mono text-amber-700 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
                                 {{ $jam==4 ? '10.30-10.45' : '13.30-13.50' }}
                             </td>
                             <td colspan="{{ $kelass->count() }}"
-                                class="p-1 border-b border-slate-200 text-center font-bold text-amber-800 text-[10px] tracking-widest uppercase">
+                                class="p-1 border-b border-amber-200 text-center font-bold text-amber-600 text-[10px] tracking-[0.2em] uppercase">
                                 ☕ ISTIRAHAT
                             </td>
                         </tr>
                         @endif
+
                         @endfor
 
-                        {{-- Gap antar hari --}}
+                        {{-- PEMBATAS HARI (GAP TEBAL) --}}
                         <tr>
-                            <td colspan="{{ $kelass->count() + 3 }}" class="bg-slate-800 h-0.5"></td>
+                            <td colspan="{{ $kelass->count() + 3 }}" class="bg-slate-300 h-1 border-b border-slate-300">
+                            </td>
                         </tr>
                         @endforeach
                 </tbody>
@@ -262,73 +254,43 @@
 
 @push('scripts')
 <style>
-/* Membuat teks hari tegak/vertikal di layar kecil */
+/* CSS Reset Khusus Tabel Sticky */
+table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Vertical Text untuk Hari */
 .vertical-text {
     writing-mode: vertical-lr;
     transform: rotate(180deg);
     white-space: nowrap;
 }
 
-@media (min-width: 768px) {
-    .vertical-text {
-        writing-mode: horizontal-tb;
-        transform: none;
-    }
-}
-
+/* Scrollbar Halus */
 .custom-scrollbar::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: #f1f5f9;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 4px;
+    border: 2px solid #f1f5f9;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
 
-/* Memperbaiki Sticky Header agar background tidak transparan saat discroll */
-th.sticky,
-td.sticky {
-    background-clip: padding-box;
-}
-
-.animate-scale-in {
-    animation: scaleIn 0.3s ease-out forwards;
-}
-
-@keyframes scaleIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-.animate-fade-in-down {
-    animation: fadeInDown 0.5s ease-out;
-}
-
-@keyframes fadeInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
+@media (min-width: 768px) {
+    .vertical-text {
+        writing-mode: horizontal-tb;
+        transform: none;
     }
 }
 </style>
