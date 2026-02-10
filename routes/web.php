@@ -11,16 +11,24 @@ use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\TahunPelajaranController; // <--- PENTING: Controller Baru
+use App\Http\Controllers\TahunPelajaranController;
 
 // ==================================================================
 // 1. RUTE KHUSUS DEPLOY & DEBUG (PUBLIC)
 // ==================================================================
 
+// Rute ini WAJIB dijalankan setelah upload file baru untuk sinkronisasi
 Route::get('/tembak-db', function () {
     try {
+        // 1. Migrate Database (Membuat tabel baru jika belum ada)
         Artisan::call('migrate --force');
-        return '<h1>SUKSES! Database berhasil di-migrate.</h1>';
+        
+        // 2. Clear Cache Route & Config (Memperbaiki error "Route not defined")
+        Artisan::call('route:clear');
+        Artisan::call('config:clear');
+        Artisan::call('view:clear');
+        
+        return '<h1>SUKSES! <br>1. Database Migrated. <br>2. Route Cache Cleared. <br>3. View Cache Cleared.</h1>';
     } catch (\Exception $e) {
         return 'Gagal: ' . $e->getMessage();
     }
@@ -75,12 +83,11 @@ Route::middleware(['auth'])->group(function () {
 
     // Dashboard Redirect
     Route::get('/', function () {
-        // Bisa diubah ke dashboard statistik jika sudah ada
         return redirect()->route('guru.index');
     })->name('home');
 
     // --------------------------------------------------------------
-    // GROUP: DATA MASTER (TAHUN PELAJARAN) - [BARU DITAMBAHKAN]
+    // GROUP: DATA MASTER (TAHUN PELAJARAN)
     // --------------------------------------------------------------
     Route::prefix('tahun-pelajaran')->name('tahun-pelajaran.')->group(function () {
         Route::get('/', [TahunPelajaranController::class, 'index'])->name('index');
@@ -111,7 +118,6 @@ Route::middleware(['auth'])->group(function () {
     // GROUP: DATA MASTER (MAPEL)
     // --------------------------------------------------------------
     Route::prefix('mapel')->name('mapel.')->group(function () {
-        // CRUD Mapel
         Route::get('/', [MapelController::class, 'index'])->name('index');
         Route::post('/', [MapelController::class, 'store'])->name('store');
         Route::put('/{id}', [MapelController::class, 'update'])->name('update');
@@ -122,7 +128,6 @@ Route::middleware(['auth'])->group(function () {
     // GROUP: DATA MASTER (KELAS)
     // --------------------------------------------------------------
     Route::prefix('kelas')->name('kelas.')->group(function () {
-        // CRUD Kelas
         Route::get('/', [KelasController::class, 'index'])->name('index');
         Route::post('/', [KelasController::class, 'store'])->name('store');
         Route::put('/{id}', [KelasController::class, 'update'])->name('update');

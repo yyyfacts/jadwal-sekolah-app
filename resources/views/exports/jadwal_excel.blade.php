@@ -1,7 +1,7 @@
 <table>
     <thead>
         <tr>
-            {{-- Perbaikan: Menghitung colspan dinamis (3 kolom awal + jumlah kelas + 6 kolom legenda/gap) --}}
+            {{-- Menggunakan count() agar colspan dinamis dan menangani variabel judulTahun --}}
             <th colspan="{{ 3 + $kelass->count() + 6 }}" height="50"
                 style="font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; text-align: center; vertical-align: middle; border: 2px solid #000000; background-color: #ffffff; color: #000000;">
                 JADWAL PELAJARAN SMA NEGERI 1 SAMPANG TAHUN AJARAN
