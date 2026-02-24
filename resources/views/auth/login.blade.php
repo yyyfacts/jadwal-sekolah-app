@@ -77,7 +77,7 @@
         box-shadow: 0 0 30px rgba(59, 130, 246, 0.15), inset 0 0 20px rgba(59, 130, 246, 0.05);
     }
 
-    /* Loading Bar Animation */
+    /* Loading Bar Animation - DIPERCEPAT DARI 2.5s MENJADI 1s */
     @keyframes load {
         0% {
             width: 0%;
@@ -89,7 +89,7 @@
     }
 
     .loading-bar {
-        animation: load 2.5s ease-in-out forwards;
+        animation: load 1s ease-in-out forwards;
     }
     </style>
 </head>
@@ -105,11 +105,13 @@
     <div class="fixed bottom-[-10%] right-[-10%] w-96 h-96 bg-cyan-600 rounded-full mix-blend-screen filter blur-[120px] opacity-20 animate-pulse"
         style="animation-delay: 2s"></div>
 
-    <div x-data="{ showIntro: true }" x-init="setTimeout(() => showIntro = false, 2800)"
+    {{-- DIPERCEPAT: setTimeout diubah dari 2800ms ke 1000ms --}}
+    <div x-data="{ showIntro: true }" x-init="setTimeout(() => showIntro = false, 1000)"
         class="relative min-h-screen flex items-center justify-center z-10">
 
         {{-- BAGIAN 1: INTRO ANIMATION (LOGO SEKOLAH) --}}
-        <div x-show="showIntro" x-transition:leave="transition ease-in-out duration-700"
+        {{-- DIPERCEPAT: duration-700 diubah ke duration-300 --}}
+        <div x-show="showIntro" x-transition:leave="transition ease-in-out duration-300"
             x-transition:leave-start="opacity-100 transform scale-100"
             x-transition:leave-end="opacity-0 transform scale-110 blur-md"
             class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950">
@@ -119,7 +121,6 @@
                 <div class="relative w-32 h-32 border-4 border-cyan-500/30 rounded-full border-t-cyan-400 animate-spin">
                 </div>
                 <div class="absolute inset-0 flex items-center justify-center">
-                    {{-- Logo Sekolah di Intro --}}
                     <img src="{{ asset('img/logo-sekolah.png') }}"
                         class="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
                 </div>
@@ -135,7 +136,8 @@
         </div>
 
         {{-- BAGIAN 2: HALAMAN LOGIN UTAMA --}}
-        <div x-show="!showIntro" x-cloak x-transition:enter="transition ease-out duration-1000 delay-300"
+        {{-- DIPERCEPAT: duration-1000 delay-300 diubah ke duration-500 delay-100 --}}
+        <div x-show="!showIntro" x-cloak x-transition:enter="transition ease-out duration-500 delay-100"
             x-transition:enter-start="opacity-0 translate-y-8 scale-95"
             x-transition:enter-end="opacity-100 translate-y-0 scale-100" class="w-full max-w-md px-6 py-8">
 
@@ -151,15 +153,10 @@
 
                 {{-- HEADER LOGIN --}}
                 <div class="text-center mb-10 relative z-10">
-
-                    {{-- CONTAINER LOGO --}}
                     <div class="relative inline-block group mb-6">
-                        {{-- Efek Glow di belakang logo --}}
                         <div
                             class="absolute inset-0 bg-cyan-500 rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition duration-700">
                         </div>
-
-                        {{-- Wrapper Logo --}}
                         <div
                             class="relative flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-b from-white/10 to-white/5 border border-white/20 shadow-2xl p-4 backdrop-blur-sm">
                             <img src="{{ asset('img/logo-sekolah.png') }}" alt="Logo Sekolah"
@@ -167,12 +164,10 @@
                         </div>
                     </div>
 
-                    {{-- JUDUL (1 BARIS) --}}
                     <h2 class="text-3xl font-black text-white font-orbitron tracking-wider glow-text whitespace-nowrap">
                         SMAN 1 SAMPANG
                     </h2>
 
-                    {{-- SUB JUDUL --}}
                     <div class="flex items-center justify-center gap-3 mt-3">
                         <div class="h-px w-8 bg-gradient-to-r from-transparent to-cyan-500"></div>
                         <p class="text-cyan-200/90 text-[11px] font-mono tracking-[0.25em] uppercase font-bold">

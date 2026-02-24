@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sistem Penjadwalan - SMAN 1 Sampang</title>
+
+    {{-- Favicon Global: Menggunakan logo sekolah --}}
+    <link rel="icon" href="{{ asset('img/logo-sekolah.png') }}" type="image/png">
+
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     {{-- Fonts --}}

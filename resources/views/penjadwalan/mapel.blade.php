@@ -236,7 +236,7 @@
         {{-- 3. FOOTER SECTION --}}
         <div
             class="bg-slate-50 border-t border-slate-200 px-6 py-3 flex justify-between items-center shrink-0 rounded-b-3xl">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sistem Penjadwalan v2.1</span>
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sistem Penjadwalan</span>
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Secure Data</span>
         </div>
     </div>
