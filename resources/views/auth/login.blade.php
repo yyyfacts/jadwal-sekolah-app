@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Login - SISTEM PENJADWALAN SMAN 1 SAMPANG</title>
+    <link rel="icon" href="{{ asset('img/logo-sekolah.png') }}" type="image/png">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
