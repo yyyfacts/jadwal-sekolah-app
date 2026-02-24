@@ -266,7 +266,7 @@
             </div>
 
             <div class="text-center mt-8 text-[10px] text-slate-600 font-mono tracking-wide">
-                <span class="opacity-60 hover:opacity-100 transition cursor-default">SECURE SYSTEM V2.5</span>
+                <span class="opacity-60 hover:opacity-100 transition cursor-default">SECURE SYSTEM</span>
                 <span class="mx-2 text-cyan-800">•</span>
                 <span class="opacity-60 hover:opacity-100 transition cursor-default">&copy; {{ date('Y') }} SMAN 1
                     SAMPANG</span>
