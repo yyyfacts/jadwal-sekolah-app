@@ -83,7 +83,8 @@
     @else
 
     {{-- CONTAINER TABEL UTAMA --}}
-    <div class="bg-white shadow-xl rounded-xl border border-slate-200 overflow-hidden flex flex-col flex-1 min-h-0">
+    <div
+        class="bg-white shadow-xl rounded-xl border border-slate-200 overflow-hidden flex flex-col flex-1 min-h-0 relative z-0">
 
         {{-- WRAPPER SCROLL (Scroll di sini) --}}
         <div class="overflow-auto custom-scrollbar flex-1 relative w-full h-full">
@@ -92,7 +93,7 @@
                     {{-- HEADER 1: JUDUL BESAR (Sticky Top L1) --}}
                     <tr>
                         <th colspan="{{ 3 + $kelass->count() }}"
-                            class="sticky top-0 left-0 z-[60] h-12 bg-slate-800 text-white font-bold text-center uppercase tracking-wider border-b border-slate-700 shadow-md">
+                            class="sticky top-0 left-0 z-[30] h-12 bg-slate-800 text-white font-bold text-center uppercase tracking-wider border-b border-slate-700 shadow-md">
                             Jadwal Pelajaran
                         </th>
                     </tr>
@@ -101,24 +102,24 @@
                     <tr>
                         {{-- 1. HARI (Sticky Kiri & Atas = Pojok Mati) --}}
                         <th
-                            class="sticky top-12 left-0 z-[55] w-12 p-3 bg-slate-100 text-slate-700 font-bold border-r border-b border-slate-300 shadow-[2px_2px_5px_rgba(0,0,0,0.05)]">
+                            class="sticky top-12 left-0 z-[25] w-12 p-3 bg-slate-100 text-slate-700 font-bold border-r border-b border-slate-300 shadow-[2px_2px_5px_rgba(0,0,0,0.05)]">
                             HARI
                         </th>
                         {{-- 2. JAM (Sticky Kiri & Atas) --}}
                         <th
-                            class="sticky top-12 left-12 z-[55] w-10 p-3 bg-slate-100 text-slate-700 font-bold border-r border-b border-slate-300 shadow-[2px_2px_5px_rgba(0,0,0,0.05)]">
+                            class="sticky top-12 left-12 z-[25] w-10 p-3 bg-slate-100 text-slate-700 font-bold border-r border-b border-slate-300 shadow-[2px_2px_5px_rgba(0,0,0,0.05)]">
                             JP
                         </th>
                         {{-- 3. WAKTU (Sticky Kiri & Atas) --}}
                         <th
-                            class="sticky top-12 left-[5.5rem] z-[55] w-28 p-3 bg-slate-100 text-slate-700 font-bold border-r border-b border-slate-300 shadow-[2px_2px_5px_rgba(0,0,0,0.05)]">
+                            class="sticky top-12 left-[5.5rem] z-[25] w-28 p-3 bg-slate-100 text-slate-700 font-bold border-r border-b border-slate-300 shadow-[2px_2px_5px_rgba(0,0,0,0.05)]">
                             WAKTU
                         </th>
 
                         {{-- 4. KELAS (Scrollable Horizontal, Sticky Vertikal) --}}
                         @foreach($kelass as $kelas)
                         <th
-                            class="sticky top-12 z-[50] min-w-[140px] p-3 bg-slate-50 text-slate-800 font-bold border-r border-b border-slate-300 text-center">
+                            class="sticky top-12 z-[20] min-w-[140px] p-3 bg-slate-50 text-slate-800 font-bold border-r border-b border-slate-300 text-center">
                             {{ $kelas->nama_kelas }}
                         </th>
                         @endforeach
@@ -156,7 +157,7 @@
                         {{-- KOLOM HARI (Sticky Horizontal - Fix Layering) --}}
                         @if($jam == $startJam)
                         <td rowspan="{{ $rowSpanTotal }}"
-                            class="sticky left-0 z-[45] p-0 bg-white border-r border-b border-slate-300 align-middle text-center shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                            class="sticky left-0 z-[15] p-0 bg-white border-r border-b border-slate-300 align-middle text-center shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                             <div
                                 class="vertical-text font-bold text-slate-700 uppercase tracking-widest text-xs h-full flex items-center justify-center bg-slate-50 w-full py-4">
                                 {{ $hari }}
@@ -166,13 +167,13 @@
 
                         {{-- INFO JAM (Sticky Horizontal) --}}
                         <td
-                            class="sticky left-12 z-[40] p-2 bg-slate-50 border-r border-b border-slate-200 text-center font-bold text-slate-500 text-[10px] shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                            class="sticky left-12 z-[10] p-2 bg-slate-50 border-r border-b border-slate-200 text-center font-bold text-slate-500 text-[10px] shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                             {{ $jam }}
                         </td>
 
                         {{-- INFO WAKTU (Sticky Horizontal) --}}
                         <td
-                            class="sticky left-[5.5rem] z-[40] p-2 bg-white border-r border-b border-slate-200 text-center text-[10px] font-mono text-slate-600 shadow-[4px_0_5px_rgba(0,0,0,0.05)]">
+                            class="sticky left-[5.5rem] z-[10] p-2 bg-white border-r border-b border-slate-200 text-center text-[10px] font-mono text-slate-600 shadow-[4px_0_5px_rgba(0,0,0,0.05)]">
                             @php
                             if($hari == 'Senin') $w = $waktu['Senin'][$jam] ?? '-';
                             elseif($hari == 'Jumat') $w = $waktu['Jumat'][$jam] ?? '-';
@@ -219,12 +220,12 @@
                         <tr class="bg-amber-50">
                             {{-- Sticky Jam Istirahat --}}
                             <td
-                                class="sticky left-12 z-[40] p-1 border-r border-b border-amber-200 bg-amber-100 text-center font-bold text-amber-800 text-[10px] shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                                class="sticky left-12 z-[10] p-1 border-r border-b border-amber-200 bg-amber-100 text-center font-bold text-amber-800 text-[10px] shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                                 IST
                             </td>
                             {{-- Sticky Waktu Istirahat --}}
                             <td
-                                class="sticky left-[5.5rem] z-[40] p-1 border-r border-b border-amber-200 bg-amber-50 text-center text-[10px] font-mono text-amber-700 shadow-[4px_0_5px_rgba(0,0,0,0.05)]">
+                                class="sticky left-[5.5rem] z-[10] p-1 border-r border-b border-amber-200 bg-amber-50 text-center text-[10px] font-mono text-amber-700 shadow-[4px_0_5px_rgba(0,0,0,0.05)]">
                                 {{ $jam==4 ? '10.30-10.45' : '13.30-13.50' }}
                             </td>
                             <td colspan="{{ $kelass->count() }}"
