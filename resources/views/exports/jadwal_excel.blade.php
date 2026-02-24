@@ -71,7 +71,7 @@
         // Hitung Rowspan: Jumlah jam + Jumlah istirahat
         $rowCount = ($maxJam - $startJam + 1);
         if($hari != 'Jumat') {
-        $rowCount += 1; // Ditambah 1 baris untuk istirahat (Senin-Kamis)
+        $rowCount += 2; // Ditambah 1 baris untuk istirahat (Senin-Kamis)
         }
         @endphp
 
