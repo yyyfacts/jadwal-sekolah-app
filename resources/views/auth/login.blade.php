@@ -199,8 +199,7 @@
 
                     <div class="group">
                         <label for="email"
-                            class="block text-[10px] font-bold text-cyan-300/70 mb-1.5 uppercase tracking-widest">Identity
-                            / Email</label>
+                            class="block text-[10px] font-bold text-cyan-300/70 mb-1.5 uppercase tracking-widest">Email</label>
                         <div class="relative">
                             <input type="email" name="email" id="email" required autofocus
                                 class="w-full px-4 py-3.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all duration-300 font-medium"
@@ -217,7 +216,7 @@
 
                     <div class="group">
                         <label for="password"
-                            class="block text-[10px] font-bold text-cyan-300/70 mb-1.5 uppercase tracking-widest">Passcode</label>
+                            class="block text-[10px] font-bold text-cyan-300/70 mb-1.5 uppercase tracking-widest">Password</label>
                         <div class="relative">
                             <input type="password" name="password" id="password" required
                                 class="w-full px-4 py-3.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all duration-300 font-medium"
@@ -255,8 +254,7 @@
                     <button type="submit"
                         class="w-full py-4 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-xl shadow-[0_0_25px_rgba(6,182,212,0.3)] hover:shadow-[0_0_35px_rgba(6,182,212,0.5)] transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-3 border-t border-white/20 group">
                         <span
-                            class="tracking-[0.15em] font-orbitron text-sm group-hover:tracking-[0.25em] transition-all duration-300">LOGIN
-                            ACCESS</span>
+                            class="tracking-[0.15em] font-orbitron text-sm group-hover:tracking-[0.25em] transition-all duration-300">LOGIN</span>
                         <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
