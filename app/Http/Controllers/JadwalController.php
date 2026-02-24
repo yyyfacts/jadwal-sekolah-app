@@ -212,7 +212,12 @@ class JadwalController extends Controller
                         ]);
                     }
                     DB::commit();
-                    return redirect()->route('jadwal.index')->with('success', $result['message']);
+                    
+                    // <-- INI BAGIAN YANG DITAMBAHKAN UNTUK MENGIRIM WAKTU KOMPUTASI KE VIEW -->
+                    return redirect()->route('jadwal.index')
+                        ->with('success', $result['message'])
+                        ->with('waktu_komputasi', $result['waktu_komputasi_detik'] ?? null);
+
                 } catch (\Exception $e) {
                     DB::rollBack();
                     throw $e;

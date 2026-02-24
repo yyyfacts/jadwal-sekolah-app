@@ -54,10 +54,24 @@
     @if(session('success'))
     <div
         class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-lg flex items-center gap-2 shrink-0">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
         </svg>
-        {{ session('success') }}
+        <span>{{ session('success') }}</span>
+
+        {{-- TAMBAHAN: Menampilkan Waktu Komputasi AI di Pojok Kanan --}}
+        @if(session('waktu_komputasi'))
+        <div
+            class="ml-auto bg-white/60 border border-emerald-200 text-emerald-900 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
+            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Selesai dalam {{ session('waktu_komputasi') }} detik
+        </div>
+        @endif
+        {{-- AKHIR TAMBAHAN --}}
+
     </div>
     @endif
 
