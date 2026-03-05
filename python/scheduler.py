@@ -180,7 +180,7 @@ def main():
     # 4. EKSEKUSI & PERHITUNGAN WAKTU
     # ==========================================
     
-    start_time = time.time()  # <-- TAMBAHAN 2: Mulai stopwatch
+    start_time = time.time()  # <-- Mulai stopwatch
 
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 300 # 5 menit maks
@@ -188,7 +188,7 @@ def main():
     
     status = solver.Solve(model)
 
-    end_time = time.time()  # <-- TAMBAHAN 3: Matikan stopwatch
+    end_time = time.time()  # <-- Matikan stopwatch
     waktu_komputasi = end_time - start_time  # Hitung selisih waktu
 
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
@@ -208,18 +208,20 @@ def main():
                         })
                         break
         
-        # <-- TAMBAHAN 4: Kirim data waktu ke Laravel
+        # <-- Kirim data JSON sukses lengkap dengan Waktu & Jumlah Bentrok
         print(json.dumps({
             "status": "OPTIMAL",
             "solution": final_solution,
             "waktu_komputasi_detik": round(waktu_komputasi, 2), 
-            "message": f"Jadwal berhasil disusun dalam {waktu_komputasi:.2f} detik dengan metode Blok Susun."
+            "jumlah_bentrok": 0,  # <-- TAMBAHAN: Otomatis 0 karena OR-Tools menjamin bebas bentrok
+            "message": f"Jadwal berhasil disusun dalam {waktu_komputasi:.2f} detik dengan 0 bentrok."
         }))
     else:
-        # <-- TAMBAHAN 5: Kirim data waktu gagal ke Laravel
+        # <-- Kirim data JSON gagal lengkap dengan Waktu & Jumlah Bentrok
         print(json.dumps({
             "status": "INFEASIBLE", 
             "waktu_komputasi_detik": round(waktu_komputasi, 2),
+            "jumlah_bentrok": "Gagal Tersusun", # <-- TAMBAHAN: Indikator gagal
             "message": f"Gagal menyusun (Waktu: {waktu_komputasi:.2f} detik). Data terlalu padat atau bentrok parah."
         }))
 
