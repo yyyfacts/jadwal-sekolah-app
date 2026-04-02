@@ -57,10 +57,9 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA') ? base_path(env('MYSQL_ATTR_SSL_CA')) : null,
-        PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => true,
-            ]) : [],
+           'options' => extension_loaded('pdo_mysql') ? [
+                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
+            ] : [],
         ],
 
         'mariadb' => [
@@ -79,16 +78,8 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-        // Jurus Deteksi Otomatis:
-        // Kalau file sertifikat Linux ada (di Render), pakai itu. 
-        // Kalau nggak ada (di Windows/Laragon), pakai file .pem di folder certs.
-        PDO::MYSQL_ATTR_SSL_CA => file_exists('/etc/ssl/certs/ca-certificates.crt') 
-            ? '/etc/ssl/certs/ca-certificates.crt' 
-            : base_path('certs/isrgrootx1.pem'),
-            
-        // Matikan verifikasi ketat sementara supaya tidak ditolak TiDB Cloud
-        PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
-    ]) : [],
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
         ],
 
         'pgsql' => [
