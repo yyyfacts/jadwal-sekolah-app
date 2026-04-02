@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login - SISTEM PENJADWALAN SMAN 1 SAMPANG</title>
+    <title>Masuk - SISTEM PENJADWALAN SMAN 1 SAMPANG</title>
     <link rel="icon" href="{{ asset('img/logo-sekolah.png') }}" type="image/png">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -103,7 +103,7 @@
     <div x-data="{ showIntro: true }" x-init="setTimeout(() => showIntro = false, 1000)"
         class="relative min-h-screen flex items-center justify-center z-10">
 
-        {{-- INTRO --}}
+        {{-- BAGIAN 1: ANIMASI INTRO --}}
         <div x-show="showIntro" x-transition:leave="transition ease-in-out duration-300"
             class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950">
             <div class="mb-8 relative">
@@ -115,15 +115,14 @@
                         class="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
                 </div>
             </div>
-            <h1 class="text-4xl md:text-5xl font-black tracking-widest mb-4 glow-text text-white font-orbitron">SYSTEM
-                <span class="text-cyan-400">ACCESS</span>
-            </h1>
+            <h1 class="text-4xl md:text-5xl font-black tracking-widest mb-4 glow-text text-white font-orbitron">AKSES
+                <span class="text-cyan-400">SISTEM</span></h1>
             <div class="w-64 h-1 bg-slate-800 rounded-full overflow-hidden border border-slate-700 mt-4">
                 <div class="h-full bg-cyan-500 loading-bar shadow-[0_0_10px_#06b6d4]"></div>
             </div>
         </div>
 
-        {{-- MAIN LOGIN --}}
+        {{-- BAGIAN 2: HALAMAN MASUK UTAMA --}}
         <div x-show="!showIntro" x-cloak x-transition:enter="transition ease-out duration-500 delay-100"
             class="w-full max-w-md px-6 py-8">
             <div
@@ -165,15 +164,16 @@
                     @csrf
 
                     <div class="group">
-                        {{-- Label diganti jadi Username --}}
+                        {{-- Label: Nama Pengguna --}}
                         <label for="username"
-                            class="block text-[10px] font-bold text-cyan-300/70 mb-1.5 uppercase tracking-widest">Username</label>
+                            class="block text-[10px] font-bold text-cyan-300/70 mb-1.5 uppercase tracking-widest">Nama
+                            Pengguna</label>
                         <div class="relative">
-                            {{-- Input diganti jadi type text, id username, name username --}}
+                            {{-- Input: type text, name username --}}
                             <input type="text" name="username" id="username" value="{{ old('username') }}" required
                                 autofocus
                                 class="w-full px-4 py-3.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all duration-300 font-medium font-mono"
-                                placeholder="Masukkan Username">
+                                placeholder="Masukkan Nama Pengguna">
                             <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
                                 <svg class="w-5 h-5 text-slate-600 group-focus-within:text-cyan-400 transition-colors"
                                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -185,8 +185,10 @@
                     </div>
 
                     <div class="group">
+                        {{-- Label: Kata Sandi --}}
                         <label for="password"
-                            class="block text-[10px] font-bold text-cyan-300/70 mb-1.5 uppercase tracking-widest">Password</label>
+                            class="block text-[10px] font-bold text-cyan-300/70 mb-1.5 uppercase tracking-widest">Kata
+                            Sandi</label>
                         <div class="relative">
                             <input type="password" name="password" id="password" required
                                 class="w-full px-4 py-3.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all duration-300 font-medium"
@@ -224,7 +226,7 @@
                     <button type="submit"
                         class="w-full py-4 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-xl shadow-[0_0_25px_rgba(6,182,212,0.3)] hover:shadow-[0_0_35px_rgba(6,182,212,0.5)] transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-3 border-t border-white/20 group">
                         <span
-                            class="tracking-[0.15em] font-orbitron text-sm group-hover:tracking-[0.25em] transition-all duration-300">LOGIN</span>
+                            class="tracking-[0.15em] font-orbitron text-sm group-hover:tracking-[0.25em] transition-all duration-300">MASUK</span>
                         <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
@@ -233,7 +235,7 @@
                 </form>
             </div>
             <div class="text-center mt-8 text-[10px] text-slate-600 font-mono tracking-wide">
-                <span class="opacity-60 hover:opacity-100 transition cursor-default">SECURE SYSTEM</span>
+                <span class="opacity-60 hover:opacity-100 transition cursor-default">SISTEM TERPROTEKSI</span>
                 <span class="mx-2 text-cyan-800">•</span>
                 <span class="opacity-60 hover:opacity-100 transition cursor-default">&copy; {{ date('Y') }} SMAN 1
                     SAMPANG</span>
