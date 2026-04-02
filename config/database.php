@@ -58,7 +58,8 @@ return [
             'strict' => true,
             'engine' => null,
            'options' => extension_loaded('pdo_mysql') ? [
-                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
+                // Ini ngasih tau: Kalau di Render baca /etc/ssl, kalau di laptop baca folder certs
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA', base_path('certs/isrgrootx1.pem')),
             ] : [],
         ],
 
