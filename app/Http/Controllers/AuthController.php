@@ -10,19 +10,23 @@ class AuthController extends Controller
     // Tampilkan Halaman Login
     public function showLoginForm()
     {
-        return view('auth.login'); // Sesuai dengan file yang kita buat sebelumnya
+        return view('auth.login'); 
     }
 
     // Proses Login
     public function login(Request $request)
     {
-        // Validasi input
+        // 1. Validasi input: Ganti 'email' jadi 'username' dan tambahkan pesan kustom Bahasa Indonesia
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
+            'username' => ['required', 'string'],
             'password' => ['required'],
+        ], [
+            // Pesan error kustom biar nggak muncul bahasa Inggris lagi
+            'username.required' => 'Nama Pengguna wajib diisi.',
+            'password.required' => 'Kata Sandi wajib diisi.',
         ]);
 
-        // Coba login (dengan fitur Remember Me)
+        // 2. Coba login (dengan fitur Remember Me)
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
@@ -30,10 +34,10 @@ class AuthController extends Controller
             return redirect()->intended(route('guru.index'));
         }
 
-        // Kembali ke login jika gagal
+        // 3. Kembali ke login jika gagal (Email diganti Username)
         return back()->withErrors([
-            'email' => 'Email atau password salah.',
-        ])->onlyInput('email');
+            'username' => 'Nama Pengguna atau Kata Sandi salah.',
+        ])->onlyInput('username');
     }
 
     // Proses Logout
