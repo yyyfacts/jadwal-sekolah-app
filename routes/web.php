@@ -17,28 +17,25 @@ use App\Http\Controllers\TahunPelajaranController;
 // 1. RUTE KHUSUS DEPLOY & DEBUG (PUBLIC)
 // ==================================================================
 
-// [PERBAIKAN PENTING DISINI]
 Route::get('/tembak-db', function () {
     try {
-        // 1. Perbaiki Database (Membuat tabel yang hilang)
         Artisan::call('migrate --force');
-        
-        // 2. Perbaiki Route Error (Hapus ingatan lama server)
-        Artisan::call('route:clear');   // <--- INI KUNCINYA
+        Artisan::call('route:clear');
         Artisan::call('config:clear');
         Artisan::call('view:clear');
         
-        return '<h1>SUKSES! <br>✅ Database Migrated. <br>✅ Route Cache DIBERSIHKAN. <br>✅ View Cache DIBERSIHKAN. <br><br>Silakan coba menu yang error tadi sekarang.</h1>';
+        return '<h1>SUKSES! <br>✅ Database Migrated. <br>✅ Route Cache DIBERSIHKAN. <br>✅ View Cache DIBERSIHKAN.</h1>';
     } catch (\Exception $e) {
         return 'Gagal: ' . $e->getMessage();
     }
 });
 
+// Perbaikan rute ini agar menggunakan USERNAME bukan EMAIL
 Route::get('/fix-zain', function () {
-    $email = 'zain@gmail.com';
+    $username = 'zain'; // Ganti email jadi username
     $password_baru = 'zain1234';
     try {
-        $user = User::where('email', $email)->first();
+        $user = User::where('username', $username)->first();
         if ($user) {
             $user->password = Hash::make($password_baru);
             $user->save();
@@ -46,12 +43,12 @@ Route::get('/fix-zain', function () {
         } else {
             User::create([
                 'name' => 'Zain',
-                'email' => $email,
+                'username' => $username,
                 'password' => Hash::make($password_baru),
             ]);
             $pesan = "Akun TIDAK ADA, berhasil dibuatkan BARU.";
         }
-        return "<h1>SUKSES! $pesan <br>Email: <b>$email</b> <br>Password: <b>$password_baru</b> <br><br><a href='/login'>LOGIN DISINI</a></h1>";
+        return "<h1>SUKSES! $pesan <br>Username: <b>$username</b> <br>Password: <b>$password_baru</b> <br><br><a href='/login'>LOGIN DISINI</a></h1>";
     } catch (\Exception $e) {
         return 'Error: ' . $e->getMessage();
     }
@@ -60,7 +57,7 @@ Route::get('/fix-zain', function () {
 Route::get('/fix-storage', function () {
     try {
         Artisan::call('storage:link');
-        return '<h1>SUKSES! Symlink Storage berhasil. Silakan refresh halaman.</h1>';
+        return '<h1>SUKSES! Symlink Storage berhasil.</h1>';
     } catch (\Exception $e) {
         return 'Gagal: ' . $e->getMessage();
     }
@@ -100,12 +97,10 @@ Route::middleware(['auth'])->group(function () {
     // GROUP: DATA MASTER (GURU)
     // --------------------------------------------------------------
     Route::prefix('guru')->name('guru.')->group(function () {
-        // Fitur Jadwal & Waktu Kosong (Ajax)
+        // Fitur Jadwal (Ajax)
         Route::post('/{id}/jadwal', [GuruController::class, 'simpanJadwal'])->name('simpanJadwal');
         Route::put('/jadwal/{id}', [GuruController::class, 'updateJadwal'])->name('updateJadwal');
         Route::delete('/jadwal/{id}', [GuruController::class, 'hapusJadwal'])->name('hapusJadwal');
-        Route::get('/{id}/waktu-kosong', [GuruController::class, 'waktuKosongForm'])->name('waktuKosong');
-        Route::post('/{id}/waktu-kosong', [GuruController::class, 'simpanWaktuKosong'])->name('simpanWaktuKosong');
         
         // CRUD Guru Utama
         Route::get('/', [GuruController::class, 'index'])->name('index');
@@ -124,9 +119,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{id}', [MapelController::class, 'update'])->name('update');
         Route::delete('/{id}', [MapelController::class, 'destroy'])->name('destroy');
         
-        // Rute Khusus Mapel (Waktu Kosong & Jadwal)
-        Route::get('/{id}/waktu-kosong', [MapelController::class, 'waktuKosongForm'])->name('waktuKosong');
-        Route::post('/{id}/waktu-kosong', [MapelController::class, 'simpanWaktuKosong'])->name('simpanWaktuKosong');
+        // Rute Jadwal Mapel
         Route::post('/{id}/jadwal', [MapelController::class, 'simpanJadwal'])->name('simpanJadwal');
         Route::put('/jadwal/{id}', [MapelController::class, 'updateJadwal'])->name('updateJadwal');
         Route::delete('/jadwal/{id}', [MapelController::class, 'hapusJadwal'])->name('hapusJadwal');

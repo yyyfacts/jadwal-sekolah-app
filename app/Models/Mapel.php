@@ -18,8 +18,5 @@ class Mapel extends Model
     }
 
     // Relasi ke waktu kosong (Satu Mapel punya banyak aturan jam libur)
-    public function waktuKosong()
-    {
-        return $this->hasMany(WaktuKosong::class, 'mapel_id');
-    }
+
 }

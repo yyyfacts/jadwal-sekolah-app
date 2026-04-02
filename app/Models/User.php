@@ -8,8 +8,8 @@ use Illuminate\Notifications\Notifiable;
 
 /**
  * @property string $name
- * @property string $email
- * @property string|null $avatar  <-- INI YANG MENGHILANGKAN GARIS KUNING
+ * @property string $username  <-- SUDAH GANTI JADI USERNAME
+ * @property string|null $avatar
  * @property string $password
  */
 class User extends Authenticatable
@@ -18,7 +18,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
-        'email',
+        'username', // Ganti email jadi username
         'password',
         'avatar',
     ];
@@ -29,7 +29,7 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'email_verified_at' => 'datetime',
+        // email_verified_at dihapus karena kita tidak pakai email lagi
         'password' => 'hashed',
     ];
 }

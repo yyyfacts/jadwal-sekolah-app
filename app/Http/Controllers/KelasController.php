@@ -6,7 +6,6 @@ use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Mapel;
 use App\Models\Jadwal;
-use App\Models\WaktuKosong;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
@@ -31,7 +30,7 @@ class KelasController extends Controller
 
     public function index()
     {
-        $kelass = Kelas::with(['jadwals.mapel', 'jadwals.guru', 'waktuKosong'])
+        $kelass = Kelas::with(['jadwals.mapel', 'jadwals.guru'])
             ->orderBy('nama_kelas')
             ->get();
 
@@ -80,33 +79,8 @@ class KelasController extends Controller
     {
         $kelas = Kelas::findOrFail($id);
         $kelas->jadwals()->delete();
-        $kelas->waktuKosong()->delete();
         $kelas->delete();
         return redirect()->route('kelas.index')->with('success', 'Kelas berhasil dihapus.');
-    }
-
-    // ================================================================
-    // MANAJEMEN WAKTU KOSONG
-    // ================================================================
-    public function waktuKosongForm($id)
-    {
-        $kelas = Kelas::findOrFail($id);
-        $hari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
-        $jam = range(1, 10);
-        $selected = WaktuKosong::where('kelas_id', $id)->get()->map(fn($w) => "$w->hari|$w->jam")->toArray();
-        return view('penjadwalan.waktu_kosong', ['entity' => $kelas, 'url' => route('kelas.waktuKosong.simpan', $id), 'selected' => $selected, 'hari' => $hari, 'jam' => $jam]);
-    }
-
-    public function simpanWaktuKosong(Request $request, $id)
-    {
-        $kelas = Kelas::findOrFail($id);
-        $kelas->waktuKosong()->delete();
-        foreach ($request->input('waktu_kosong', []) as $hari => $jam_arr) {
-            foreach ($jam_arr as $jk => $val) {
-                if ($val == 1) $kelas->waktuKosong()->create(['hari' => $hari, 'jam' => $jk]);
-            }
-        }
-        return back()->with('success', 'Waktu kosong diperbarui.');
     }
 
     // ================================================================

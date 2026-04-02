@@ -24,10 +24,5 @@ class Guru extends Model
         return $this->hasMany(Jadwal::class, 'guru_id');
     }
 
-    // Relasi: Satu guru punya banyak waktu kosong (jam sibuk)
-    public function waktuKosong()
-    {
-        // Pastikan model WaktuKosong ada di App\Models\WaktuKosong
-        return $this->hasMany(WaktuKosong::class, 'guru_id');
-    }
+   
 }

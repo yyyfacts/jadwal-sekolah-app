@@ -18,7 +18,7 @@ class ProfileController extends Controller
     }
 
     /**
-     * Perbarui data profil (Hanya Nama dan Password).
+     * Perbarui data profil (Nama, Username, dan Password).
      */
     public function update(Request $request)
     {
@@ -26,11 +26,14 @@ class ProfileController extends Controller
 
         $request->validate([
             'name'     => 'required|string|max:255',
+            // Username wajib diisi & unik, kecuali untuk ID user yang sedang login sekarang
+            'username' => 'required|string|max:255|unique:users,username,' . $user->id,
             'password' => 'nullable|string|min:8|confirmed',
         ]);
 
-        // 1. Update Nama
+        // 1. Update Nama & Username
         $user->name = $request->name;
+        $user->username = $request->username;
 
         // 2. Update Password jika diisi
         if ($request->filled('password')) {

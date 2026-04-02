@@ -63,7 +63,6 @@
         class="bg-white rounded-xl shadow-lg shadow-slate-200/50 border border-slate-200 overflow-hidden relative flex flex-col">
 
         {{-- SEARCH BAR --}}
-        {{-- FIX: Z-Index set to 10 agar tidak menutupi dropdown profil --}}
         <div
             class="p-4 border-b border-slate-100 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 z-10 relative">
             <div class="relative w-full sm:w-72 group">
@@ -74,9 +73,10 @@
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                 </div>
+                {{-- GANTI: Placeholder jadi Username --}}
                 <input type="text" id="search-user" onkeyup="searchTable()"
                     class="block w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg leading-5 bg-slate-50 placeholder-slate-400 focus:bg-white focus:outline-none focus:placeholder-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-xs transition duration-200 ease-in-out"
-                    placeholder="Cari Nama atau Email...">
+                    placeholder="Cari Nama atau Username...">
             </div>
 
             {{-- Indikator Tahun Ajaran --}}
@@ -97,7 +97,6 @@
             <table class="w-full text-left border-collapse min-w-[900px]">
 
                 {{-- HEADER TABEL --}}
-                {{-- FIX: Z-Index set to 10 agar sticky header tidak menutupi dropdown profil --}}
                 <thead
                     class="bg-slate-50/95 backdrop-blur sticky top-0 z-10 shadow-sm text-slate-500 text-[11px] font-bold uppercase tracking-wider">
                     <tr>
@@ -115,10 +114,9 @@
                         {{-- 1. NOMOR --}}
                         <td class="px-4 py-3 text-center text-slate-400 font-mono">{{ $index + 1 }}</td>
 
-                        {{-- 2. IDENTITAS (Avatar + Nama + Email) --}}
+                        {{-- 2. IDENTITAS (Avatar + Nama + Username) --}}
                         <td class="px-4 py-3">
                             <div class="flex items-center">
-                                {{-- Avatar Gradient --}}
                                 <div
                                     class="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 text-white flex items-center justify-center font-bold text-xs mr-3 shadow-sm shadow-blue-200 border border-white flex-shrink-0">
                                     {{ substr($u->name, 0, 1) }}
@@ -129,10 +127,11 @@
                                         <svg class="w-3 h-3 text-slate-400 mr-1" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
                                             </path>
                                         </svg>
-                                        <span class="text-slate-500 text-[11px]">{{ $u->email }}</span>
+                                        {{-- GANTI: email jadi username --}}
+                                        <span class="text-slate-500 text-[11px] font-mono">{{ $u->username }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -224,11 +223,12 @@
                         placeholder="Nama User" required>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Email
+                    {{-- GANTI: Label & Name jadi Username --}}
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Username
                         Login</label>
-                    <input type="email" name="email"
-                        class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-slate-50 focus:bg-white text-sm"
-                        placeholder="email@sekolah.sch.id" required>
+                    <input type="text" name="username"
+                        class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-slate-50 focus:bg-white text-sm font-mono"
+                        placeholder="Masukkan Username" required>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Password</label>

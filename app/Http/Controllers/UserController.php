@@ -11,22 +11,24 @@ class UserController extends Controller
 {
     public function index()
     {
-        // Ambil semua user kecuali user yang sedang login (biar ga hapus diri sendiri)
+        // Ambil semua user untuk ditampilkan di daftar pengaturan
         $users = User::all();
         return view('pengaturan.user', compact('users'));
     }
 
     public function store(Request $request)
     {
+        // 1. Validasi: Email diganti jadi username, rule 'email' dihapus
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'username' => 'required|string|max:255|unique:users', // Ganti disini
             'password' => 'required|string|min:8',
         ]);
 
+        // 2. Simpan Data: Kolom email diganti jadi username
         User::create([
             'name' => $request->name,
-            'email' => $request->email,
+            'username' => $request->username, // Ganti disini
             'password' => Hash::make($request->password),
         ]);
 
@@ -35,6 +37,7 @@ class UserController extends Controller
 
     public function destroy($id)
     {
+        // Proteksi: Biar ga hapus akun yang lagi dipake login
         if (Auth::id() == $id) {
             return redirect()->route('user.index')->with('error', 'Anda tidak bisa menghapus akun sendiri!');
         }

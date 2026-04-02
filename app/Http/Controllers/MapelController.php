@@ -6,7 +6,6 @@ use App\Models\Mapel;
 use App\Models\Kelas;
 use App\Models\Guru;
 use App\Models\Jadwal;
-use App\Models\WaktuKosong; // Pastikan model ini di-use
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -46,46 +45,6 @@ class MapelController extends Controller
         return view('penjadwalan.mapel', compact('mapels', 'kelases', 'gurus'));
     }
 
-    // --- FITUR WAKTU KOSONG (MANUAL GRID) ---
-
-    public function waktuKosongForm($id)
-    {
-        $mapel = Mapel::with('waktuKosong')->findOrFail($id);
-        
-        // Format data: ['Senin-1', 'Jumat-5'] untuk checkbox checked
-        $selected = $mapel->waktuKosong->map(function($wk) {
-            return $wk->hari . '-' . $wk->jam;
-        })->toArray();
-
-        return view('penjadwalan.waktu_kosong_mapel', compact('mapel', 'selected'));
-    }
-
-    public function simpanWaktuKosong(Request $request, $id)
-    {
-        $mapel = Mapel::findOrFail($id);
-
-        DB::transaction(function () use ($mapel, $request) {
-            // 1. Bersihkan data lama khusus mapel ini
-            $mapel->waktuKosong()->delete();
-
-            // 2. Simpan data baru
-            // Input dari view: libur[Senin] = [1, 2, 5]
-            if ($request->has('libur')) {
-                foreach ($request->libur as $hari => $jamArray) {
-                    foreach ($jamArray as $jam) {
-                        $mapel->waktuKosong()->create([
-                            'hari' => $hari,
-                            'jam' => (int)$jam,
-                            'guru_id' => null // Pastikan guru_id null
-                        ]);
-                    }
-                }
-            }
-        });
-
-        return redirect()->route('mapel.index')->with('success', 'Jam terlarang mapel berhasil diperbarui.');
-    }
-
     // --- CRUD MAPEL ---
 
     public function store(Request $request)
@@ -113,7 +72,6 @@ class MapelController extends Controller
     {
         $mapel = Mapel::findOrFail($id);
         $mapel->jadwals()->delete();
-        $mapel->waktuKosong()->delete(); // Hapus constraint juga
         $mapel->delete();
         return redirect()->route('mapel.index')->with('success', 'Mapel dihapus.');
     }

@@ -11,22 +11,24 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // 1. Tabel Users (Email & Email Verified dihapus)
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->string('username')->unique(); // Pengganti email
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();
         });
 
+        // 2. Tabel Reset Password (Sekarang pakai username sebagai kunci)
         Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
+            $table->string('username')->primary(); 
             $table->string('token');
             $table->timestamp('created_at')->nullable();
         });
 
+        // 3. Tabel Sessions (Tetap pakai user_id, tidak perlu berubah)
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
             $table->foreignId('user_id')->nullable()->index();

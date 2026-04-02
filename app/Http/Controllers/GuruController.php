@@ -6,7 +6,6 @@ use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Mapel;
 use App\Models\Jadwal;
-use App\Models\WaktuKosong;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -14,7 +13,7 @@ class GuruController extends Controller
 {
     public function index()
     {
-        $gurus = Guru::with(['jadwals.mapel', 'jadwals.kelas', 'waktuKosong'])
+        $gurus = Guru::with(['jadwals.mapel', 'jadwals.kelas'])
             ->orderBy('nama_guru')
             ->get();
 
@@ -53,39 +52,8 @@ class GuruController extends Controller
     {
         $guru = Guru::findOrFail($id);
         $guru->jadwals()->delete();
-        $guru->waktuKosong()->delete();
         $guru->delete();
         return redirect()->route('guru.index')->with('success', 'Guru dihapus.');
-    }
-
-    // --- FITUR WAKTU KOSONG ---
-    public function waktuKosongForm($id)
-    {
-        $guru = Guru::with('waktuKosong')->findOrFail($id);
-        $selected = $guru->waktuKosong->map(function($wk) {
-            return $wk->hari . '-' . $wk->jam;
-        })->toArray();
-
-        return view('penjadwalan.waktu_kosong', compact('guru', 'selected'));
-    }
-
-    public function simpanWaktuKosong(Request $request, $id)
-    {
-        $guru = Guru::findOrFail($id);
-        DB::transaction(function () use ($guru, $request) {
-            $guru->waktuKosong()->delete();
-            if ($request->has('libur')) {
-                foreach ($request->libur as $hari => $jamArray) {
-                    foreach ($jamArray as $jam) {
-                        $guru->waktuKosong()->create([
-                            'hari' => $hari,
-                            'jam' => (int)$jam
-                        ]);
-                    }
-                }
-            }
-        });
-        return redirect()->route('guru.index')->with('success', 'Jadwal libur guru berhasil diperbarui.');
     }
 
     // --- MANAJEMEN BEBAN MENGAJAR (AJAX) ---
