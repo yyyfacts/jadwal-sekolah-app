@@ -79,9 +79,16 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-               PDO::MYSQL_ATTR_SSL_CA => base_path('certs/isrgrootx1.pem'),
-        PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => true,
-            ]) : [],
+        // Jurus Deteksi Otomatis:
+        // Kalau file sertifikat Linux ada (di Render), pakai itu. 
+        // Kalau nggak ada (di Windows/Laragon), pakai file .pem di folder certs.
+        PDO::MYSQL_ATTR_SSL_CA => file_exists('/etc/ssl/certs/ca-certificates.crt') 
+            ? '/etc/ssl/certs/ca-certificates.crt' 
+            : base_path('certs/isrgrootx1.pem'),
+            
+        // Matikan verifikasi ketat sementara supaya tidak ditolak TiDB Cloud
+        PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
+    ]) : [],
         ],
 
         'pgsql' => [
