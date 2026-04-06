@@ -15,7 +15,7 @@ class Guru extends Model
     // Kolom yang boleh diisi (Mass Assignment)
     protected $fillable = [
         'nama_guru',
-        'kode_guru'
+        'kode_guru',
         'hari_mengajar'
     ];
 
