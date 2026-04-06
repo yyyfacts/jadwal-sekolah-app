@@ -90,7 +90,7 @@
                     <tr>
                         <th
                             class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center w-16 border-b-2 border-slate-100">
-                            #</th>
+                            No</th>
                         <th
                             class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider w-[40%] border-b-2 border-slate-100">
                             Profil Guru</th>

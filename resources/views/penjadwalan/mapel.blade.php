@@ -89,7 +89,7 @@
                     <tr>
                         <th
                             class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-left w-16 border-b-2 border-slate-100">
-                            Hari</th>
+                            No</th>
                         <th
                             class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider w-[35%] border-b-2 border-slate-100">
                             Identitas Mapel</th>

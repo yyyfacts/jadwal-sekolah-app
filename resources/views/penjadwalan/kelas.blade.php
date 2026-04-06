@@ -3,16 +3,13 @@
 @section('content')
 {{-- BACKGROUND --}}
 <div class="fixed inset-0 -z-10 pointer-events-none">
-    <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-purple-50 to-slate-50"></div>
-    <div class="absolute top-0 right-0 w-72 h-72 bg-purple-300/20 rounded-full blur-3xl mix-blend-multiply opacity-70">
-    </div>
-    <div
-        class="absolute top-20 left-20 w-72 h-72 bg-fuchsia-300/20 rounded-full blur-3xl mix-blend-multiply opacity-70">
-    </div>
+    <div class="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-purple-50/60 to-white"></div>
+    <div class="absolute top-0 right-0 w-96 h-96 bg-fuchsia-300/10 rounded-full blur-3xl opacity-70"></div>
+    <div class="absolute top-20 left-10 w-72 h-72 bg-purple-300/10 rounded-full blur-3xl opacity-70"></div>
 </div>
 
-{{-- CONTAINER UTAMA (Full Height minus Navbar padding) --}}
-<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-7rem)] pb-4 pt-2 flex flex-col">
+{{-- CONTAINER UTAMA --}}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-6rem)] pb-4 pt-6 flex flex-col">
 
     {{-- FLASH MESSAGE --}}
     @if(session('success'))
@@ -30,47 +27,49 @@
     </div>
     @endif
 
-    {{-- UNIFIED CARD (Satu Card Besar) --}}
+    {{-- UNIFIED CARD (Sesuai Gambar Referensi) --}}
     <div
-        class="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col flex-1 overflow-hidden">
+        class="bg-white rounded-[2rem] border border-slate-100 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] flex flex-col flex-1 overflow-hidden">
 
-        {{-- 1. HEADER SECTION (FIXED) --}}
-        <div class="p-6 border-b border-slate-100 bg-white/50 shrink-0 z-20">
+        {{-- 1. HEADER SECTION --}}
+        <div class="px-8 pt-8 pb-6 bg-white shrink-0 z-20">
 
             {{-- Baris 1: Judul & Tombol Tambah --}}
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                <div>
-                    <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
-                        <span class="w-2 h-6 bg-purple-600 rounded-full"></span>
-                        Data Kelas & Ruang
-                    </h1>
-                    <p class="text-slate-500 text-sm mt-1 font-medium ml-4">
-                        Manajemen kapasitas, target kurikulum, dan plotting.
-                    </p>
+            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
+                <div class="flex gap-3 items-start">
+                    <div class="w-2.5 h-8 bg-purple-600 rounded-full mt-0.5"></div>
+                    <div>
+                        <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">
+                            Data Kelas & Ruang
+                        </h1>
+                        <p class="text-slate-500 text-sm mt-1 font-medium">
+                            Manajemen kapasitas, target kurikulum, dan plotting.
+                        </p>
+                    </div>
                 </div>
 
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-4">
                     <div
-                        class="hidden md:flex items-center px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm">
-                        <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total: <span
-                                class="text-purple-600 text-sm ml-1">{{ $kelass->count() }}</span></span>
+                        class="hidden md:flex items-center px-5 py-2.5 bg-white border border-slate-200 rounded-full shadow-sm">
+                        <span class="text-[11px] text-slate-500 font-bold uppercase tracking-wider">
+                            Total: <span
+                                class="text-purple-600 text-sm ml-1 font-extrabold">{{ $kelass->count() }}</span>
+                        </span>
                     </div>
 
                     <button onclick="openModal('modaltambah')"
-                        class="relative inline-flex items-center justify-center px-6 py-2.5 overflow-hidden font-bold text-white transition-all duration-300 bg-purple-600 rounded-xl group hover:bg-purple-700 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:-translate-y-0.5">
-                        <span class="flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            <span class="text-sm uppercase tracking-wide">Tambah</span>
-                        </span>
+                        class="px-6 py-2.5 font-bold text-white transition-all duration-300 bg-[#9333ea] rounded-xl hover:bg-purple-700 shadow-md shadow-purple-500/20 hover:shadow-purple-500/40 hover:-translate-y-0.5 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
+                        <span class="text-sm uppercase tracking-wide">Tambah</span>
                     </button>
                 </div>
             </div>
 
             {{-- Baris 2: Search Bar --}}
-            <div class="relative group max-w-2xl">
+            <div class="relative group">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <svg class="h-5 w-5 text-slate-400 group-focus-within:text-purple-500 transition-colors" fill="none"
                         stroke="currentColor" viewBox="0 0 24 24">
@@ -79,131 +78,118 @@
                     </svg>
                 </div>
                 <input type="text" id="search-kelas-main" oninput="searchMainTable()"
-                    class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 text-sm transition shadow-sm"
+                    class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 text-sm transition shadow-sm"
                     placeholder="Cari Nama Kelas atau Kode...">
             </div>
         </div>
 
         {{-- 2. TABLE SECTION (SCROLLABLE AREA) --}}
-        <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white">
+        <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white px-2">
             <table class="w-full text-left border-collapse min-w-[800px]">
-                <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
+                <thead class="bg-white sticky top-0 z-10">
                     <tr>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-16 border-b border-slate-200">
-                            #</th>
+                            class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-left w-16 border-b-2 border-slate-100">
+                            No</th>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-[30%] border-b border-slate-200">
+                            class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider w-[35%] border-b-2 border-slate-100">
                             Identitas Kelas</th>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-[25%] border-b border-slate-200">
+                            class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center w-[25%] border-b-2 border-slate-100">
                             Beban & Kapasitas</th>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-[40%] border-b border-slate-200">
+                            class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right w-[35%] pr-12 border-b-2 border-slate-100">
                             Aksi & Plotting</th>
                     </tr>
                 </thead>
 
-                <tbody id="tbody-kelas-main" class="divide-y divide-slate-100">
+                <tbody id="tbody-kelas-main" class="divide-y divide-slate-100/80">
                     @forelse($kelass as $index => $k)
                     @php
                     $totalJam = $k->jadwals->sum('jumlah_jam');
-                    $maxJam = $k->max_jam ?? 50;
+                    $maxJam = $k->max_jam ?? 48; // Di gambar tertulis 48 JP
                     $percentage = $maxJam > 0 ? ($totalJam / $maxJam) * 100 : 0;
 
-                    // Theme Logic untuk Progress Bar
-                    $themeColor = 'purple';
-                    $badgeBg = 'bg-purple-50';
-                    $badgeText = 'text-purple-700';
-                    $badgeBorder = 'border-purple-100';
-
+                    // Di gambar garis bar berwarna hijau (emerald)
+                    $barColor = 'bg-[#34d399]';
                     if($totalJam > $maxJam) {
-                    $themeColor = 'rose';
-                    $badgeBg = 'bg-rose-50';
-                    $badgeText = 'text-rose-700';
-                    $badgeBorder = 'border-rose-100';
-                    } elseif ($percentage >= 90) {
-                    $themeColor = 'emerald';
-                    $badgeBg = 'bg-emerald-50';
-                    $badgeText = 'text-emerald-700';
-                    $badgeBorder = 'border-emerald-100';
+                    $barColor = 'bg-rose-500';
                     }
                     @endphp
-                    <tr class="group hover:bg-purple-50/40 transition-colors duration-200"
+                    <tr class="group hover:bg-slate-50/50 transition-colors duration-200"
                         data-filter="{{ strtolower($k->nama_kelas) }} {{ strtolower($k->kode_kelas) }}">
 
                         {{-- NOMOR --}}
-                        <td class="px-6 py-4 text-center">
-                            <span
-                                class="font-mono text-slate-400 text-sm group-hover:text-purple-500 font-bold transition-colors">{{ $index + 1 }}</span>
+                        <td class="px-8 py-5 text-left">
+                            <span class="font-medium text-slate-500 text-sm">{{ $index + 1 }}</span>
                         </td>
 
-                        {{-- IDENTITAS --}}
-                        <td class="px-6 py-4">
+                        {{-- IDENTITAS KELAS --}}
+                        <td class="px-6 py-5">
                             <div class="flex items-center gap-4">
+                                {{-- Icon/Avatar Kotak Melingkar (Lilac) --}}
                                 <div
-                                    class="h-11 w-11 shrink-0 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm ring-1 ring-purple-50">
-                                    {{ substr($k->nama_kelas, 0, 1) }}
+                                    class="h-12 w-12 shrink-0 rounded-2xl bg-[#f3e8ff] text-[#9333ea] flex items-center justify-center font-bold text-sm shadow-sm border border-[#e9d5ff]">
+                                    {{ substr($k->nama_kelas, 0, 2) }}
                                 </div>
                                 <div>
                                     <div
-                                        class="font-bold text-slate-800 text-sm group-hover:text-purple-700 transition-colors">
+                                        class="font-bold text-slate-800 text-[15px] group-hover:text-purple-600 transition-colors">
                                         {{ $k->nama_kelas }}
                                     </div>
-                                    <span
-                                        class="inline-flex items-center px-2 py-0.5 mt-1 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 font-mono tracking-wide group-hover:border-purple-200 group-hover:text-purple-600 transition-colors">
+                                    <div
+                                        class="inline-block px-2 py-0.5 mt-1 rounded bg-slate-100 border border-slate-200 text-slate-500 font-bold text-[10px] tracking-wide uppercase">
                                         {{ $k->kode_kelas }}
-                                    </span>
+                                    </div>
                                 </div>
                             </div>
                         </td>
 
-                        {{-- BEBAN & KAPASITAS --}}
-                        <td class="px-6 py-4 text-center align-middle">
-                            <div class="flex flex-col items-center gap-2">
-                                <span
-                                    class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold {{ $badgeBg }} {{ $badgeText }} border {{ $badgeBorder }} shadow-sm">
+                        {{-- BEBAN & KAPASITAS (Angka + Garis Bawah Hijau) --}}
+                        <td class="px-6 py-5 text-center align-middle">
+                            <div class="flex flex-col items-center gap-1.5">
+                                <span class="text-[12px] font-bold text-emerald-600">
                                     {{ $totalJam }} / {{ $maxJam }} JP
                                 </span>
-                                <div
-                                    class="w-28 h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
-                                    <div class="h-full bg-{{ $themeColor }}-500 rounded-full transition-all duration-500"
+                                <div class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div class="h-full {{ $barColor }} rounded-full transition-all duration-500"
                                         style="width: {{ min($percentage, 100) }}%"></div>
                                 </div>
                             </div>
                         </td>
 
-                        {{-- AKSI --}}
-                        <td class="px-6 py-4">
-                            <div class="flex items-center justify-center gap-2">
+                        {{-- AKSI & PLOTTING --}}
+                        <td class="px-6 py-5 text-right pr-12">
+                            <div class="flex items-center justify-end gap-2.5">
+                                {{-- Tombol Plotting Gelap --}}
                                 <button onclick="openModal('modaljadwal{{ $k->id }}')"
-                                    class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-purple-600 text-white text-xs font-bold rounded-lg shadow-sm transition-all hover:-translate-y-0.5">
+                                    class="flex items-center gap-1.5 px-4 py-2 bg-[#1e293b] hover:bg-slate-800 text-white text-xs font-semibold rounded-lg shadow-sm transition-all hover:-translate-y-0.5">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                            d="M12 4v16m8-8H4"></path>
                                     </svg>
                                     Plotting
                                 </button>
 
-                                <div class="w-px h-6 bg-slate-200 mx-1"></div>
-
+                                {{-- Tombol Edit Lingkaran Outline --}}
                                 <button onclick="openModal('edit{{ $k->id }}')"
-                                    class="p-2 text-amber-500 bg-white border border-slate-200 hover:border-amber-200 hover:bg-amber-50 rounded-lg transition shadow-sm"
+                                    class="h-8 w-8 flex items-center justify-center text-slate-400 bg-white border-2 border-slate-200 hover:border-slate-400 hover:text-slate-600 rounded-full transition"
                                     title="Edit">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
                                         </path>
                                     </svg>
                                 </button>
 
+                                {{-- Tombol Hapus Lingkaran Outline Lilac/Pink --}}
                                 <form action="{{ route('kelas.destroy', $k->id) }}" method="POST"
                                     onsubmit="return confirm('Hapus kelas {{ $k->nama_kelas }}?')" class="inline">
                                     @csrf @method('DELETE')
                                     <button type="submit"
-                                        class="p-2 text-slate-400 hover:text-red-500 bg-white border border-slate-200 hover:border-red-200 hover:bg-red-50 rounded-lg transition shadow-sm"
+                                        class="h-8 w-8 flex items-center justify-center text-[#d946ef] bg-[#faf5ff] border-2 border-[#f3e8ff] hover:border-[#d946ef] hover:bg-[#fdf4ff] rounded-full transition"
                                         title="Hapus">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
                                             </path>
@@ -246,16 +232,22 @@
             </table>
         </div>
 
-        {{-- 3. FOOTER SECTION --}}
-        <div
-            class="bg-slate-50 border-t border-slate-200 px-6 py-3 flex justify-between items-center shrink-0 rounded-b-3xl">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sistem Penjadwalan</span>
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Secure Data</span>
+        {{-- 3. FOOTER SECTION CARD --}}
+        <div class="bg-white border-t border-slate-100 px-8 py-4 flex justify-between items-center shrink-0">
+            <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Sistem Penjadwalan</span>
+            <span class="text-[11px] font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
+                Secure Data
+            </span>
         </div>
     </div>
 
+    {{-- COPYRIGHT TEXT DI LUAR CARD --}}
+    <div class="text-center mt-6 text-slate-500 text-[11px] font-medium tracking-wide">
+        &copy; 2026 SMAN 1 SAMPANG. Sistem Penjadwalan Terintegrasi.
+    </div>
+
     {{-- ========================================================= --}}
-    {{-- MODALS AREA --}}
+    {{-- MODALS AREA (Logika tetap sama persis) --}}
     {{-- ========================================================= --}}
 
     {{-- 1. Modal Tambah Kelas --}}
@@ -288,12 +280,11 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kapasitas (JP)</label>
-                        <input type="number" name="max_jam" value="50"
+                        <input type="number" name="max_jam" value="48"
                             class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-purple-500 outline-none text-center font-bold text-sm transition"
                             required>
                     </div>
                 </div>
-                {{-- Limit Harian --}}
                 <div class="p-3 bg-purple-50 rounded-lg border border-purple-100">
                     <p class="text-[10px] font-bold text-purple-700 uppercase mb-2">Limit Jam Harian</p>
                     <div class="grid grid-cols-2 gap-4">
@@ -348,7 +339,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Max JP</label>
-                        <input type="number" name="max_jam" value="{{ $k->max_jam ?? 50 }}"
+                        <input type="number" name="max_jam" value="{{ $k->max_jam ?? 48 }}"
                             class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-center font-bold text-sm transition"
                             required>
                     </div>
@@ -377,13 +368,12 @@
         </div>
     </div>
 
-    {{-- 3. Modal Plotting Jadwal (Fixed Layout & Scroll) --}}
+    {{-- 3. Modal Plotting Jadwal --}}
     <div id="modaljadwal{{ $k->id }}"
         class="fixed inset-0 bg-slate-900/80 z-[99] hidden flex items-center justify-center p-2 sm:p-4 transition-opacity duration-300">
         <div
             class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-200 overflow-hidden animate-scale-in">
-
-            {{-- A. Header Modal (Tetap) --}}
+            {{-- Header Modal --}}
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                 <div class="flex items-center gap-3">
                     <div class="p-2 bg-purple-600 text-white rounded-lg shadow-sm">
@@ -395,20 +385,18 @@
                     </div>
                     <div>
                         <h3 class="font-bold text-lg text-slate-800">{{ $k->nama_kelas }}</h3>
-                        <p class="text-xs text-slate-500">Terisi: {{ $k->jadwals->sum('jumlah_jam') }} JP</p>
+                        <p class="text-xs text-slate-500">Terisi: <span
+                                id="total-jam-{{ $k->id }}">{{ $k->jadwals->sum('jumlah_jam') }}</span> JP</p>
                     </div>
                 </div>
                 <button onclick="closeModal('modaljadwal{{ $k->id }}')"
                     class="text-slate-400 hover:text-red-500 text-3xl leading-none transition-colors">&times;</button>
             </div>
 
-            {{-- B. Body Modal (Split Layout) --}}
+            {{-- Body Modal --}}
             <div class="flex flex-col lg:flex-row h-full overflow-hidden">
-
-                {{-- KIRI: Area Tabel (Flex Column) --}}
+                {{-- Kiri: Area Tabel --}}
                 <div class="flex-1 flex flex-col h-full border-r border-slate-100 bg-white relative min-w-0">
-
-                    {{-- 1. Search Bar (FIXED POSITION - Tidak ikut scroll) --}}
                     <div class="p-4 border-b border-slate-100 bg-white z-20 shrink-0">
                         <div class="relative group">
                             <span
@@ -423,11 +411,8 @@
                                 class="w-full border border-slate-200 bg-slate-50/50 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500/50 focus:bg-white focus:border-purple-500 outline-none transition-all">
                         </div>
                     </div>
-
-                    {{-- 2. Container Tabel (SCROLLABLE AREA) --}}
                     <div class="flex-1 overflow-y-auto custom-scrollbar p-0 relative bg-white">
                         <table class="w-full text-xs border-collapse">
-                            {{-- Header Tabel (Sticky di dalam area scroll) --}}
                             <thead class="bg-slate-50 text-slate-500 font-bold uppercase sticky top-0 z-10 shadow-sm">
                                 <tr>
                                     <th class="px-4 py-3 text-left border-b border-slate-100 w-[40%]">Mata Pelajaran
@@ -448,8 +433,8 @@
                                     <td class="px-4 py-3 text-center align-middle">
                                         <div class="flex flex-col items-center">
                                             <span
-                                                class="bg-white text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-purple-100 shadow-sm">{{ $jadwal->jumlah_jam }}
-                                                JP</span>
+                                                class="bg-white text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-purple-100 shadow-sm"
+                                                data-jam="{{ $jadwal->jumlah_jam }}">{{ $jadwal->jumlah_jam }} JP</span>
                                             <span
                                                 class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">{{ $jadwal->tipe_jam }}</span>
                                         </div>
@@ -469,7 +454,7 @@
                                                     </path>
                                                 </svg>
                                             </button>
-                                            <button onclick="hapusJadwal({{ $jadwal->id }}, this)"
+                                            <button onclick="hapusJadwal({{ $jadwal->id }}, this, {{ $k->id }})"
                                                 class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"
                                                 title="Hapus">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
@@ -484,12 +469,10 @@
                                     </td>
                                 </tr>
                                 @endforeach
-                                {{-- Jika Kosong --}}
                                 @if($k->jadwals->isEmpty())
                                 <tr class="empty-row">
-                                    <td colspan="4" class="py-12 text-center text-slate-400 italic bg-slate-50/30">
-                                        Belum ada mapel di kelas ini.
-                                    </td>
+                                    <td colspan="4" class="py-12 text-center text-slate-400 italic bg-slate-50/30">Belum
+                                        ada mapel di kelas ini.</td>
                                 </tr>
                                 @endif
                             </tbody>
@@ -497,7 +480,7 @@
                     </div>
                 </div>
 
-                {{-- KANAN: Form Input (Fixed Width, Scrollable vertically) --}}
+                {{-- Kanan: Form Input --}}
                 <div
                     class="w-full lg:w-[380px] bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-200 flex flex-col h-[40vh] lg:h-full">
                     <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
@@ -506,19 +489,16 @@
                             <div class="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
                                 <h4 id="form-title-{{ $k->id }}"
                                     class="font-extrabold text-slate-700 text-xs uppercase tracking-widest flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full bg-purple-500"></span>
-                                    Input Plotting
+                                    <span class="w-2 h-2 rounded-full bg-purple-500"></span> Input Plotting
                                 </h4>
                                 <button id="btn-batal-{{ $k->id }}" type="button"
                                     onclick="resetFormJadwal({{ $k->id }})"
                                     class="hidden text-[10px] font-bold text-red-500 hover:bg-red-50 px-2 py-1 rounded transition uppercase">Batal</button>
                             </div>
-
                             <form id="form-jadwal-{{ $k->id }}" action="{{ route('kelas.simpanJadwal', $k->id) }}"
                                 method="POST" onsubmit="handleFormJadwal(event, this, {{ $k->id }})">
                                 <div id="method-spoof-{{ $k->id }}"></div>
                                 <div class="space-y-5">
-                                    {{-- Dropdown Mapel --}}
                                     <div class="relative custom-select-wrapper" id="wrapper-mapel-{{ $k->id }}">
                                         <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Mata
                                             Pelajaran</label>
@@ -553,8 +533,6 @@
                                             </div>
                                         </div>
                                     </div>
-
-                                    {{-- Dropdown Guru --}}
                                     <div class="relative custom-select-wrapper" id="wrapper-guru-{{ $k->id }}">
                                         <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Guru
                                             Pengampu</label>
@@ -587,8 +565,6 @@
                                             </div>
                                         </div>
                                     </div>
-
-                                    {{-- Input Jam & Tipe --}}
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             <label
@@ -623,11 +599,9 @@
                                             </div>
                                         </div>
                                     </div>
-
                                     <button type="submit" id="btn-submit-{{ $k->id }}"
-                                        class="w-full py-3.5 bg-slate-900 hover:bg-purple-600 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-lg hover:shadow-purple-500/30 transform active:scale-95 transition-all duration-300 mt-2">
-                                        Simpan Plotting
-                                    </button>
+                                        class="w-full py-3.5 bg-slate-900 hover:bg-purple-600 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-lg hover:shadow-purple-500/30 transform active:scale-95 transition-all duration-300 mt-2">Simpan
+                                        Plotting</button>
                                 </div>
                             </form>
                         </div>
@@ -637,14 +611,13 @@
         </div>
     </div>
     @endforeach
-
 </div>
 @endsection
 
 @push('scripts')
 <script>
 // ==========================================================
-// 1. SEARCH LOGIC (OPTIMIZED & FAST)
+// 1. SEARCH LOGIC
 // ==========================================================
 function searchMainTable() {
     const input = document.getElementById('search-kelas-main').value.toLowerCase();
@@ -708,9 +681,6 @@ window.onclick = function(event) {
     }
 }
 
-// ==========================================================
-// 3. SEARCH INTERNAL TABLE (MODAL)
-// ==========================================================
 function searchTable(kelasId) {
     const filter = document.getElementById('search-' + kelasId).value.toLowerCase();
     const rows = document.getElementById('tbody-kelas-' + kelasId).getElementsByTagName('tr');
@@ -721,9 +691,6 @@ function searchTable(kelasId) {
     }
 }
 
-// ==========================================================
-// 4. CUSTOM DROPDOWN LOGIC
-// ==========================================================
 function toggleCustomDropdown(type, kelasId) {
     const wrapper = document.getElementById(`wrapper-${type}-${kelasId}`);
     const dropdown = document.getElementById(`dropdown-${type}-${kelasId}`);
@@ -815,14 +782,15 @@ function resetFormJadwal(kelasId) {
     const form = document.getElementById(`form-jadwal-${kelasId}`);
     if (!container || !form) return;
 
-    container.classList.remove('ring-2', 'ring-amber-200');
-    document.getElementById(`form-title-${kelasId}`).innerHTML = `INPUT PLOTTING`;
+    cont ainer.classList.remove('ring-2', 'ring-amber-200');
+    document.getElementById(`form-title-${kelasId}`).innerHTML =
+        `<span class="w-2 h-2 rounded-full bg-purple-500"></span> Input Plotting`;
     document.getElementById(`btn-batal-${kelasId}`).classList.add('hidden');
 
     const btnSubmit = document.getElementById(`btn-submit-${kelasId}`);
     btnSubmit.className =
         "w-full py-3.5 bg-slate-900 hover:bg-purple-600 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-lg transition mt-2";
-    btnSubmit.innerHTML = "SIMPAN";
+    btnSubmit.innerHTML = "SIMPAN PLOTTING";
 
     form.reset();
     resetCustomDropdown('mapel', kelasId);
@@ -831,6 +799,18 @@ function resetFormJadwal(kelasId) {
     form.action = `/kelas/${kelasId}/jadwal`;
     delete form.dataset.mode;
     document.getElementById(`method-spoof-${kelasId}`).innerHTML = '';
+}
+
+function updateTotalJam(kelasId) {
+    const tbody = document.getElementById(`tbody-kelas-${kelasId}`);
+    const jamElements = tbody.querySelectorAll('.jam-text');
+    let total = 0;
+    jamElements.forEach(el => {
+        total += parseInt(el.getAttribute('data-jam') || 0);
+    });
+
+    const totalDisplay = document.getElementById(`total-jam-${kelasId}`);
+    if (totalDisplay) totalDisplay.innerText = total;
 }
 
 async function handleFormJadwal(e, form, kelasId) {
@@ -854,6 +834,7 @@ async function handleFormJadwal(e, form, kelasId) {
         if (res.ok && json.success) {
             updateTableUI(kelasId, json.jadwal, form.dataset.mode === 'edit');
             resetFormJadwal(kelasId);
+            updateTotalJam(kelasId);
         } else {
             alert(json.message || "Gagal menyimpan.");
         }
@@ -876,7 +857,11 @@ function updateTableUI(kelasId, jadwal, isEdit) {
         if (row) {
             row.querySelector('.mapel-text').innerText = mapelName;
             row.querySelector('.guru-text').innerText = guruName;
-            row.querySelector('.jam-text').innerText = jadwal.jumlah_jam + ' JP';
+
+            const jamSpan = row.querySelector('.jam-text');
+            jamSpan.innerText = jadwal.jumlah_jam + ' JP';
+            jamSpan.setAttribute('data-jam', jadwal.jumlah_jam);
+
             row.querySelector('.tipe-text').innerText = jadwal.tipe_jam;
 
             const btnEdit = row.querySelector('button[onclick^="editJadwalInline"]');
@@ -890,25 +875,36 @@ function updateTableUI(kelasId, jadwal, isEdit) {
     } else {
         const tr = document.createElement('tr');
         tr.id = `row-jadwal-${jadwal.id}`;
-        tr.className = "hover:bg-purple-50 transition";
+        tr.className = "hover:bg-purple-50 transition group";
         tr.innerHTML = `
-            <td class="px-4 py-3 font-bold text-slate-700 align-middle mapel-text">${mapelName}</td>
-            <td class="px-4 py-3 text-slate-600 guru-text align-middle font-medium">${guruName}</td>
-            <td class="px-4 py-3 text-center align-middle">
-                <div class="flex flex-col items-center">
-                    <span class="bg-white border border-slate-200 text-purple-600 py-0.5 px-2 rounded-full font-bold text-[10px] jam-text shadow-sm">${jadwal.jumlah_jam} JP</span>
-                    <span class="text-[9px] text-slate-400 uppercase mt-1 font-bold tracking-wider tipe-text">${jadwal.tipe_jam}</span>
-                </div>
-            </td>
-            <td class="px-4 py-3 text-right align-middle">
-                <button onclick="editJadwalInline(${kelasId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}')" class="text-purple-600 hover:text-purple-800 mr-2 p-1">✏️</button>
-                <button onclick="hapusJadwal(${jadwal.id}, this)" class="text-red-500 hover:text-red-700 p-1">🗑️</button>
-            </td>`;
+                <td class="px-4 py-3 font-bold text-slate-700 align-middle mapel-text">${mapelName}</td>
+                <td class="px-4 py-3 text-slate-600 guru-text align-middle font-medium">${guruName}</td>
+                <td class="px-4 py-3 text-center align-middle">
+                    <div class="flex flex-col items-center">
+                        <span class="bg-white border border-purple-100 text-purple-700 py-0.5 px-2 rounded-md font-bold text-[10px] jam-text shadow-sm" data-jam="${jadwal.jumlah_jam}">${jadwal.jumlah_jam} JP</span>
+                        <span class="text-[9px] text-slate-400 uppercase mt-0.5 font-semibold tracking-wider tipe-text">${jadwal.tipe_jam}</span>
+                    </div>
+                </td>
+                <td class="px-4 py-3 text-right align-middle">
+                    <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="editJadwalInline(${kelasId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}')" class="p-1.5 text-purple-600 hover:bg-purple-100 rounded-lg transition" title="Edit">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                        </button>
+                        <button onclick="hapusJadwal(${jadwal.id}, this, ${kelasId})" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition" title="Hapus">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                </td>`;
+
+        const tbody = document.getElementById(`tbody-kelas-${kelasId}`);
         tbody.appendChild(tr);
+
+        const emptyRow = tbody.querySelector('.empty-row');
+        if (emptyRow) emptyRow.remove();
     }
 }
 
-async function hapusJadwal(id, btn) {
+async function hapusJadwal(id, btn, kelasId) {
     if (!confirm("Hapus jadwal ini?")) return;
     try {
         const res = await fetch(`/kelas/jadwal/${id}`, {
@@ -923,6 +919,7 @@ async function hapusJadwal(id, btn) {
         });
         if (res.ok) {
             btn.closest('tr').remove();
+            updateTotalJam(kelasId);
         } else {
             alert('Gagal menghapus');
         }
