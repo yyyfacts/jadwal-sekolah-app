@@ -32,16 +32,16 @@
     </div>
     @endif
 
-    {{-- MAIN CARD UI (Sesuai Referensi Gambar) --}}
+    {{-- MAIN CARD UI --}}
     <div class="bg-white rounded-3xl border border-slate-200 shadow-xl flex flex-col flex-1 overflow-hidden">
 
-        {{-- 1. HEADER SECTION --}}
+        {{-- 1. HEADER & SEARCH SECTION --}}
         <div class="p-6 md:px-8 border-b border-slate-100 shrink-0">
 
             {{-- Top: Judul & Action Buttons --}}
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div class="flex items-center gap-3">
-                    <div class="w-1.5 h-8 bg-slate-800 rounded-full"></div>
+                    <div class="w-1.5 h-8 bg-indigo-600 rounded-full"></div>
                     <div>
                         <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 tracking-tight">
                             Jadwal Pelajaran Terpadu
@@ -67,7 +67,7 @@
                         @csrf
                         <button type="button"
                             onclick="if(confirm('Generate ulang akan menimpa jadwal lama. Lanjut?')) this.form.submit()"
-                            class="relative inline-flex items-center justify-center px-6 py-2.5 overflow-hidden font-bold text-white transition-all duration-300 bg-slate-800 rounded-xl hover:bg-slate-900 shadow-md text-xs uppercase tracking-wider">
+                            class="relative inline-flex items-center justify-center px-6 py-2.5 overflow-hidden font-bold text-white transition-all duration-300 bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-md text-xs uppercase tracking-wider">
                             <span class="flex items-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -83,73 +83,38 @@
                 </div>
             </div>
 
-            {{-- Bottom: Filters (Desain Outline Clean) --}}
-            <form action="{{ route('jadwal.index') }}" method="GET" class="flex flex-col md:flex-row gap-4 items-end">
-                <div class="w-full md:w-[35%] relative">
-                    <label
-                        class="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider ml-1">Filter
-                        Guru</label>
-                    <select name="guru_id" id="filter-guru" placeholder="Semua Guru" autocomplete="off">
-                        <option value="">Semua Guru</option>
-                        @foreach($gurusList as $g)
-                        <option value="{{ $g->id }}" {{ $reqGuru == $g->id ? 'selected' : '' }}>{{ $g->nama_guru }}
-                        </option>
-                        @endforeach
-                    </select>
+            {{-- Bottom: SINGLE LIVE SEARCH BAR (Ala Bank Data Guru) --}}
+            <div class="relative group max-w-4xl">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
                 </div>
-
-                <div class="w-full md:w-[35%] relative">
-                    <label
-                        class="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider ml-1">Filter
-                        Kelas</label>
-                    <select name="kelas_id" id="filter-kelas" placeholder="Semua Kelas" autocomplete="off">
-                        <option value="">Semua Kelas</option>
-                        @foreach($kelassList as $k)
-                        <option value="{{ $k->id }}" {{ $reqKelas == $k->id ? 'selected' : '' }}>{{ $k->nama_kelas }}
-                        </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="w-full md:w-[30%] flex gap-2">
-                    {{-- Tombol Cari didesain putih outline dengan text abu-abu seperti gambar --}}
-                    <button type="submit"
-                        class="flex-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-500 rounded-xl text-xs font-semibold shadow-sm transition flex items-center justify-start px-4 gap-2 h-[42px]">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                        Cari
-                    </button>
-                    @if($reqGuru || $reqKelas)
-                    <a href="{{ route('jadwal.index') }}" title="Reset Filter"
-                        class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 px-4 rounded-xl text-xs font-bold shadow-sm transition flex items-center justify-center h-[42px]">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </a>
-                    @endif
-                </div>
-            </form>
+                <input type="text" id="search-jadwal" oninput="filterJadwalRealtime()"
+                    class="block w-full pl-11 pr-4 py-3.5 bg-white border border-slate-300 hover:border-indigo-300 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 font-medium text-slate-700 transition-all duration-300 shadow-sm"
+                    placeholder="Cari Nama Guru, Mata Pelajaran, atau Kelas... (Merespon Langsung)">
+            </div>
         </div>
 
-        {{-- 2. TABLE SECTION (Desain Dua Lapis Header & Block Cell) --}}
+        {{-- 2. TABLE SECTION (Dual Header & Block Colors) --}}
         <div class="flex-1 overflow-auto custom-scrollbar relative bg-white">
             @if($kelass->isEmpty())
             <div class="flex flex-col items-center justify-center h-full py-20 text-center">
                 <div class="text-6xl mb-4 opacity-50">🗂️</div>
                 <h3 class="text-lg font-bold text-slate-600">Data Tidak Ditemukan</h3>
-                <p class="text-slate-400 text-sm mt-1">Silakan sesuaikan filter pencarian Anda.</p>
+                <p class="text-slate-400 text-sm mt-1">Sistem belum memiliki jadwal atau data kelas.</p>
             </div>
             @else
-            <table class="w-full border-collapse min-w-[900px]">
+            <table class="w-full border-collapse min-w-[900px]" id="jadwal-tabel">
                 <thead class="sticky top-0 z-[40] shadow-sm">
                     {{-- Row 1: Biru Gelap --}}
                     <tr class="bg-slate-800 text-white">
                         <th colspan="3" class="h-10 border-r border-slate-700/50 bg-[#1e293b]"></th>
                         @foreach($kelass as $kelas)
-                        <th class="h-10 px-2 border-r border-slate-700/50 text-center font-bold text-xs tracking-wider">
+                        <th class="h-10 px-2 border-r border-slate-700/50 text-center font-bold text-xs tracking-wider jadwal-header"
+                            data-kelas="{{ strtolower($kelas->nama_kelas) }}">
                             {{ $kelas->nama_kelas }}
                         </th>
                         @endforeach
@@ -236,20 +201,22 @@
                         @else
                         @foreach($kelass as $kelas)
                         @php $data = $jadwals[$kelas->id][$hari][$jam] ?? null; @endphp
-                        <td class="p-1.5 border-r border-b border-slate-100 text-center align-middle h-16">
+                        {{-- ATRIBUT DATA-SEARCH DISINI SEBAGAI KUNCI FILTER --}}
+                        <td class="p-1.5 border-r border-b border-slate-100 text-center align-middle h-16 jadwal-cell transition-all duration-300"
+                            data-search="{{ $data ? strtolower($data['mapel'].' '.$data['guru'].' '.$kelas->nama_kelas) : '' }}"
+                            data-kelas="{{ strtolower($kelas->nama_kelas) }}">
+
                             @if($data)
-                            {{-- Desain Inner Block (Rounded) --}}
                             <div
-                                class="w-full h-full rounded-md flex flex-col justify-center items-center p-1.5 shadow-sm border border-black/5 {{ $data['color'] ?? 'bg-indigo-600 text-white' }} hover:brightness-95 transition-all">
+                                class="w-full h-full rounded-md flex flex-col justify-center items-center p-1.5 shadow-sm border border-black/5 {{ $data['color'] ?? 'bg-indigo-600 text-white' }} hover:brightness-95 sel-content transition-all duration-300">
                                 <span
                                     class="font-bold text-[11px] leading-tight line-clamp-1 mb-0.5">{{ $data['mapel'] }}</span>
                                 <span
                                     class="text-[9px] font-medium opacity-90 line-clamp-1 truncate w-full">{{ $data['guru'] }}</span>
                             </div>
                             @else
-                            {{-- Sel Kosong --}}
                             <div
-                                class="w-full h-full rounded-md bg-transparent border border-dashed border-slate-200 flex items-center justify-center">
+                                class="w-full h-full rounded-md bg-transparent border border-dashed border-slate-200 flex items-center justify-center sel-content transition-all duration-300 opacity-50">
                                 <span class="text-slate-300 text-[9px] font-light">-</span>
                             </div>
                             @endif
@@ -324,7 +291,6 @@
 @endsection
 
 @push('styles')
-<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
 <style>
 /* Tabel Setup Minimalis */
 table {
@@ -340,8 +306,8 @@ table {
 
 /* Custom Scrollbar Elegan */
 .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -357,66 +323,82 @@ table {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
-
-/* =========================================================
-   STYLE TOMSELECT (Bypass Overflow + Desain Clean)
-   ========================================================= */
-.ts-control {
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 0.5rem !important;
-    /* rounded-lg */
-    padding: 0.5rem 1rem !important;
-    min-height: 42px !important;
-    font-size: 0.875rem !important;
-    background-color: #ffffff !important;
-    color: #334155 !important;
-    box-shadow: none !important;
-    transition: all 0.2s ease !important;
-}
-
-.ts-control.focus {
-    border-color: #94a3b8 !important;
-    box-shadow: 0 0 0 2px rgba(241, 245, 249, 1) !important;
-    outline: none !important;
-}
-
-/* MASTER KEY: Mengatur Dropdown agar melayang mutlak di body */
-.ts-dropdown {
-    border-radius: 0.5rem !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
-    font-size: 0.875rem !important;
-    z-index: 99999 !important;
-    /* MENGALAHKAN SEGALA ELEMEN DI LAYAR */
-    margin-top: 4px !important;
-}
-
-.ts-dropdown .active {
-    background-color: #f1f5f9 !important;
-    color: #0f172a !important;
-}
-
-.ts-control input::placeholder {
-    color: #94a3b8 !important;
-}
 </style>
 @endpush
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const tsConfig = {
-        create: false,
-        dropdownParent: "body", // <--- OBAT SAKIT KEPALA 5 JAM: Paksa dropdown render di luar Card!
-        sortField: {
-            field: "text",
-            direction: "asc"
+// ==========================================================
+// MAGIC LIVE SEARCH JADWAL MATRIKS (Anti Lelet, Sangat Mulus)
+// ==========================================================
+function filterJadwalRealtime() {
+    const input = document.getElementById('search-jadwal').value.toLowerCase().trim();
+    const cells = document.querySelectorAll('.jadwal-cell');
+    const headers = document.querySelectorAll('.jadwal-header');
+
+    // KONDISI 1: JIKA KOTAK PENCARIAN KOSONG (RESET SEMUA KE NORMAL)
+    if (input === '') {
+        cells.forEach(cell => {
+            cell.style.opacity = '1';
+            cell.style.filter = 'none';
+            const innerBox = cell.querySelector('.sel-content');
+            if (innerBox) {
+                innerBox.classList.remove('ring-4', 'ring-indigo-400', 'ring-offset-2', 'scale-105');
+            }
+        });
+        headers.forEach(header => {
+            header.style.opacity = '1';
+        });
+        return;
+    }
+
+    // KONDISI 2: SAAT MENGISI TEXT (APLIKASIKAN EFEK HEATMAP)
+    let classMatched = false; // Flag khusus kalau yang dicari murni nama kelas
+
+    cells.forEach(cell => {
+        const searchData = cell.getAttribute('data-search'); // Mengandung Mapel + Guru + Kelas
+        const dataKelas = cell.getAttribute('data-kelas'); // Mengandung spesifik nama kelas
+
+        // Cek jika input adalah murni nama kelas (misal: "xe-1")
+        if (dataKelas === input) {
+            classMatched = true;
         }
-    };
-    new TomSelect("#filter-guru", tsConfig);
-    new TomSelect("#filter-kelas", tsConfig);
-});
+
+        // Pengecekan utama: Apa yang dia cari ada di dalam sel ini?
+        if (searchData && searchData.includes(input)) {
+            // MATCHING: Terangkan sel ini
+            cell.style.opacity = '1';
+            cell.style.filter = 'none';
+
+            // Tambahkan efek membesar (pop-out) agar gampang dicari pakai mata
+            const innerBox = cell.querySelector('.sel-content');
+            if (innerBox && !innerBox.classList.contains(
+                    'opacity-50')) { // Abaikan sel yang emang kosong dari awal
+                innerBox.classList.add('ring-4', 'ring-indigo-400', 'ring-offset-2', 'scale-105');
+            }
+        } else {
+            // TIDAK MATCH: Redupkan dan hilangkan efek warna (grayscale)
+            cell.style.opacity = '0.15';
+            cell.style.filter = 'grayscale(100%)';
+            const innerBox = cell.querySelector('.sel-content');
+            if (innerBox) {
+                innerBox.classList.remove('ring-4', 'ring-indigo-400', 'ring-offset-2', 'scale-105');
+            }
+        }
+    });
+
+    // Logika tambahan: Redupkan Header Kelas di atas tabel jika tidak cocok
+    headers.forEach(header => {
+        const headerKelas = header.getAttribute('data-kelas');
+        // Jika pencarian fokus ke kelas tertentu, redupkan kelas yang tidak dicari
+        if (classMatched) {
+            header.style.opacity = (headerKelas === input) ? '1' : '0.15';
+        } else {
+            // Jika mencari guru, biarkan header tetap menyala
+            header.style.opacity = '1';
+        }
+    });
+}
 
 function showLoading() {
     document.getElementById('loading-overlay').classList.remove('hidden');
