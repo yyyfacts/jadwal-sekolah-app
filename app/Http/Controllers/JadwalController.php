@@ -151,7 +151,6 @@ class JadwalController extends Controller
                 return [
                     'id' => $guru->id,
                     'nama' => $guru->nama_guru,
-                    // --- BAGIAN INI YANG DITAMBAHKAN AGAR PYTHON TAHU HARI MENGAJARNYA ---
                     'hari_mengajar' => $guru->hari_mengajar ? json_decode($guru->hari_mengajar, true) : [],
                     'waktu_kosong' => [] // Kosongkan karena fitur dihapus
                 ];
@@ -224,22 +223,17 @@ class JadwalController extends Controller
             if (isset($result['status']) && ($result['status'] === 'OPTIMAL' || $result['status'] === 'FEASIBLE')) {
                 DB::beginTransaction();
                 try {
-                    // KODINGAN BARU (SUPER NGEBUT)
-                    $dataUpdates = [];
+                    // KODINGAN BARU: Pakai DB::table biar super cepat dan nggak kena error MySQL
                     foreach ($result['solution'] as $item) {
-                        $dataUpdates[] = [
-                            'id' => $item['id'],
-                            'hari' => $item['hari'],
-                            'jam' => $item['jam']
-                        ];
+                        DB::table('jadwals')
+                            ->where('id', $item['id'])
+                            ->update([
+                                'hari' => $item['hari'],
+                                'jam' => $item['jam'],
+                                'updated_at' => now()
+                            ]);
                     }
 
-                    // Lakukan Bulk Update (Upsert) HANYA DALAM 1 KALI QUERY MYSQL!
-                    Jadwal::upsert(
-                        $dataUpdates,
-                        ['id'], // Kolom unik penyocok data
-                        ['hari', 'jam'] // Kolom yang mau diupdate
-                    );
                     DB::commit();
 
                     return redirect()->route('jadwal.index')
