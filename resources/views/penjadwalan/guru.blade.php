@@ -263,6 +263,22 @@
                         class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none font-mono uppercase text-sm transition"
                         placeholder="GR-01" required>
                 </div>
+                {{-- TAMBAHAN: Pilihan Hari Mengajar --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Hari Bersedia Mengajar <span
+                            class="text-[10px] font-normal italic lowercase">(Kosongkan jika bisa setiap
+                            hari)</span></label>
+                    <div class="flex flex-wrap gap-3">
+                        @foreach(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'] as $hari)
+                        <label
+                            class="inline-flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-indigo-50 transition">
+                            <input type="checkbox" name="hari_mengajar[]" value="{{ $hari }}"
+                                class="rounded text-indigo-600 focus:ring-indigo-500">
+                            <span class="text-xs font-bold text-slate-600">{{ $hari }}</span>
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
                 <button type="submit"
                     class="w-full bg-slate-900 hover:bg-indigo-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">SIMPAN
                     DATA</button>
@@ -296,6 +312,23 @@
                     <input type="text" name="kode_guru" value="{{ $g->kode_guru }}"
                         class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none font-mono uppercase text-sm transition"
                         required>
+                </div>
+                {{-- TAMBAHAN: Pilihan Hari Mengajar (Centang otomatis) --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Hari Bersedia Mengajar <span
+                            class="text-[10px] font-normal italic lowercase">(Kosongkan jika bisa setiap
+                            hari)</span></label>
+                    <div class="flex flex-wrap gap-3">
+                        @foreach(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'] as $hari)
+                        <label
+                            class="inline-flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-amber-50 transition">
+                            <input type="checkbox" name="hari_mengajar[]" value="{{ $hari }}"
+                                {{ in_array($hari, $g->hari_array) ? 'checked' : '' }}
+                                class="rounded text-amber-500 focus:ring-amber-500">
+                            <span class="text-xs font-bold text-slate-600">{{ $hari }}</span>
+                        </label>
+                        @endforeach
+                    </div>
                 </div>
                 <button type="submit"
                     class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">UPDATE</button>

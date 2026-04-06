@@ -19,20 +19,41 @@ class JadwalController extends Controller
     /**
      * Menampilkan Grid Jadwal di Website
      */
-    public function index()
+    public function index(Request $request) 
     {
-        $kelass = Kelas::orderBy('nama_kelas')->get();
+        // --- FITUR BARU: Tangkap Request Filter ---
+        $reqGuru = $request->input('guru_id');
+        $reqKelas = $request->input('kelas_id');
 
-        // Ambil data jadwal yang sudah valid (punya hari & jam)
-        $rawJadwals = Jadwal::with(['guru', 'mapel', 'kelas'])
+        // Ambil data list untuk dropdown select di view
+        $gurusList = Guru::orderBy('nama_guru')->get();
+        $kelassList = Kelas::orderBy('nama_kelas')->get();
+
+        // 1. Filter Kolom Kelas
+        if ($reqKelas) {
+            $kelass = Kelas::where('id', $reqKelas)->orderBy('nama_kelas')->get();
+        } else {
+            $kelass = Kelas::orderBy('nama_kelas')->get();
+        }
+
+        // 2. Filter Data Jadwal
+        $query = Jadwal::with(['guru', 'mapel', 'kelas'])
             ->whereNotNull('hari')
-            ->whereNotNull('jam')
-            ->get();
+            ->whereNotNull('jam');
+
+        if ($reqGuru) {
+            $query->where('guru_id', $reqGuru);
+        }
+        if ($reqKelas) {
+            $query->where('kelas_id', $reqKelas);
+        }
+
+        $rawJadwals = $query->get();
 
         $jadwals = [];
         $hariList = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
 
-        // 1. Inisialisasi grid kosong
+        // 3. Inisialisasi grid kosong
         foreach ($kelass as $k) {
             foreach ($hariList as $h) {
                 for ($j = 0; $j <= 11; $j++) {
@@ -41,7 +62,7 @@ class JadwalController extends Controller
             }
         }
 
-        // 2. Mapping data jadwal dari Database ke Grid Array
+        // 4. Mapping data jadwal dari Database ke Grid Array
         foreach ($rawJadwals as $row) {
             $durasi = $row->jumlah_jam;
             $kode_mapel = $row->mapel->kode_mapel ?? '?';
@@ -56,6 +77,9 @@ class JadwalController extends Controller
             for ($i = 0; $i < $durasi; $i++) {
                 $jamSekarang = $row->jam + $i;
                 if ($jamSekarang <= 11) {
+                    // Pengecekan ekstra: Jika kelas tidak ada di array (efek filter), skip
+                    if(!isset($jadwals[$row->kelas_id])) continue; 
+
                     $jadwals[$row->kelas_id][$row->hari][$jamSekarang] = [
                         'id' => $row->id,
                         'mapel' => $row->mapel->nama_mapel ?? '-',
@@ -69,7 +93,7 @@ class JadwalController extends Controller
             }
         }
 
-        // 3. Logika "Gap Detection" (Visual Jam Kosong di Tabel)
+        // 5. Logika "Gap Detection" (Visual Jam Kosong di Tabel)
         foreach ($kelass as $k) {
             foreach ($hariList as $h) {
                 $startJam = 1;
@@ -99,22 +123,28 @@ class JadwalController extends Controller
             ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}"
             : date('Y') . '/' . (date('Y') + 1);
 
-        return view('penjadwalan.jadwal', compact('kelass', 'jadwals', 'judulTahun'));
+        // --- TAMBAHAN: Melempar variabel list filter ke View ---
+        return view('penjadwalan.jadwal', compact(
+            'kelass', 'jadwals', 'judulTahun', 
+            'gurusList', 'kelassList', 'reqGuru', 'reqKelas'
+        ));
     }
 
     /**
-     * Proses Generate AI (Solver Python)
+     * Proses Generate Algoritma (Solver Python)
      */
     public function generate(Request $request)
     {
         set_time_limit(600); 
 
         try {
-            // A. Siapkan Data Guru (Tanpa Waktu Kosong)
+            // A. Siapkan Data Guru
             $gurus = Guru::all()->map(function ($guru) {
                 return [
                     'id' => $guru->id,
                     'nama' => $guru->nama_guru,
+                    // --- BAGIAN INI YANG DITAMBAHKAN AGAR PYTHON TAHU HARI MENGAJARNYA ---
+                    'hari_mengajar' => $guru->hari_mengajar ? json_decode($guru->hari_mengajar, true) : [],
                     'waktu_kosong' => [] // Kosongkan karena fitur dihapus
                 ];
             });

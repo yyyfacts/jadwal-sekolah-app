@@ -19,6 +19,8 @@ class GuruController extends Controller
 
         foreach ($gurus as $g) {
             $g->total_jam_mengajar = $g->jadwals->sum('jumlah_jam');
+            // Decode array hari untuk ditampilkan di checkbox modal edit
+            $g->hari_array = $g->hari_mengajar ? json_decode($g->hari_mengajar, true) : [];
         }
 
         $mapels = Mapel::orderBy('nama_mapel')->get();
@@ -33,8 +35,14 @@ class GuruController extends Controller
         $request->validate([
             'nama_guru' => 'required|string',
             'kode_guru' => 'required|string|unique:gurus',
+            'hari_mengajar' => 'nullable|array' // Validasi array hari
         ]);
-        Guru::create($request->only('nama_guru', 'kode_guru'));
+
+        $data = $request->only('nama_guru', 'kode_guru');
+        // Simpan array hari menjadi format JSON
+        $data['hari_mengajar'] = $request->hari_mengajar ? json_encode($request->hari_mengajar) : json_encode([]);
+
+        Guru::create($data);
         return redirect()->route('guru.index')->with('success', 'Guru berhasil ditambahkan.');
     }
 
@@ -43,8 +51,14 @@ class GuruController extends Controller
         $request->validate([
             'nama_guru' => 'required|string',
             'kode_guru' => 'required|string|unique:gurus,kode_guru,' . $id,
+            'hari_mengajar' => 'nullable|array' // Validasi array hari
         ]);
-        Guru::findOrFail($id)->update($request->only('nama_guru', 'kode_guru'));
+
+        $data = $request->only('nama_guru', 'kode_guru');
+        // Simpan array hari menjadi format JSON
+        $data['hari_mengajar'] = $request->hari_mengajar ? json_encode($request->hari_mengajar) : json_encode([]);
+
+        Guru::findOrFail($id)->update($data);
         return redirect()->route('guru.index')->with('success', 'Data guru diperbarui.');
     }
 

@@ -36,6 +36,53 @@
         </div>
     </div>
 
+    {{-- FITUR BARU: Filter Section --}}
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4 shrink-0">
+        <form action="{{ route('jadwal.index') }}" method="GET" class="flex flex-col sm:flex-row gap-4 items-end">
+            <div class="flex-1 w-full sm:w-auto">
+                <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Cari Guru</label>
+                <select name="guru_id"
+                    class="w-full rounded-lg border-slate-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">-- Semua Guru --</option>
+                    @foreach($gurusList as $g)
+                    <option value="{{ $g->id }}" {{ $reqGuru == $g->id ? 'selected' : '' }}>{{ $g->nama_guru }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="flex-1 w-full sm:w-auto">
+                <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Cari Kelas</label>
+                <select name="kelas_id"
+                    class="w-full rounded-lg border-slate-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">-- Semua Kelas --</option>
+                    @foreach($kelassList as $k)
+                    <option value="{{ $k->id }}" {{ $reqKelas == $k->id ? 'selected' : '' }}>{{ $k->nama_kelas }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="flex gap-2 w-full sm:w-auto">
+                <button type="submit"
+                    class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    Tampilkan
+                </button>
+
+                @if($reqGuru || $reqKelas)
+                <a href="{{ route('jadwal.index') }}"
+                    class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition flex items-center">
+                    Reset Filter
+                </a>
+                @endif
+            </div>
+        </form>
+    </div>
+    {{-- AKHIR FITUR BARU --}}
+
     {{-- Loading Overlay --}}
     <div id="loading-overlay"
         class="hidden fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-900/90 backdrop-blur-sm transition-opacity duration-300">
@@ -59,7 +106,7 @@
         </svg>
         <span>{{ session('success') }}</span>
 
-        {{-- TAMBAHAN: Menampilkan Waktu Komputasi AI di Pojok Kanan --}}
+        {{-- Menampilkan Waktu Komputasi AI di Pojok Kanan --}}
         @if(session('waktu_komputasi'))
         <div
             class="ml-auto bg-white/60 border border-emerald-200 text-emerald-900 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
@@ -70,15 +117,13 @@
             Selesai dalam {{ session('waktu_komputasi') }} detik
         </div>
         @endif
-        {{-- AKHIR TAMBAHAN --}}
-
     </div>
     @endif
 
     @if($kelass->isEmpty())
     <div class="text-center py-20 bg-white rounded-xl border border-dashed border-slate-300">
         <div class="text-5xl mb-4">📂</div>
-        <h3 class="text-lg font-bold text-slate-700">Data Kelas Kosong</h3>
+        <h3 class="text-lg font-bold text-slate-700">Data Kelas Kosong / Tidak Ditemukan</h3>
     </div>
     @else
 
@@ -95,6 +140,7 @@
                         <th colspan="{{ 3 + $kelass->count() }}"
                             class="sticky top-0 left-0 z-[30] h-12 bg-slate-800 text-white font-bold text-center uppercase tracking-wider border-b border-slate-700 shadow-md">
                             Jadwal Pelajaran
+                            @if($reqGuru || $reqKelas) (Hasil Pencarian) @endif
                         </th>
                     </tr>
 
