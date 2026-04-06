@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-{{-- BACKGROUND AMBIENT (Sama seperti halaman Guru) --}}
+{{-- BACKGROUND AMBIENT --}}
 <div class="fixed inset-0 -z-10 pointer-events-none">
     <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-50 to-slate-50"></div>
     <div class="absolute top-0 right-0 w-72 h-72 bg-indigo-300/20 rounded-full blur-3xl mix-blend-multiply opacity-70">
@@ -12,7 +12,7 @@
 
 <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-7rem)] pb-4 pt-2 flex flex-col">
 
-    {{-- FLASH MESSAGE (Model Melayang) --}}
+    {{-- FLASH MESSAGE --}}
     @if(session('success'))
     <div x-data="{ show: true }" x-show="show" x-transition
         class="mb-4 flex items-center justify-between p-4 bg-emerald-50 border border-emerald-100 rounded-xl shadow-sm text-emerald-800 shrink-0 relative z-50">
@@ -56,10 +56,10 @@
     <div
         class="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col flex-1 overflow-hidden relative z-10">
 
-        {{-- 1. HEADER & FILTER SECTION (Digabung agar rapi) --}}
+        {{-- 1. HEADER & FILTER SECTION --}}
         <div class="p-6 border-b border-slate-100 bg-white/50 shrink-0 z-20">
 
-            {{-- Top Header: Judul & Tombol Aksi --}}
+            {{-- Top Header --}}
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
@@ -100,16 +100,16 @@
                 </div>
             </div>
 
-            {{-- Bottom Header: Searchable Filters --}}
+            {{-- Bottom Header: Searchable Filters (SUDAH DIPERBAIKI) --}}
             <div class="mt-5 pt-5 border-t border-slate-100/60">
                 <form action="{{ route('jadwal.index') }}" method="GET"
-                    class="flex flex-col sm:flex-row gap-3 items-end">
+                    class="flex flex-col sm:flex-row gap-4 items-end">
                     <div class="flex-1 w-full min-w-[200px]">
                         <label
                             class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider ml-1">Filter
                             Guru</label>
-                        <select name="guru_id" id="filter-guru" class="w-full text-sm">
-                            <option value="">-- Ketik & Cari Guru --</option>
+                        <select name="guru_id" id="filter-guru" placeholder="Ketik & Cari Guru...">
+                            <option value="">Semua Guru</option>
                             @foreach($gurusList as $g)
                             <option value="{{ $g->id }}" {{ $reqGuru == $g->id ? 'selected' : '' }}>{{ $g->nama_guru }}
                             </option>
@@ -121,8 +121,8 @@
                         <label
                             class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider ml-1">Filter
                             Kelas</label>
-                        <select name="kelas_id" id="filter-kelas" class="w-full text-sm">
-                            <option value="">-- Ketik & Cari Kelas --</option>
+                        <select name="kelas_id" id="filter-kelas" placeholder="Ketik & Cari Kelas...">
+                            <option value="">Semua Kelas</option>
                             @foreach($kelassList as $k)
                             <option value="{{ $k->id }}" {{ $reqKelas == $k->id ? 'selected' : '' }}>
                                 {{ $k->nama_kelas }}</option>
@@ -130,9 +130,9 @@
                         </select>
                     </div>
 
-                    <div class="flex gap-2 w-full sm:w-auto">
+                    <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
                         <button type="submit"
-                            class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-2 uppercase tracking-wider h-[42px]">
+                            class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition flex items-center justify-center gap-2 uppercase tracking-wider h-[42px] w-full sm:w-auto">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -142,7 +142,7 @@
 
                         @if($reqGuru || $reqKelas)
                         <a href="{{ route('jadwal.index') }}"
-                            class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition flex items-center h-[42px] uppercase tracking-wider">
+                            class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition flex items-center justify-center h-[42px] uppercase tracking-wider w-full sm:w-auto">
                             Reset
                         </a>
                         @endif
@@ -151,7 +151,7 @@
             </div>
         </div>
 
-        {{-- 2. TABLE SECTION (AREA SCROLL) --}}
+        {{-- 2. TABLE SECTION --}}
         @if($kelass->isEmpty())
         <div class="flex-1 flex flex-col items-center justify-center py-20 bg-slate-50/50">
             <div class="text-6xl mb-4 opacity-50">🗂️</div>
@@ -162,7 +162,6 @@
         <div class="flex-1 overflow-auto custom-scrollbar relative bg-white">
             <table class="w-full text-xs border-separate border-spacing-0 min-w-[800px]">
                 <thead>
-                    {{-- Header Row 1: Judul Tabel --}}
                     <tr>
                         <th colspan="{{ 3 + $kelass->count() }}"
                             class="sticky top-0 left-0 z-[30] h-12 bg-slate-800 text-white font-bold text-center uppercase tracking-widest border-b border-slate-700 shadow-md text-xs">
@@ -170,8 +169,6 @@
                             @if($reqGuru || $reqKelas) <span class="text-indigo-300 ml-1">(Hasil Filter)</span> @endif
                         </th>
                     </tr>
-
-                    {{-- Header Row 2: Kolom --}}
                     <tr>
                         <th
                             class="sticky top-12 left-0 z-[25] w-12 p-3 bg-slate-100/90 backdrop-blur text-slate-600 font-bold border-r border-b border-slate-200 shadow-[2px_2px_5px_rgba(0,0,0,0.03)] uppercase">
@@ -185,7 +182,7 @@
 
                         @foreach($kelass as $kelas)
                         <th
-                            class="sticky top-12 z-[20] min-w-[160px] p-3 bg-slate-50/90 backdrop-blur text-slate-800 font-extrabold border-r border-b border-slate-200 text-center tracking-wider">
+                            class="sticky top-12 z-[20] min-w-[140px] p-3 bg-slate-50/90 backdrop-blur text-slate-800 font-extrabold border-r border-b border-slate-200 text-center tracking-wider">
                             {{ $kelas->nama_kelas }}
                         </th>
                         @endforeach
@@ -220,7 +217,6 @@
                     @for($jam = $startJam; $jam <= $maxJam; $jam++) <tr
                         class="hover:bg-slate-50 transition-colors duration-150 group">
 
-                        {{-- Kolom HARI (Pojok Kiri) --}}
                         @if($jam == $startJam)
                         <td rowspan="{{ $rowSpanTotal }}"
                             class="sticky left-0 z-[15] p-0 bg-white border-r border-b border-slate-200 align-middle text-center shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
@@ -231,13 +227,11 @@
                         </td>
                         @endif
 
-                        {{-- Kolom JP --}}
                         <td
                             class="sticky left-12 z-[10] p-2 bg-slate-50 border-r border-b border-slate-100 text-center font-bold text-slate-400 text-[10px] shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
                             {{ $jam }}
                         </td>
 
-                        {{-- Kolom WAKTU --}}
                         <td
                             class="sticky left-[5.5rem] z-[10] p-2 bg-white border-r border-b border-slate-100 text-center text-[10px] font-mono font-medium text-slate-500 shadow-[4px_0_5px_rgba(0,0,0,0.02)]">
                             @php
@@ -248,7 +242,6 @@
                             {{ $w }}
                         </td>
 
-                        {{-- ISI DATA KELAS --}}
                         @if($jam == 0)
                         <td colspan="{{ $kelass->count() }}"
                             class="p-2 border-b border-slate-100 bg-indigo-50/60 text-center text-xs font-bold text-indigo-600 tracking-widest uppercase">
@@ -278,7 +271,6 @@
                         @endif
                         </tr>
 
-                        {{-- Baris Istirahat --}}
                         @if(($jam == 4 || $jam == 8) && $hari != 'Jumat')
                         <tr class="bg-amber-50/50">
                             <td
@@ -294,7 +286,6 @@
                         @endif
                         @endfor
 
-                        {{-- Garis Pemisah Hari --}}
                         <tr>
                             <td colspan="{{ $kelass->count() + 3 }}"
                                 class="bg-slate-200/50 h-1 border-b border-slate-200"></td>
@@ -382,14 +373,28 @@ table {
     }
 }
 
-/* Modifikasi tampilan TomSelect agar mewah (Glassmorphism style) */
+/* PERBAIKAN FATAL: Memaksa TomSelect jadi 1 Baris Sejajar (Anti-Gencet) */
 .ts-control {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    /* Mencegah input turun ke bawah */
     border-radius: 0.75rem !important;
-    border-color: #e2e8f0 !important;
+    border: 1px solid #e2e8f0 !important;
     background-color: #f8fafc !important;
-    padding: 0.6rem 1rem !important;
-    min-height: 42px;
-    font-weight: 600;
+    padding: 0px 16px !important;
+    min-height: 42px !important;
+}
+
+.ts-control>input {
+    display: inline-block !important;
+    width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    font-size: 14px !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 .ts-control.focus {
@@ -400,16 +405,21 @@ table {
 
 .ts-dropdown {
     border-radius: 0.75rem !important;
-    border-color: #e2e8f0 !important;
+    border: 1px solid #e2e8f0 !important;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
     overflow: hidden;
-    font-weight: 500;
+    font-size: 14px !important;
 }
 
 .ts-dropdown .active {
     background-color: #eef2ff !important;
     color: #4f46e5 !important;
     font-weight: 700;
+}
+
+/* Menyembunyikan text terpilih saat sedang ngetik biar gak tabrakan */
+.ts-control.has-items.focus .item {
+    display: none !important;
 }
 </style>
 @endpush
@@ -418,19 +428,22 @@ table {
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // TomSelect yang udah dikalibrasi supaya mulus
     new TomSelect("#filter-guru", {
         create: false,
         sortField: {
             field: "text",
             direction: "asc"
-        }
+        },
+        placeholder: "Ketik & Cari Guru..."
     });
     new TomSelect("#filter-kelas", {
         create: false,
         sortField: {
             field: "text",
             direction: "asc"
-        }
+        },
+        placeholder: "Ketik & Cari Kelas..."
     });
 });
 
