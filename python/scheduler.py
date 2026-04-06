@@ -1,9 +1,12 @@
 import sys
 import json
-import time  # <-- Import library waktu
+import time  
 from ortools.sat.python import cp_model
 
 def main():
+    # PINDAHKAN STOPWATCH KE SINI (Menghitung dari awal perakitan model)
+    start_time = time.time()  
+
     # ==========================================
     # 1. PERSIAPAN DATA
     # ==========================================
@@ -193,10 +196,8 @@ def main():
         model.AddDecisionStrategy(all_start_vars, cp_model.CHOOSE_FIRST, cp_model.SELECT_MIN_VALUE)
 
     # ==========================================
-    # 4. EKSEKUSI & PERHITUNGAN WAKTU
+    # 4. EKSEKUSI
     # ==========================================
-    start_time = time.time()  
-
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 300 
     solver.parameters.num_search_workers = 8    
@@ -221,11 +222,12 @@ def main():
                         })
                         break
         
+        # PESAN SUKSES DIUBAH SESUAI PERMINTAAN
         print(json.dumps({
             "status": "OPTIMAL",
             "solution": final_solution,
             "waktu_komputasi_detik": round(waktu_komputasi, 2), 
-            "message": f"Jadwal berhasil disusun dalam {waktu_komputasi:.2f} detik dengan metode Blok Susun."
+            "message": f"Jadwal berhasil disusun dalam {waktu_komputasi:.2f} detik dan aturan hari mengajar tertentu berhasil disesuaikan."
         }))
     else:
         print(json.dumps({

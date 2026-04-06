@@ -6,7 +6,7 @@ use App\Models\Jadwal;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Mapel;
-use App\Models\TahunPelajaran; 
+use App\Models\TahunPelajaran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Process;
@@ -19,7 +19,7 @@ class JadwalController extends Controller
     /**
      * Menampilkan Grid Jadwal di Website
      */
-    public function index(Request $request) 
+    public function index(Request $request)
     {
         // --- FITUR BARU: Tangkap Request Filter ---
         $reqGuru = $request->input('guru_id');
@@ -78,7 +78,8 @@ class JadwalController extends Controller
                 $jamSekarang = $row->jam + $i;
                 if ($jamSekarang <= 11) {
                     // Pengecekan ekstra: Jika kelas tidak ada di array (efek filter), skip
-                    if(!isset($jadwals[$row->kelas_id])) continue; 
+                    if (!isset($jadwals[$row->kelas_id]))
+                        continue;
 
                     $jadwals[$row->kelas_id][$row->hari][$jamSekarang] = [
                         'id' => $row->id,
@@ -100,8 +101,10 @@ class JadwalController extends Controller
                 $endJam = ($h == 'Jumat') ? 8 : 10;
 
                 for ($j = $startJam; $j <= $endJam; $j++) {
-                    if (($j == 4 || $j == 8) && $h != 'Jumat') continue;
-                    if (($j == 4 || $j == 7) && $h == 'Jumat') continue; 
+                    if (($j == 4 || $j == 8) && $h != 'Jumat')
+                        continue;
+                    if (($j == 4 || $j == 7) && $h == 'Jumat')
+                        continue;
 
                     if (($jadwals[$k->id][$h][$j] ?? null) === null) {
                         $jadwals[$k->id][$h][$j] = [
@@ -110,7 +113,7 @@ class JadwalController extends Controller
                             'guru' => '',
                             'kode_mapel' => '',
                             'kode_guru' => '',
-                            'color' => 'bg-slate-50', 
+                            'color' => 'bg-slate-50',
                             'tipe' => 'empty'
                         ];
                     }
@@ -125,8 +128,13 @@ class JadwalController extends Controller
 
         // --- TAMBAHAN: Melempar variabel list filter ke View ---
         return view('penjadwalan.jadwal', compact(
-            'kelass', 'jadwals', 'judulTahun', 
-            'gurusList', 'kelassList', 'reqGuru', 'reqKelas'
+            'kelass',
+            'jadwals',
+            'judulTahun',
+            'gurusList',
+            'kelassList',
+            'reqGuru',
+            'reqKelas'
         ));
     }
 
@@ -135,7 +143,7 @@ class JadwalController extends Controller
      */
     public function generate(Request $request)
     {
-        set_time_limit(600); 
+        set_time_limit(600);
 
         try {
             // A. Siapkan Data Guru
@@ -165,13 +173,14 @@ class JadwalController extends Controller
             // C. Data Kelas & Limit Harian
             $kelassData = Kelas::all()->map(function ($k) use ($rawAssignments) {
                 $totalJamMingguan = $rawAssignments->where('kelas_id', $k->id)->sum('jumlah_jam');
-                
+
                 $maxHarian = 10;
                 $kapasitasSeninKamis = $maxHarian * 4;
                 $sisaUntukJumat = $totalJamMingguan - $kapasitasSeninKamis;
-                
+
                 $limitJumat = max(4, min($sisaUntukJumat, 11));
-                if ($sisaUntukJumat <= 0) $limitJumat = 5;
+                if ($sisaUntukJumat <= 0)
+                    $limitJumat = 5;
 
                 return [
                     'id' => $k->id,
@@ -215,14 +224,24 @@ class JadwalController extends Controller
             if (isset($result['status']) && ($result['status'] === 'OPTIMAL' || $result['status'] === 'FEASIBLE')) {
                 DB::beginTransaction();
                 try {
+                    // KODINGAN BARU (SUPER NGEBUT)
+                    $dataUpdates = [];
                     foreach ($result['solution'] as $item) {
-                        Jadwal::where('id', $item['id'])->update([
+                        $dataUpdates[] = [
+                            'id' => $item['id'],
                             'hari' => $item['hari'],
                             'jam' => $item['jam']
-                        ]);
+                        ];
                     }
+
+                    // Lakukan Bulk Update (Upsert) HANYA DALAM 1 KALI QUERY MYSQL!
+                    Jadwal::upsert(
+                        $dataUpdates,
+                        ['id'], // Kolom unik penyocok data
+                        ['hari', 'jam'] // Kolom yang mau diupdate
+                    );
                     DB::commit();
-                    
+
                     return redirect()->route('jadwal.index')
                         ->with('success', $result['message'])
                         ->with('waktu_komputasi', $result['waktu_komputasi_detik'] ?? null);
@@ -247,8 +266,8 @@ class JadwalController extends Controller
     {
         $tahunAktif = TahunPelajaran::getActive();
 
-        $judulTahun = $tahunAktif 
-            ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}" 
+        $judulTahun = $tahunAktif
+            ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}"
             : date('Y') . '/' . (date('Y') + 1);
 
         $fileName = 'Jadwal_Pelajaran_';

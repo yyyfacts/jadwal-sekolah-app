@@ -36,14 +36,14 @@
         </div>
     </div>
 
-    {{-- FITUR BARU: Filter Section --}}
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4 shrink-0">
+    {{-- Filter Section (SEARCHABLE DROPDOWN) --}}
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4 shrink-0 relative z-50">
         <form action="{{ route('jadwal.index') }}" method="GET" class="flex flex-col sm:flex-row gap-4 items-end">
             <div class="flex-1 w-full sm:w-auto">
                 <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Cari Guru</label>
-                <select name="guru_id"
-                    class="w-full rounded-lg border-slate-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="">-- Semua Guru --</option>
+                {{-- ID ditambahkan untuk TomSelect --}}
+                <select name="guru_id" id="filter-guru" class="w-full text-sm">
+                    <option value="">-- Ketik Nama Guru --</option>
                     @foreach($gurusList as $g)
                     <option value="{{ $g->id }}" {{ $reqGuru == $g->id ? 'selected' : '' }}>{{ $g->nama_guru }}</option>
                     @endforeach
@@ -52,9 +52,9 @@
 
             <div class="flex-1 w-full sm:w-auto">
                 <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Cari Kelas</label>
-                <select name="kelas_id"
-                    class="w-full rounded-lg border-slate-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="">-- Semua Kelas --</option>
+                {{-- ID ditambahkan untuk TomSelect --}}
+                <select name="kelas_id" id="filter-kelas" class="w-full text-sm">
+                    <option value="">-- Ketik Nama Kelas --</option>
                     @foreach($kelassList as $k)
                     <option value="{{ $k->id }}" {{ $reqKelas == $k->id ? 'selected' : '' }}>{{ $k->nama_kelas }}
                     </option>
@@ -64,7 +64,7 @@
 
             <div class="flex gap-2 w-full sm:w-auto">
                 <button type="submit"
-                    class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition flex items-center gap-2">
+                    class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-sm transition flex items-center gap-2 h-[42px]">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -74,14 +74,13 @@
 
                 @if($reqGuru || $reqKelas)
                 <a href="{{ route('jadwal.index') }}"
-                    class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition flex items-center">
+                    class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition flex items-center h-[42px]">
                     Reset Filter
                 </a>
                 @endif
             </div>
         </form>
     </div>
-    {{-- AKHIR FITUR BARU --}}
 
     {{-- Loading Overlay --}}
     <div id="loading-overlay"
@@ -106,7 +105,6 @@
         </svg>
         <span>{{ session('success') }}</span>
 
-        {{-- Menampilkan Waktu Komputasi AI di Pojok Kanan --}}
         @if(session('waktu_komputasi'))
         <div
             class="ml-auto bg-white/60 border border-emerald-200 text-emerald-900 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
@@ -131,11 +129,10 @@
     <div
         class="bg-white shadow-xl rounded-xl border border-slate-200 overflow-hidden flex flex-col flex-1 min-h-0 relative z-0">
 
-        {{-- WRAPPER SCROLL (Scroll di sini) --}}
+        {{-- WRAPPER SCROLL --}}
         <div class="overflow-auto custom-scrollbar flex-1 relative w-full h-full">
             <table class="w-full text-xs border-separate border-spacing-0">
                 <thead>
-                    {{-- HEADER 1: JUDUL BESAR (Sticky Top L1) --}}
                     <tr>
                         <th colspan="{{ 3 + $kelass->count() }}"
                             class="sticky top-0 left-0 z-[30] h-12 bg-slate-800 text-white font-bold text-center uppercase tracking-wider border-b border-slate-700 shadow-md">
@@ -144,25 +141,17 @@
                         </th>
                     </tr>
 
-                    {{-- HEADER 2: NAMA KELAS & KOLOM WAKTU (Sticky Top L2) --}}
                     <tr>
-                        {{-- 1. HARI (Sticky Kiri & Atas = Pojok Mati) --}}
                         <th
                             class="sticky top-12 left-0 z-[25] w-12 p-3 bg-slate-100 text-slate-700 font-bold border-r border-b border-slate-300 shadow-[2px_2px_5px_rgba(0,0,0,0.05)]">
-                            HARI
-                        </th>
-                        {{-- 2. JAM (Sticky Kiri & Atas) --}}
+                            HARI</th>
                         <th
                             class="sticky top-12 left-12 z-[25] w-10 p-3 bg-slate-100 text-slate-700 font-bold border-r border-b border-slate-300 shadow-[2px_2px_5px_rgba(0,0,0,0.05)]">
-                            JP
-                        </th>
-                        {{-- 3. WAKTU (Sticky Kiri & Atas) --}}
+                            JP</th>
                         <th
                             class="sticky top-12 left-[5.5rem] z-[25] w-28 p-3 bg-slate-100 text-slate-700 font-bold border-r border-b border-slate-300 shadow-[2px_2px_5px_rgba(0,0,0,0.05)]">
-                            WAKTU
-                        </th>
+                            WAKTU</th>
 
-                        {{-- 4. KELAS (Scrollable Horizontal, Sticky Vertikal) --}}
                         @foreach($kelass as $kelas)
                         <th
                             class="sticky top-12 z-[20] min-w-[140px] p-3 bg-slate-50 text-slate-800 font-bold border-r border-b border-slate-300 text-center">
@@ -199,8 +188,6 @@
 
                     @for($jam = $startJam; $jam <= $maxJam; $jam++) <tr
                         class="hover:bg-slate-50 transition-colors group">
-
-                        {{-- KOLOM HARI (Sticky Horizontal - Fix Layering) --}}
                         @if($jam == $startJam)
                         <td rowspan="{{ $rowSpanTotal }}"
                             class="sticky left-0 z-[15] p-0 bg-white border-r border-b border-slate-300 align-middle text-center shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
@@ -211,13 +198,10 @@
                         </td>
                         @endif
 
-                        {{-- INFO JAM (Sticky Horizontal) --}}
                         <td
                             class="sticky left-12 z-[10] p-2 bg-slate-50 border-r border-b border-slate-200 text-center font-bold text-slate-500 text-[10px] shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
-                            {{ $jam }}
-                        </td>
+                            {{ $jam }}</td>
 
-                        {{-- INFO WAKTU (Sticky Horizontal) --}}
                         <td
                             class="sticky left-[5.5rem] z-[10] p-2 bg-white border-r border-b border-slate-200 text-center text-[10px] font-mono text-slate-600 shadow-[4px_0_5px_rgba(0,0,0,0.05)]">
                             @php
@@ -228,7 +212,6 @@
                             {{ $w }}
                         </td>
 
-                        {{-- ISI JADWAL --}}
                         @if($jam == 0)
                         <td colspan="{{ $kelass->count() }}"
                             class="p-2 border-b border-slate-200 bg-indigo-50 text-center text-xs font-bold text-indigo-700 tracking-widest uppercase">
@@ -239,19 +222,14 @@
                         @else
                         @foreach($kelass as $kelas)
                         @php $data = $jadwals[$kelas->id][$hari][$jam] ?? null; @endphp
-
-                        <td class="p-1 border-r border-b border-slate-200 text-center align-middle h-14 relative 
-                                        {{ $data ? $data['color'] : 'bg-white' }} 
-                                        hover:brightness-95 transition-all">
-
+                        <td
+                            class="p-1 border-r border-b border-slate-200 text-center align-middle h-14 relative {{ $data ? $data['color'] : 'bg-white' }} hover:brightness-95 transition-all">
                             @if($data)
                             <div class="flex flex-col justify-center h-full w-full">
-                                <span class="font-bold text-slate-800 text-[10px] leading-tight line-clamp-1">
-                                    {{ $data['mapel'] }}
-                                </span>
-                                <span class="text-[9px] text-slate-500 leading-tight mt-0.5 line-clamp-1 italic">
-                                    {{ Str::limit($data['guru'], 15) }}
-                                </span>
+                                <span
+                                    class="font-bold text-slate-800 text-[10px] leading-tight line-clamp-1">{{ $data['mapel'] }}</span>
+                                <span
+                                    class="text-[9px] text-slate-500 leading-tight mt-0.5 line-clamp-1 italic">{{ Str::limit($data['guru'], 15) }}</span>
                             </div>
                             @else
                             <span class="text-slate-200 text-[8px]">-</span>
@@ -261,29 +239,21 @@
                         @endif
                         </tr>
 
-                        {{-- BARIS ISTIRAHAT --}}
                         @if(($jam == 4 || $jam == 8) && $hari != 'Jumat')
                         <tr class="bg-amber-50">
-                            {{-- Sticky Jam Istirahat --}}
                             <td
                                 class="sticky left-12 z-[10] p-1 border-r border-b border-amber-200 bg-amber-100 text-center font-bold text-amber-800 text-[10px] shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
-                                IST
-                            </td>
-                            {{-- Sticky Waktu Istirahat --}}
+                                IST</td>
                             <td
                                 class="sticky left-[5.5rem] z-[10] p-1 border-r border-b border-amber-200 bg-amber-50 text-center text-[10px] font-mono text-amber-700 shadow-[4px_0_5px_rgba(0,0,0,0.05)]">
-                                {{ $jam==4 ? '10.30-10.45' : '13.30-13.50' }}
-                            </td>
+                                {{ $jam==4 ? '10.30-10.45' : '13.30-13.50' }}</td>
                             <td colspan="{{ $kelass->count() }}"
                                 class="p-1 border-b border-amber-200 text-center font-bold text-amber-600 text-[10px] tracking-[0.2em] uppercase">
-                                ☕ ISTIRAHAT
-                            </td>
+                                ☕ ISTIRAHAT</td>
                         </tr>
                         @endif
-
                         @endfor
 
-                        {{-- PEMBATAS HARI (GAP TEBAL) --}}
                         <tr>
                             <td colspan="{{ $kelass->count() + 3 }}" class="bg-slate-300 h-1 border-b border-slate-300">
                             </td>
@@ -297,7 +267,8 @@
 </div>
 @endsection
 
-@push('scripts')
+@push('styles')
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
 <style>
 /* Reset Spesifik untuk Tabel Sticky agar tidak goyang */
 table {
@@ -305,14 +276,12 @@ table {
     border-spacing: 0;
 }
 
-/* Tulisan Hari Vertikal */
 .vertical-text {
     writing-mode: vertical-lr;
     transform: rotate(180deg);
     white-space: nowrap;
 }
 
-/* Custom Scrollbar Halus */
 .custom-scrollbar::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -338,8 +307,45 @@ table {
         transform: none;
     }
 }
+
+/* Modifikasi tampilan TomSelect agar cocok dengan Tailwind */
+.ts-control {
+    border-radius: 0.5rem !important;
+    border-color: #cbd5e1 !important;
+    padding: 0.6rem 1rem !important;
+    min-height: 42px;
+}
+
+.ts-control.focus {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+}
 </style>
+@endpush
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inisialisasi fitur ketik pencarian untuk Guru
+    new TomSelect("#filter-guru", {
+        create: false,
+        sortField: {
+            field: "text",
+            direction: "asc"
+        }
+    });
+
+    // Inisialisasi fitur ketik pencarian untuk Kelas
+    new TomSelect("#filter-kelas", {
+        create: false,
+        sortField: {
+            field: "text",
+            direction: "asc"
+        }
+    });
+});
+
 function showLoading() {
     document.getElementById('loading-overlay').classList.remove('hidden');
 }

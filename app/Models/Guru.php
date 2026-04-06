@@ -16,6 +16,7 @@ class Guru extends Model
     protected $fillable = [
         'nama_guru',
         'kode_guru'
+        'hari_mengajar'
     ];
 
     // Relasi: Satu guru punya banyak jadwal
