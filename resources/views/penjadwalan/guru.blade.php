@@ -3,15 +3,13 @@
 @section('content')
 {{-- BACKGROUND --}}
 <div class="fixed inset-0 -z-10 pointer-events-none">
-    <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-50 to-slate-50"></div>
-    <div class="absolute top-0 right-0 w-72 h-72 bg-indigo-300/20 rounded-full blur-3xl mix-blend-multiply opacity-70">
-    </div>
-    <div class="absolute top-20 left-20 w-72 h-72 bg-cyan-300/20 rounded-full blur-3xl mix-blend-multiply opacity-70">
-    </div>
+    <div class="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-blue-50/50 to-white"></div>
+    <div class="absolute top-0 right-0 w-96 h-96 bg-indigo-300/10 rounded-full blur-3xl opacity-70"></div>
+    <div class="absolute top-20 left-10 w-72 h-72 bg-cyan-300/10 rounded-full blur-3xl opacity-70"></div>
 </div>
 
-{{-- CONTAINER UTAMA (Full Height minus Navbar padding) --}}
-<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-7rem)] pb-4 pt-2 flex flex-col">
+{{-- CONTAINER UTAMA --}}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-6rem)] pb-4 pt-6 flex flex-col">
 
     {{-- FLASH MESSAGE --}}
     @if(session('success'))
@@ -29,47 +27,49 @@
     </div>
     @endif
 
-    {{-- UNIFIED CARD (Satu Card Besar untuk Semua) --}}
+    {{-- UNIFIED CARD (Sesuai Gambar Referensi) --}}
     <div
-        class="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col flex-1 overflow-hidden">
+        class="bg-white rounded-[2rem] border border-slate-100 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] flex flex-col flex-1 overflow-hidden">
 
-        {{-- 1. HEADER SECTION (FIXED - Judul & Search Gabung Disini) --}}
-        <div class="p-6 border-b border-slate-100 bg-white/50 shrink-0 z-20">
+        {{-- 1. HEADER SECTION --}}
+        <div class="px-8 pt-8 pb-6 bg-white shrink-0 z-20">
 
             {{-- Baris 1: Judul & Tombol Tambah --}}
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                <div>
-                    <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
-                        <span class="w-2 h-6 bg-indigo-600 rounded-full"></span>
-                        Bank Data Guru
-                    </h1>
-                    <p class="text-slate-500 text-sm mt-1 font-medium ml-4">
-                        Manajemen profil pengajar, NIP, dan beban jam.
-                    </p>
+            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
+                <div class="flex gap-3 items-start">
+                    <div class="w-2.5 h-8 bg-indigo-600 rounded-full mt-0.5"></div>
+                    <div>
+                        <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">
+                            Bank Data Guru
+                        </h1>
+                        <p class="text-slate-500 text-sm mt-1 font-medium">
+                            Manajemen profil pengajar, NIP, dan beban jam.
+                        </p>
+                    </div>
                 </div>
 
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-4">
                     <div
-                        class="hidden md:flex items-center px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm">
-                        <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total: <span
-                                class="text-indigo-600 text-sm ml-1">{{ $gurus->count() }}</span></span>
+                        class="hidden md:flex items-center px-5 py-2.5 bg-white border border-slate-200 rounded-full shadow-sm">
+                        <span class="text-[11px] text-slate-500 font-bold uppercase tracking-wider">
+                            Total: <span
+                                class="text-indigo-600 text-sm ml-1 font-extrabold">{{ $gurus->count() }}</span>
+                        </span>
                     </div>
 
                     <button onclick="openModal('modaltambah')"
-                        class="relative inline-flex items-center justify-center px-6 py-2.5 overflow-hidden font-bold text-white transition-all duration-300 bg-indigo-600 rounded-xl group hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-0.5">
-                        <span class="flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            <span class="text-sm uppercase tracking-wide">Tambah</span>
-                        </span>
+                        class="px-6 py-2.5 font-bold text-white transition-all duration-300 bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:-translate-y-0.5 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
+                        <span class="text-sm uppercase tracking-wide">Tambah</span>
                     </button>
                 </div>
             </div>
 
             {{-- Baris 2: Search Bar --}}
-            <div class="relative group max-w-2xl">
+            <div class="relative group">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <svg class="h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" fill="none"
                         stroke="currentColor" viewBox="0 0 24 24">
@@ -78,84 +78,101 @@
                     </svg>
                 </div>
                 <input type="text" id="search-guru-main" oninput="searchMainTable()"
-                    class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-sm transition shadow-sm"
+                    class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm transition"
                     placeholder="Cari Nama Guru atau NIP...">
             </div>
         </div>
 
         {{-- 2. TABLE SECTION (SCROLLABLE AREA) --}}
-        <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white">
+        <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white px-2">
             <table class="w-full text-left border-collapse min-w-[800px]">
-                <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
+                <thead class="bg-white sticky top-0 z-10">
                     <tr>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-16 border-b border-slate-200">
+                            class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center w-16 border-b-2 border-slate-100">
                             #</th>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-[35%] border-b border-slate-200">
+                            class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider w-[40%] border-b-2 border-slate-100">
                             Profil Guru</th>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-[25%] border-b border-slate-200">
+                            class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center w-[25%] border-b-2 border-slate-100">
                             Beban Mengajar</th>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center w-[35%] border-b border-slate-200">
+                            class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center w-[35%] border-b-2 border-slate-100">
                             Aksi & Jadwal</th>
                     </tr>
                 </thead>
 
-                <tbody id="tbody-guru-main" class="divide-y divide-slate-100">
+                <tbody id="tbody-guru-main" class="divide-y divide-slate-100/80">
+                    @php
+                    // Tema warna dinamis sesuai dengan gambar referensi
+                    $themes = [
+                    ['avatar' => 'bg-pink-600', 'pillBg' => 'bg-pink-50', 'pillText' => 'text-pink-700', 'dot' =>
+                    'bg-pink-500'],
+                    ['avatar' => 'bg-cyan-500', 'pillBg' => 'bg-cyan-50', 'pillText' => 'text-cyan-700', 'dot' =>
+                    'bg-cyan-500'],
+                    ['avatar' => 'bg-blue-800', 'pillBg' => 'bg-blue-50', 'pillText' => 'text-blue-800', 'dot' =>
+                    'bg-blue-600'],
+                    ['avatar' => 'bg-indigo-500', 'pillBg' => 'bg-indigo-50', 'pillText' => 'text-indigo-700', 'dot' =>
+                    'bg-indigo-500'],
+                    ];
+                    @endphp
+
                     @forelse($gurus as $index => $g)
-                    <tr class="group hover:bg-indigo-50/40 transition-colors duration-200"
+                    @php $theme = $themes[$index % 4]; @endphp
+                    <tr class="group hover:bg-slate-50/50 transition-colors duration-200"
                         data-filter="{{ strtolower($g->nama_guru) }} {{ strtolower($g->kode_guru) }}">
 
                         {{-- NOMOR --}}
-                        <td class="px-6 py-4 text-center">
+                        <td class="px-8 py-5 text-center">
                             <span
-                                class="font-mono text-slate-400 text-sm group-hover:text-indigo-500 font-bold transition-colors">{{ $index + 1 }}</span>
+                                class="font-medium text-slate-400 text-sm group-hover:text-slate-600 transition-colors">{{ $index + 1 }}</span>
                         </td>
 
                         {{-- PROFIL --}}
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-5">
                             <div class="flex items-center gap-4">
                                 <div
-                                    class="h-11 w-11 shrink-0 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm ring-1 ring-indigo-50">
+                                    class="h-10 w-10 shrink-0 rounded-full {{ $theme['avatar'] }} text-white flex items-center justify-center font-bold text-sm shadow-sm">
                                     {{ substr($g->nama_guru, 0, 1) }}
                                 </div>
                                 <div>
                                     <div
-                                        class="font-bold text-slate-800 text-sm group-hover:text-indigo-700 transition-colors">
+                                        class="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors">
                                         {{ $g->nama_guru }}
                                     </div>
-                                    <span
-                                        class="inline-flex items-center px-2 py-0.5 mt-1 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 font-mono tracking-wide group-hover:border-indigo-200 group-hover:text-indigo-600 transition-colors">
+                                    <div
+                                        class="inline-block px-2 py-0.5 mt-1 rounded bg-slate-100 border border-slate-200 text-slate-500 font-bold text-[10px] tracking-wide">
                                         {{ $g->kode_guru }}
-                                    </span>
+                                    </div>
                                 </div>
                             </div>
                         </td>
 
                         {{-- BEBAN --}}
-                        <td class="px-6 py-4 text-center">
+                        <td class="px-6 py-5 text-center">
                             @if($g->total_jam_mengajar > 0)
                             <div
-                                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700">
-                                <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></div>
+                                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full {{ $theme['pillBg'] }} {{ $theme['pillText'] }}">
+                                <div class="w-1.5 h-1.5 rounded-full {{ $theme['dot'] }}"></div>
                                 <span class="text-xs font-bold">{{ $g->total_jam_mengajar }} Jam</span>
                             </div>
                             @else
                             <div
-                                class="inline-flex items-center px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-slate-400 text-xs font-medium italic">
-                                0 Jam
+                                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 text-slate-400 border border-slate-100">
+                                <div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                                <span class="text-xs font-bold">0 Jam</span>
                             </div>
                             @endif
                         </td>
 
                         {{-- AKSI --}}
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-5">
                             <div class="flex items-center justify-center gap-2">
                                 <button onclick="openModal('modaljadwal{{ $g->id }}')"
-                                    class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-sm transition-all hover:-translate-y-0.5">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    class="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 hover:border-indigo-400 hover:text-indigo-600 text-xs font-bold rounded-full transition-colors bg-white">
+                                    <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
                                         </path>
@@ -163,10 +180,8 @@
                                     Jadwal
                                 </button>
 
-                                <div class="w-px h-6 bg-slate-200 mx-1"></div>
-
                                 <button onclick="openModal('edit{{ $g->id }}')"
-                                    class="p-2 text-amber-500 bg-white border border-slate-200 hover:border-amber-200 hover:bg-amber-50 rounded-lg transition shadow-sm"
+                                    class="p-2 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg transition-colors bg-white"
                                     title="Edit">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -179,7 +194,7 @@
                                     onsubmit="return confirm('Hapus data {{ $g->nama_guru }}?')" class="inline">
                                     @csrf @method('DELETE')
                                     <button type="submit"
-                                        class="p-2 text-slate-400 hover:text-red-500 bg-white border border-slate-200 hover:border-red-200 hover:bg-red-50 rounded-lg transition shadow-sm"
+                                        class="p-2 border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300 rounded-lg transition-colors bg-white"
                                         title="Hapus">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -225,15 +240,19 @@
         </div>
 
         {{-- 3. FOOTER SECTION --}}
-        <div
-            class="bg-slate-50 border-t border-slate-200 px-6 py-3 flex justify-between items-center shrink-0 rounded-b-3xl">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sistem Penjadwalan</span>
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Secure Data</span>
+        <div class="bg-white border-t border-slate-100 px-8 py-4 flex justify-between items-center shrink-0">
+            <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Sistem Penjadwalan</span>
+            <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Secure Data</span>
         </div>
     </div>
 
+    {{-- COPYRIGHT TEXT DI LUAR CARD --}}
+    <div class="text-center mt-6 text-slate-500 text-[11px] font-medium tracking-wide">
+        &copy; 2026 SMAN 1 SAMPANG. Sistem Penjadwalan Terintegrasi.
+    </div>
+
     {{-- ========================================================= --}}
-    {{-- MODALS AREA --}}
+    {{-- MODALS AREA (Dibiarkan tetap sama sesuai logika Anda) --}}
     {{-- ========================================================= --}}
 
     {{-- 1. Modal Tambah --}}
@@ -263,7 +282,6 @@
                         class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none font-mono uppercase text-sm transition"
                         placeholder="GR-01" required>
                 </div>
-                {{-- TAMBAHAN: Pilihan Hari Mengajar --}}
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Hari Bersedia Mengajar <span
                             class="text-[10px] font-normal italic lowercase">(Kosongkan jika bisa setiap
@@ -313,7 +331,6 @@
                         class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none font-mono uppercase text-sm transition"
                         required>
                 </div>
-                {{-- TAMBAHAN: Pilihan Hari Mengajar (Centang otomatis) --}}
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Hari Bersedia Mengajar <span
                             class="text-[10px] font-normal italic lowercase">(Kosongkan jika bisa setiap
@@ -336,12 +353,11 @@
         </div>
     </div>
 
-    {{-- 3. Modal Jadwal Mengajar (Fixed Layout & Scroll) --}}
+    {{-- 3. Modal Jadwal Mengajar --}}
     <div id="modaljadwal{{ $g->id }}"
         class="fixed inset-0 bg-slate-900/80 z-[99] hidden flex items-center justify-center p-2 sm:p-4 transition-opacity duration-300">
         <div
             class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-200 overflow-hidden animate-scale-in">
-
             {{-- A. Header Modal (Tetap) --}}
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                 <div class="flex items-center gap-3">
@@ -363,11 +379,8 @@
 
             {{-- B. Body Modal (Split Layout) --}}
             <div class="flex flex-col lg:flex-row h-full overflow-hidden">
-
-                {{-- KIRI: Area Tabel (Flex Column) --}}
+                {{-- KIRI: Area Tabel --}}
                 <div class="flex-1 flex flex-col h-full border-r border-slate-100 bg-white relative min-w-0">
-
-                    {{-- 1. Search Bar (FIXED POSITION) --}}
                     <div class="p-4 border-b border-slate-100 bg-white z-20 shrink-0">
                         <div class="relative group">
                             <span
@@ -382,8 +395,6 @@
                                 class="w-full border border-slate-200 bg-slate-50/50 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500/50 focus:bg-white focus:border-indigo-500 outline-none transition-all">
                         </div>
                     </div>
-
-                    {{-- 2. Container Tabel (SCROLLABLE AREA) --}}
                     <div class="flex-1 overflow-y-auto custom-scrollbar p-0 relative bg-white">
                         <table class="w-full text-xs border-collapse">
                             <thead class="bg-slate-50 text-slate-500 font-bold uppercase sticky top-0 z-10 shadow-sm">
@@ -465,19 +476,16 @@
                             <div class="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
                                 <h4 id="form-title-{{ $g->id }}"
                                     class="font-extrabold text-slate-700 text-xs uppercase tracking-widest flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                                    Input Jadwal
+                                    <span class="w-2 h-2 rounded-full bg-indigo-500"></span> Input Jadwal
                                 </h4>
                                 <button id="btn-batal-{{ $g->id }}" type="button"
                                     onclick="resetFormJadwal({{ $g->id }})"
                                     class="hidden text-[10px] font-bold text-red-500 hover:bg-red-50 px-2 py-1 rounded transition uppercase">Batal</button>
                             </div>
-
                             <form id="form-jadwal-{{ $g->id }}" action="{{ route('guru.simpanJadwal', $g->id) }}"
                                 method="POST" onsubmit="handleFormJadwal(event, this, {{ $g->id }})">
                                 <div id="method-spoof-{{ $g->id }}"></div>
                                 <div class="space-y-5">
-                                    {{-- Dropdown Mapel --}}
                                     <div class="relative custom-select-wrapper" id="wrapper-mapel-{{ $g->id }}">
                                         <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Mata
                                             Pelajaran</label>
@@ -512,8 +520,6 @@
                                             </div>
                                         </div>
                                     </div>
-
-                                    {{-- Dropdown Kelas --}}
                                     <div class="relative custom-select-wrapper" id="wrapper-kelas-{{ $g->id }}">
                                         <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Kelas
                                             Tujuan</label>
@@ -547,8 +553,6 @@
                                             </div>
                                         </div>
                                     </div>
-
-                                    {{-- Input Jam & Tipe --}}
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             <label
@@ -583,11 +587,9 @@
                                             </div>
                                         </div>
                                     </div>
-
                                     <button type="submit" id="btn-submit-{{ $g->id }}"
-                                        class="w-full py-3.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-lg hover:shadow-indigo-500/30 transform active:scale-95 transition-all duration-300 mt-2">
-                                        Simpan Jadwal
-                                    </button>
+                                        class="w-full py-3.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-lg hover:shadow-indigo-500/30 transform active:scale-95 transition-all duration-300 mt-2">Simpan
+                                        Jadwal</button>
                                 </div>
                             </form>
                         </div>
@@ -776,13 +778,14 @@ function resetFormJadwal(guruId) {
     if (!container || !form) return;
 
     container.classList.remove('ring-2', 'ring-amber-200');
-    document.getElementById(`form-title-${guruId}`).innerHTML = `INPUT JADWAL`;
+    document.getElementById(`form-title-${guruId}`).innerHTML =
+        `<span class="w-2 h-2 rounded-full bg-indigo-500"></span> INPUT JADWAL`;
     document.getElementById(`btn-batal-${guruId}`).classList.add('hidden');
 
     const btnSubmit = document.getElementById(`btn-submit-${guruId}`);
     btnSubmit.className =
         "w-full py-3.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-lg transition mt-2";
-    btnSubmit.innerHTML = "SIMPAN";
+    btnSubmit.innerHTML = "SIMPAN JADWAL";
 
     form.reset();
     resetCustomDropdown('mapel', guruId);
@@ -852,7 +855,7 @@ function updateTableUI(guruId, jadwal, isEdit) {
     } else {
         const tr = document.createElement('tr');
         tr.id = `row-jadwal-${jadwal.id}`;
-        tr.className = "hover:bg-indigo-50 transition";
+        tr.className = "hover:bg-indigo-50/50 transition duration-150 group";
         tr.innerHTML = `
             <td class="px-4 py-3 font-bold text-slate-700 align-middle mapel-text">${namaMapel}<div class="text-[10px] font-normal text-slate-400 mt-0.5">${kodeMapel}</div></td>
             <td class="px-4 py-3 text-slate-600 align-middle kelas-text font-medium">${namaKelas}</td>
@@ -863,10 +866,20 @@ function updateTableUI(guruId, jadwal, isEdit) {
                 </div>
             </td>
             <td class="px-4 py-3 text-right align-middle">
-                <button onclick="editJadwalInline(${guruId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.kelas_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}')" class="text-indigo-600 hover:text-indigo-800 mr-2 p-1">✏️</button>
-                <button onclick="hapusJadwal(${jadwal.id}, this)" class="text-red-500 hover:text-red-700 p-1">🗑️</button>
+                <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onclick="editJadwalInline(${guruId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.kelas_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}')" class="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded-lg transition" title="Edit">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                    </button>
+                    <button onclick="hapusJadwal(${jadwal.id}, this)" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition" title="Hapus">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </div>
             </td>`;
         tbody.appendChild(tr);
+
+        // Hapus row kosong jika ada
+        const emptyRow = tbody.querySelector('.empty-row');
+        if (emptyRow) emptyRow.remove();
     }
 }
 
