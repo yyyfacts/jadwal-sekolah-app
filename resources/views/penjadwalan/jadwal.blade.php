@@ -2,9 +2,7 @@
 
 @section('content')
 {{-- BACKGROUND AMBIENT --}}
-<div class="fixed inset-0 -z-10 pointer-events-none bg-[#f8fafc]">
-    <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-indigo-50/60 to-slate-50"></div>
-</div>
+<div class="fixed inset-0 -z-10 pointer-events-none bg-[#f4f7fb]"></div>
 
 <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 min-h-[calc(100vh-6rem)] pb-8 pt-6 flex flex-col">
 
@@ -34,13 +32,13 @@
 
     {{-- MAIN CARD UI --}}
     <div
-        class="bg-white rounded-[2rem] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] border border-slate-100 flex flex-col flex-1 overflow-hidden">
+        class="bg-white rounded-[2rem] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col flex-1 overflow-hidden">
 
-        {{-- 1. HEADER SECTION (Gaya Baru & Teks Dinamis Rapi) --}}
-        <div class="p-8 border-b border-slate-100 shrink-0 bg-white z-20">
+        {{-- 1. HEADER SECTION --}}
+        <div class="p-8 border-b border-slate-100 shrink-0 bg-white">
             <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-6">
 
-                {{-- Judul (Kiri) --}}
+                {{-- Judul --}}
                 <div class="flex gap-4 items-start">
                     <div class="w-2.5 h-12 bg-indigo-600 rounded-full mt-1"></div>
                     <div>
@@ -59,8 +57,8 @@
                     </div>
                 </div>
 
-                {{-- Action Buttons (Kanan) --}}
-                <div class="flex flex-wrap items-center gap-3">
+                {{-- Action Buttons --}}
+                <div class="flex items-center gap-3">
                     <a href="{{ route('jadwal.export') }}"
                         class="flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 font-bold text-xs uppercase tracking-widest rounded-xl transition-all shadow-sm">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,7 +101,7 @@
             </div>
         </div>
 
-        {{-- 2. TABLE SECTION (Freeze Pane Setup) --}}
+        {{-- 2. TABLE SECTION (Freeze Pane Sempurna) --}}
         <div class="flex-1 overflow-auto custom-scrollbar relative bg-slate-50/50">
             @if($kelass->isEmpty())
             <div class="flex flex-col items-center justify-center h-full py-20 text-center">
@@ -112,41 +110,41 @@
                 <p class="text-slate-400 text-sm mt-1">Sistem belum memiliki jadwal atau data kelas.</p>
             </div>
             @else
-            <table class="w-full min-w-[1200px]" id="jadwal-tabel">
-                <thead class="sticky top-0 z-[60]">
-                    {{-- Row 1: Header Hitam Gelap --}}
-                    <tr class="bg-[#1e293b] text-white">
+            <table class="w-full min-w-[1200px] border-separate border-spacing-0" id="jadwal-tabel">
+                <thead>
+                    {{-- Row 1: Header Hitam Gelap (TOP 0) --}}
+                    <tr class="text-white">
                         <th
-                            class="h-14 w-[60px] min-w-[60px] max-w-[60px] border-r border-b border-slate-700/50 bg-[#0f172a] sticky left-0 z-[60]">
+                            class="h-[56px] w-[60px] min-w-[60px] max-w-[60px] border-r border-b border-slate-700/50 bg-[#0f172a] sticky top-0 left-0 z-[60]">
                         </th>
                         <th
-                            class="h-14 w-[50px] min-w-[50px] max-w-[50px] border-r border-b border-slate-700/50 bg-[#0f172a] sticky left-[60px] z-[60]">
+                            class="h-[56px] w-[50px] min-w-[50px] max-w-[50px] border-r border-b border-slate-700/50 bg-[#0f172a] sticky top-0 left-[60px] z-[60]">
                         </th>
                         <th
-                            class="h-14 w-[80px] min-w-[80px] max-w-[80px] border-r border-b border-slate-700/50 bg-[#0f172a] sticky left-[110px] z-[60] freeze-pane-shadow">
+                            class="h-[56px] w-[80px] min-w-[80px] max-w-[80px] border-r border-b border-slate-700/50 bg-[#0f172a] sticky top-0 left-[110px] z-[60] freeze-pane-shadow">
                         </th>
                         @foreach($kelass as $kelas)
-                        <th class="h-14 px-4 border-r border-b border-slate-700/50 text-center font-extrabold text-[14px] tracking-wider uppercase jadwal-header bg-[#1e293b]"
+                        <th class="h-[56px] px-4 border-r border-b border-slate-700/50 text-center font-extrabold text-[14px] tracking-wider uppercase jadwal-header bg-[#1e293b] sticky top-0 z-[50]"
                             data-kelas="{{ strtolower($kelas->nama_kelas) }}">
                             {{ $kelas->nama_kelas }}
                         </th>
                         @endforeach
                     </tr>
 
-                    {{-- Row 2: Sub-Header Putih (HARI, JP, WAKTU, KELAS) --}}
-                    <tr class="bg-white text-slate-400">
+                    {{-- Row 2: Sub-Header Putih (TOP 56px karena tinggi Header 1 adalah 56px) --}}
+                    <tr class="text-slate-400">
                         <th
-                            class="h-10 w-[60px] min-w-[60px] max-w-[60px] sticky left-0 z-[50] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-500">
+                            class="h-[40px] w-[60px] min-w-[60px] max-w-[60px] sticky top-[56px] left-0 z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-500">
                             HARI</th>
                         <th
-                            class="h-10 w-[50px] min-w-[50px] max-w-[50px] sticky left-[60px] z-[50] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-500">
+                            class="h-[40px] w-[50px] min-w-[50px] max-w-[50px] sticky top-[56px] left-[60px] z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-500">
                             JP</th>
                         <th
-                            class="h-10 w-[80px] min-w-[80px] max-w-[80px] sticky left-[110px] z-[50] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-500 freeze-pane-shadow">
+                            class="h-[40px] w-[80px] min-w-[80px] max-w-[80px] sticky top-[56px] left-[110px] z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-500 freeze-pane-shadow">
                             WAKTU</th>
                         @foreach($kelass as $kelas)
                         <th
-                            class="h-10 min-w-[160px] border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400 bg-slate-50/80">
+                            class="h-[40px] min-w-[160px] border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400 bg-slate-50/80 sticky top-[56px] z-[50]">
                             {{ $kelas->nama_kelas }}
                         </th>
                         @endforeach
@@ -196,7 +194,7 @@
                             {{ $jam }}
                         </td>
 
-                        {{-- Kolom WAKTU (Sticky Lapis 3 + Efek Bayangan Papan) --}}
+                        {{-- Kolom WAKTU (Sticky Lapis 3 + Shadow) --}}
                         <td
                             class="w-[80px] min-w-[80px] max-w-[80px] sticky left-[110px] z-[40] p-2 bg-white border-r border-b border-slate-200 text-center text-[10px] font-mono font-medium text-slate-400 freeze-pane-shadow">
                             @php
@@ -215,7 +213,7 @@
                             @endif
                         </td>
 
-                        {{-- Kolom Kelas / Sel Jadwal (Isi Data) --}}
+                        {{-- Kolom Kelas / Sel Jadwal --}}
                         @if($jam == 0)
                         <td colspan="{{ $kelass->count() }}"
                             class="p-1.5 border-b border-slate-100 align-middle bg-slate-50/50">
@@ -287,7 +285,7 @@
                         @endif
                         @endfor
 
-                        {{-- Pemisah Antar Hari (Garis Tebal) --}}
+                        {{-- Pemisah Antar Hari --}}
                         <tr>
                             <td colspan="{{ $kelass->count() + 3 }}"
                                 class="bg-slate-100/80 h-2 border-y border-slate-200"></td>
@@ -332,7 +330,7 @@
 
 @push('styles')
 <style>
-/* Tabel Setup untuk Freeze Pane Sempurna */
+/* MENCEGAH BORDER RUSAK SAAT STICKY */
 table {
     border-collapse: separate;
     border-spacing: 0;
@@ -344,7 +342,7 @@ table {
     white-space: nowrap;
 }
 
-/* Custom Scrollbar Clean */
+/* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -368,7 +366,6 @@ table {
 .freeze-pane-shadow {
     box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.06);
     clip-path: inset(0 -15px 0 0);
-    /* Membatasi shadow agar tidak bocor ke sisi lain */
 }
 </style>
 @endpush
@@ -376,14 +373,13 @@ table {
 @push('scripts')
 <script>
 // ==========================================================
-// MAGIC LIVE SEARCH JADWAL MATRIKS (Anti Lelet, Sangat Mulus)
+// MAGIC LIVE SEARCH JADWAL MATRIKS
 // ==========================================================
 function filterJadwalRealtime() {
     const input = document.getElementById('search-jadwal').value.toLowerCase().trim();
     const cells = document.querySelectorAll('.jadwal-cell');
     const headers = document.querySelectorAll('.jadwal-header');
 
-    // KONDISI 1: JIKA KOTAK PENCARIAN KOSONG
     if (input === '') {
         cells.forEach(cell => {
             cell.style.opacity = '1';
@@ -399,19 +395,16 @@ function filterJadwalRealtime() {
         return;
     }
 
-    // KONDISI 2: MENCARI
     let classMatched = false;
 
     cells.forEach(cell => {
         const searchData = cell.getAttribute('data-search');
         const dataKelas = cell.getAttribute('data-kelas');
 
-        // Cek jika input adalah persis nama kelas
         if (dataKelas === input) {
             classMatched = true;
         }
 
-        // Cek isi data (Guru/Mapel/Kelas)
         if (searchData && searchData.includes(input)) {
             cell.style.opacity = '1';
             cell.style.filter = 'none';
@@ -421,7 +414,6 @@ function filterJadwalRealtime() {
                 innerBox.classList.add('ring-4', 'ring-indigo-400', 'ring-offset-2', 'scale-[1.05]');
             }
         } else {
-            // Sel tidak cocok jadi buram/grayscale
             cell.style.opacity = '0.15';
             cell.style.filter = 'grayscale(100%)';
             const innerBox = cell.querySelector('.sel-content');
@@ -431,7 +423,6 @@ function filterJadwalRealtime() {
         }
     });
 
-    // Sesuaikan Header Kelas di atas tabel
     headers.forEach(header => {
         const headerKelas = header.getAttribute('data-kelas');
         if (classMatched) {
