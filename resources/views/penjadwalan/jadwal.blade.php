@@ -35,7 +35,7 @@
         class="bg-white rounded-[2rem] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col flex-1 overflow-hidden">
 
         {{-- 1. HEADER SECTION --}}
-        <div class="p-8 border-b border-slate-100 shrink-0 bg-white z-20">
+        <div class="p-8 border-b border-slate-100 shrink-0 bg-white z-20 relative">
             <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-6">
 
                 {{-- Judul --}}
@@ -46,7 +46,7 @@
                             Jadwal Pelajaran Terpadu
                         </h1>
                         <div
-                            class="flex items-center gap-2 mt-2 text-slate-500 text-sm font-medium bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 w-fit">
+                            class="flex items-center gap-2 mt-2 text-slate-500 text-sm font-medium bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 w-fit">
                             <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
@@ -101,8 +101,8 @@
             </div>
         </div>
 
-        {{-- 2. TABLE SECTION (Strict Freeze Pane - Anti Bocor) --}}
-        <div class="flex-1 overflow-auto custom-scrollbar relative bg-slate-50/50">
+        {{-- 2. TABLE SECTION (Freeze Pane Anti Bocor 100%) --}}
+        <div class="flex-1 overflow-auto custom-scrollbar relative bg-slate-50 z-10">
             @if($kelass->isEmpty())
             <div class="flex flex-col items-center justify-center h-full py-20 text-center">
                 <div class="text-6xl mb-4 opacity-30">🗂️</div>
@@ -112,7 +112,7 @@
             @else
             <table class="w-full min-w-[1400px] table-fixed border-separate border-spacing-0" id="jadwal-tabel">
                 <thead>
-                    {{-- Row 1: Header Hitam Gelap (Z-INDEX TERTINGGI 70 & 50) --}}
+                    {{-- Row 1: Header Hitam Gelap (TOP 0) --}}
                     <tr class="text-white">
                         <th
                             class="w-[60px] h-[56px] border-r border-b border-slate-700/50 bg-[#0f172a] sticky top-0 left-0 z-[70]">
@@ -124,34 +124,34 @@
                             class="w-[100px] h-[56px] border-r border-b border-slate-700/50 bg-[#0f172a] sticky top-0 left-[110px] z-[70] freeze-pane-shadow">
                         </th>
                         @foreach($kelass as $kelas)
-                        <th class="h-[56px] bg-[#1e293b] sticky top-0 z-[50] border-r border-b border-slate-700/50 text-center font-extrabold text-[14px] tracking-wider uppercase jadwal-header"
+                        <th class="h-[56px] bg-[#1e293b] sticky top-0 z-[60] border-r border-b border-slate-700/50 text-center font-extrabold text-[14px] tracking-wider uppercase jadwal-header"
                             data-kelas="{{ strtolower($kelas->nama_kelas) }}">
                             {{ $kelas->nama_kelas }}
                         </th>
                         @endforeach
                     </tr>
 
-                    {{-- Row 2: Sub-Header Putih (Z-INDEX 60 & 40) --}}
-                    <tr class="text-slate-400">
+                    {{-- Row 2: Sub-Header Putih (TOP 56px) - NO OPACITY ALLOWED --}}
+                    <tr class="text-slate-500">
                         <th
-                            class="w-[60px] h-[40px] sticky top-[56px] left-0 z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-500">
+                            class="w-[60px] h-[40px] sticky top-[56px] left-0 z-[70] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest">
                             HARI</th>
                         <th
-                            class="w-[50px] h-[40px] sticky top-[56px] left-[60px] z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-500">
+                            class="w-[50px] h-[40px] sticky top-[56px] left-[60px] z-[70] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest">
                             JP</th>
                         <th
-                            class="w-[100px] h-[40px] sticky top-[56px] left-[110px] z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-500 freeze-pane-shadow">
+                            class="w-[100px] h-[40px] sticky top-[56px] left-[110px] z-[70] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest freeze-pane-shadow">
                             WAKTU</th>
                         @foreach($kelass as $kelas)
                         <th
-                            class="min-w-[160px] h-[40px] bg-slate-50/80 sticky top-[56px] z-[40] border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest">
+                            class="min-w-[160px] h-[40px] bg-slate-100 sticky top-[56px] z-[60] border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-500">
                             {{ $kelas->nama_kelas }}
                         </th>
                         @endforeach
                     </tr>
                 </thead>
 
-                <tbody class="bg-white relative z-[10]">
+                <tbody class="bg-white">
                     @php
                     $hariList = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
                     $waktu = [
@@ -175,12 +175,12 @@
                     @endphp
 
                     @for($jam = $startJam; $jam <= $maxJam; $jam++) <tr
-                        class="hover:bg-slate-50/50 transition-colors duration-150">
+                        class="hover:bg-slate-50 transition-colors duration-150 relative z-[10]">
 
-                        {{-- Kolom HARI (Z-INDEX 30) --}}
+                        {{-- Kolom HARI (Z-INDEX 50) --}}
                         @if($jam == $startJam)
                         <td rowspan="{{ $rowSpanTotal }}"
-                            class="w-[60px] sticky left-0 z-[30] p-0 bg-white border-r border-b border-slate-200 align-middle text-center">
+                            class="w-[60px] sticky left-0 z-[50] p-0 bg-white border-r border-b border-slate-200 align-middle text-center">
                             <div
                                 class="font-extrabold text-slate-400 uppercase tracking-[0.2em] text-[12px] h-full flex items-center justify-center py-4 px-2 vertical-text">
                                 {{ $hari }}
@@ -188,26 +188,35 @@
                         </td>
                         @endif
 
-                        {{-- Kolom JP (Z-INDEX 30) --}}
+                        {{-- Kolom JP (Z-INDEX 50) --}}
                         <td
-                            class="w-[50px] sticky left-[60px] z-[30] p-2 bg-white border-r border-b border-slate-200 text-center font-bold text-slate-600 text-[11px]">
+                            class="w-[50px] sticky left-[60px] z-[50] p-2 bg-white border-r border-b border-slate-200 text-center font-bold text-slate-600 text-[11px]">
                             {{ $jam }}
                         </td>
 
-                        {{-- Kolom WAKTU (Z-INDEX 30 + Shadow) --}}
+                        {{-- Kolom WAKTU (Z-INDEX 50 + Shadow) --}}
                         <td
-                            class="w-[100px] sticky left-[110px] z-[30] p-2 bg-white border-r border-b border-slate-200 text-center text-[10.5px] font-mono font-medium text-slate-500 freeze-pane-shadow">
+                            class="w-[100px] sticky left-[110px] z-[50] p-2 bg-white border-r border-b border-slate-200 text-center text-[10px] font-mono font-medium text-slate-500 freeze-pane-shadow">
                             @php
                             $w = ($hari == 'Senin') ? $waktu['Senin'][$jam] : (($hari == 'Jumat') ?
                             $waktu['Jumat'][$jam] : $waktu['Default'][$jam]);
+                            $w_parts = explode('-', $w);
                             @endphp
+                            @if(count($w_parts) == 2)
+                            <div class="flex flex-col items-center justify-center space-y-0.5">
+                                <span>{{ trim($w_parts[0]) }}</span>
+                                <span class="text-[8px] text-slate-300 leading-none">-</span>
+                                <span>{{ trim($w_parts[1]) }}</span>
+                            </div>
+                            @else
                             {{ $w }}
+                            @endif
                         </td>
 
                         {{-- Kolom Kelas / Sel Jadwal (Z-INDEX 10) --}}
                         @if($jam == 0)
                         <td colspan="{{ $kelass->count() }}"
-                            class="p-1.5 border-b border-slate-100 align-middle bg-slate-50/50 z-[10] relative">
+                            class="p-1.5 border-b border-slate-100 align-middle bg-slate-50 relative z-[10]">
                             <div
                                 class="w-full h-full bg-white border border-slate-200 rounded-lg flex items-center justify-center p-2 shadow-sm">
                                 <span class="text-xs font-extrabold text-indigo-600 uppercase tracking-widest">
@@ -225,9 +234,9 @@
 
                             @if($data)
                             <div
-                                class="w-full h-full rounded-xl flex flex-col justify-center items-center px-1.5 py-1 {{ $data['color'] ?? 'bg-indigo-50 text-indigo-700' }} border border-black/5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] hover:shadow-md hover:scale-[1.03] cursor-pointer transition-all duration-300 relative overflow-hidden group sel-content">
+                                class="w-full h-full rounded-xl flex flex-col justify-center items-center px-1.5 py-1 {{ $data['color'] ?? 'bg-indigo-50 text-indigo-700' }} shadow-sm hover:shadow-md hover:scale-[1.03] cursor-pointer transition-all duration-300 relative overflow-hidden group sel-content border border-slate-100">
                                 <div
-                                    class="absolute inset-0 bg-white/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    class="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity">
                                 </div>
                                 <span
                                     class="font-bold text-[12px] leading-tight mb-0.5 line-clamp-1 relative z-10">{{ $data['mapel'] }}</span>
@@ -247,19 +256,27 @@
 
                         {{-- Row Istirahat --}}
                         @if(($jam == 4 || $jam == 8) && $hari != 'Jumat')
-                        <tr>
+                        <tr class="relative z-[10]">
                             <td
-                                class="w-[50px] sticky left-[60px] z-[30] p-1 border-r border-b border-slate-200 bg-slate-50 text-center font-bold text-slate-400 text-[10px]">
+                                class="w-[50px] sticky left-[60px] z-[50] p-1 border-r border-b border-slate-200 bg-slate-50 text-center font-bold text-slate-400 text-[10px]">
                                 IST
                             </td>
                             <td
-                                class="w-[100px] sticky left-[110px] z-[30] p-1 border-r border-b border-slate-200 bg-slate-50 text-center text-[10px] font-mono font-medium text-slate-400 freeze-pane-shadow">
-                                {{ $jam==4 ? '10.00-10.15' : '13.30-13.50' }}
+                                class="w-[100px] sticky left-[110px] z-[50] p-1 border-r border-b border-slate-200 bg-slate-50 text-center text-[10px] font-mono font-medium text-slate-400 freeze-pane-shadow">
+                                @php
+                                $w_ist = $jam==4 ? '10.00-10.15' : '13.30-13.50';
+                                $w_ist_parts = explode('-', $w_ist);
+                                @endphp
+                                <div class="flex flex-col items-center justify-center space-y-0.5">
+                                    <span>{{ trim($w_ist_parts[0]) }}</span>
+                                    <span class="text-[8px] text-slate-300 leading-none">-</span>
+                                    <span>{{ trim($w_ist_parts[1] ?? '') }}</span>
+                                </div>
                             </td>
                             <td colspan="{{ $kelass->count() }}"
                                 class="p-1 border-b border-slate-100 bg-slate-50 align-middle z-[10] relative">
                                 <div
-                                    class="w-full h-full bg-slate-200/40 rounded flex items-center justify-center p-1.5">
+                                    class="w-full h-full bg-slate-200/50 rounded flex items-center justify-center p-1.5">
                                     <span class="font-bold text-slate-400 text-[10px] tracking-[0.3em] uppercase">☕
                                         Istirahat</span>
                                 </div>
@@ -269,9 +286,9 @@
                         @endfor
 
                         {{-- Pemisah Antar Hari (Garis Tebal) --}}
-                        <tr>
+                        <tr class="relative z-[10]">
                             <td colspan="{{ $kelass->count() + 3 }}"
-                                class="bg-slate-100/80 h-2 border-y border-slate-200 z-[10] relative"></td>
+                                class="bg-slate-200 h-2 border-y border-slate-300 z-[10] relative"></td>
                         </tr>
                         @endforeach
                 </tbody>
@@ -280,7 +297,8 @@
         </div>
 
         {{-- 3. FOOTER SECTION --}}
-        <div class="bg-white border-t border-slate-100 px-8 py-4 flex justify-between items-center shrink-0">
+        <div
+            class="bg-white border-t border-slate-100 px-8 py-4 flex justify-between items-center shrink-0 z-20 relative">
             <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Sistem Penjadwalan
                 Terintegrasi</span>
             <span class="text-[11px] font-bold text-emerald-500 flex items-center gap-1.5 uppercase tracking-wider">
@@ -313,7 +331,7 @@
 
 @push('styles')
 <style>
-/* MENCEGAH BORDER RUSAK & MEMBUAT KEKAKUAN TABEL */
+/* KEKAKUAN TABEL & MENCEGAH BORDER BOCOR */
 table {
     table-layout: fixed;
     border-collapse: separate;
@@ -348,7 +366,9 @@ table {
 
 /* Efek Bayangan Pembatas Freeze Pane (Lembut) */
 .freeze-pane-shadow {
-    box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.05);
+    box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.06);
+    clip-path: inset(0 -15px 0 0);
+    /* Mencegah shadow tumpah ke luar batas tabel */
 }
 </style>
 @endpush
