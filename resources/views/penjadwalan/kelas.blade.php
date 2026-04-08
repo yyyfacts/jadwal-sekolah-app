@@ -782,7 +782,7 @@ function resetFormJadwal(kelasId) {
     const form = document.getElementById(`form-jadwal-${kelasId}`);
     if (!container || !form) return;
 
-    cont ainer.classList.remove('ring-2', 'ring-amber-200');
+    container.classList.remove('ring-2', 'ring-amber-200');
     document.getElementById(`form-title-${kelasId}`).innerHTML =
         `<span class="w-2 h-2 rounded-full bg-purple-500"></span> Input Plotting`;
     document.getElementById(`btn-batal-${kelasId}`).classList.add('hidden');
