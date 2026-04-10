@@ -115,6 +115,18 @@
                         Tahun Ajaran
                     </a>
 
+                    {{-- TAMBAHAN: 4A. HARI AKTIF --}}
+                    <a href="{{ route('master-hari.index') }}"
+                        class="px-3 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs('master-hari.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
+                        Hari Aktif
+                    </a>
+
+                    {{-- TAMBAHAN: 4B. JAM BELAJAR --}}
+                    <a href="{{ route('master-waktu.index') }}"
+                        class="px-3 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs('master-waktu.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
+                        Jam Belajar
+                    </a>
+
                     {{-- 5. JADWAL --}}
                     <a href="{{ route('jadwal.index') }}"
                         class="px-3 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs('jadwal.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
@@ -222,6 +234,18 @@
                 <a href="{{ route('tahun-pelajaran.index') }}"
                     class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('tahun-pelajaran.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                     <span class="text-xl">🗓️</span> Tahun Pelajaran
+                </a>
+
+                {{-- TAMBAHAN Mobile: Master Hari --}}
+                <a href="{{ route('master-hari.index') }}"
+                    class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('master-hari.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                    <span class="text-xl">🌞</span> Hari Aktif
+                </a>
+
+                {{-- TAMBAHAN Mobile: Master Waktu --}}
+                <a href="{{ route('master-waktu.index') }}"
+                    class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('master-waktu.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                    <span class="text-xl">⏰</span> Jam Belajar
                 </a>
 
                 {{-- Mobile: Jadwal --}}

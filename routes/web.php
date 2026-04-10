@@ -12,6 +12,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TahunPelajaranController; 
+// Tambahan Import Controller Baru
+use App\Http\Controllers\MasterHariController;
+use App\Http\Controllers\MasterWaktuController;
 
 // ==================================================================
 // 1. RUTE KHUSUS DEPLOY & DEBUG (PUBLIC)
@@ -91,6 +94,26 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', [TahunPelajaranController::class, 'store'])->name('store');
         Route::patch('/{id}/activate', [TahunPelajaranController::class, 'activate'])->name('activate');
         Route::delete('/{id}', [TahunPelajaranController::class, 'destroy'])->name('destroy');
+    });
+
+    // --------------------------------------------------------------
+    // GROUP: DATA MASTER (HARI AKTIF)
+    // --------------------------------------------------------------
+    Route::prefix('master-hari')->name('master-hari.')->group(function () {
+        Route::get('/', [MasterHariController::class, 'index'])->name('index');
+        Route::post('/', [MasterHariController::class, 'store'])->name('store');
+        Route::put('/{id}', [MasterHariController::class, 'update'])->name('update');
+        Route::delete('/{id}', [MasterHariController::class, 'destroy'])->name('destroy');
+    });
+
+    // --------------------------------------------------------------
+    // GROUP: DATA MASTER (WAKTU / JAM PELAJARAN)
+    // --------------------------------------------------------------
+    Route::prefix('master-waktu')->name('master-waktu.')->group(function () {
+        Route::get('/', [MasterWaktuController::class, 'index'])->name('index');
+        Route::post('/', [MasterWaktuController::class, 'store'])->name('store');
+        Route::put('/{id}', [MasterWaktuController::class, 'update'])->name('update');
+        Route::delete('/{id}', [MasterWaktuController::class, 'destroy'])->name('destroy');
     });
 
     // --------------------------------------------------------------
