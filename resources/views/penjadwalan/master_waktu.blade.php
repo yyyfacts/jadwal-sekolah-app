@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"
-    x-data="{ openEdit: false, editData: { id: '', jam_ke: '', mulai: '', selesai: '', tipe: '' } }">
+{{-- FIX: Hapus x-data dari div paling luar biar tidak bentrok --}}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
     {{-- Header Halaman --}}
     <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -175,9 +175,9 @@
 
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-2">
-                                {{-- Tombol Edit --}}
-                                <button
-                                    @click="openEdit = true; editData = { id: '{{ $w->id }}', jam_ke: '{{ $w->jam_ke }}', mulai: '{{ substr($w->waktu_mulai, 0, 5) }}', selesai: '{{ substr($w->waktu_selesai, 0, 5) }}', tipe: '{{ $w->tipe }}' }"
+                                {{-- FIX: Tombol Edit Pakai Teknik $dispatch Event --}}
+                                <button type="button"
+                                    @click="$dispatch('buka-modal-edit', { id: '{{ $w->id }}', jam_ke: '{{ $w->jam_ke }}', mulai: '{{ substr($w->waktu_mulai, 0, 5) }}', selesai: '{{ substr($w->waktu_selesai, 0, 5) }}', tipe: '{{ $w->tipe }}' })"
                                     class="text-xs font-bold text-amber-600 hover:text-amber-800 hover:bg-amber-50 px-2 py-1.5 rounded transition border border-transparent hover:border-amber-100">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -190,7 +190,7 @@
 
                                 {{-- Tombol Delete --}}
                                 <form action="{{ route('master-waktu.destroy', $w->id) }}" method="POST"
-                                    onsubmit="return confirm('Hapus jam ke-{{ $w->jam_ke }}?')">
+                                    onsubmit="return confirm('Yakin ingin menghapus jam ke-{{ $w->jam_ke }}?')">
                                     @csrf @method('DELETE')
                                     <button type="submit"
                                         class="text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1.5 rounded transition">
@@ -215,15 +215,26 @@
         </div>
     </div>
 
-    {{-- MODAL EDIT WAKTU --}}
-    <template x-if="openEdit">
-        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+    {{-- FIX: Modal Edit Waktu dengan sistem deteksi Event dari $dispatch --}}
+    <div x-data="{ openEdit: false, id: '', jam_ke: '', mulai: '', selesai: '', tipe: '' }" @buka-modal-edit.window="
+            openEdit = true; 
+            id = $event.detail.id; 
+            jam_ke = $event.detail.jam_ke; 
+            mulai = $event.detail.mulai; 
+            selesai = $event.detail.selesai; 
+            tipe = $event.detail.tipe;
+         ">
+
+        <div x-show="openEdit" style="display: none;"
+            class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
             x-transition.opacity>
             <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden"
                 @click.away="openEdit = false">
+
                 <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                     <h3 class="font-bold text-slate-800 tracking-tight">Edit Jam Pelajaran</h3>
-                    <button @click="openEdit = false" class="text-slate-400 hover:text-slate-600 transition">
+                    <button type="button" @click="openEdit = false"
+                        class="text-slate-400 hover:text-slate-600 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M6 18L18 6M6 6l12 12"></path>
@@ -231,20 +242,20 @@
                     </button>
                 </div>
 
-                <form :action="'{{ url('master-waktu') }}/' + editData.id" method="POST" class="p-6 space-y-5">
+                <form :action="'{{ url('master-waktu') }}/' + id" method="POST" class="p-6 space-y-5">
                     @csrf @method('PUT')
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Jam
                                 Ke</label>
-                            <input type="number" name="jam_ke" x-model="editData.jam_ke" required min="1"
+                            <input type="number" name="jam_ke" x-model="jam_ke" required min="1"
                                 class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition text-sm font-medium text-slate-700">
                         </div>
                         <div>
                             <label
                                 class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tipe</label>
-                            <select name="tipe" x-model="editData.tipe"
+                            <select name="tipe" x-model="tipe"
                                 class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition text-sm font-medium text-slate-700 appearance-none">
                                 <option value="Belajar">Belajar</option>
                                 <option value="Istirahat">Istirahat</option>
@@ -256,13 +267,13 @@
                         <div>
                             <label
                                 class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mulai</label>
-                            <input type="time" name="waktu_mulai" x-model="editData.mulai" required
+                            <input type="time" name="waktu_mulai" x-model="mulai" required
                                 class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition text-sm font-medium text-slate-700">
                         </div>
                         <div>
                             <label
                                 class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Selesai</label>
-                            <input type="time" name="waktu_selesai" x-model="editData.selesai" required
+                            <input type="time" name="waktu_selesai" x-model="selesai" required
                                 class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition text-sm font-medium text-slate-700">
                         </div>
                     </div>
@@ -277,6 +288,6 @@
                 </form>
             </div>
         </div>
-    </template>
+    </div>
 </div>
 @endsection

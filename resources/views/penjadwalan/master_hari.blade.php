@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"
-    x-data="{ openEdit: false, editData: { id: '', nama: '', max: '', active: 1 } }">
+{{-- FIX: Hapus x-data dari div luar agar tidak bentrok --}}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
     {{-- Header Halaman --}}
     <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -179,9 +179,9 @@
 
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-2">
-                                {{-- Tombol Edit --}}
-                                <button
-                                    @click="openEdit = true; editData = { id: '{{ $h->id }}', nama: '{{ $h->nama_hari }}', max: '{{ $h->max_jam }}', active: '{{ $h->is_active ? 1 : 0 }}' }"
+                                {{-- FIX: Tombol Edit Pakai $dispatch --}}
+                                <button type="button"
+                                    @click="$dispatch('buka-modal-edit-hari', { id: '{{ $h->id }}', nama: '{{ $h->nama_hari }}', max: '{{ $h->max_jam }}', active: '{{ $h->is_active ? 1 : 0 }}' })"
                                     class="text-xs font-bold text-amber-600 hover:text-amber-800 hover:bg-amber-50 px-2 py-1.5 rounded transition border border-transparent hover:border-amber-100">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -194,7 +194,7 @@
 
                                 {{-- Tombol Delete --}}
                                 <form action="{{ route('master-hari.destroy', $h->id) }}" method="POST"
-                                    onsubmit="return confirm('Hapus konfigurasi hari {{ $h->nama_hari }}?')">
+                                    onsubmit="return confirm('Yakin ingin menghapus konfigurasi hari {{ $h->nama_hari }}?')">
                                     @csrf @method('DELETE')
                                     <button type="submit"
                                         class="text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1.5 rounded transition"
@@ -220,15 +220,25 @@
         </div>
     </div>
 
-    {{-- MODAL EDIT HARI --}}
-    <template x-if="openEdit">
-        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+    {{-- FIX: MODAL EDIT HARI DENGAN SISTEM $dispatch EVENT --}}
+    <div x-data="{ openEdit: false, id: '', nama: '', max: '', active: 1 }" @buka-modal-edit-hari.window="
+            openEdit = true;
+            id = $event.detail.id;
+            nama = $event.detail.nama;
+            max = $event.detail.max;
+            active = $event.detail.active;
+         ">
+
+        <div x-show="openEdit" style="display: none;"
+            class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
             x-transition.opacity>
             <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden"
                 @click.away="openEdit = false">
+
                 <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                     <h3 class="font-bold text-slate-800">Edit Konfigurasi Hari</h3>
-                    <button @click="openEdit = false" class="text-slate-400 hover:text-slate-600 transition">
+                    <button type="button" @click="openEdit = false"
+                        class="text-slate-400 hover:text-slate-600 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M6 18L18 6M6 6l12 12"></path>
@@ -236,27 +246,27 @@
                     </button>
                 </div>
 
-                <form :action="'{{ url('master-hari') }}/' + editData.id" method="POST" class="p-6 space-y-5">
+                <form :action="'{{ url('master-hari') }}/' + id" method="POST" class="p-6 space-y-5">
                     @csrf @method('PUT')
 
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Hari
                             (Read Only)</label>
-                        <input type="text" name="nama_hari" x-model="editData.nama" readonly
+                        <input type="text" name="nama_hari" x-model="nama" readonly
                             class="w-full border border-slate-200 rounded-lg px-4 py-2.5 bg-slate-50 text-slate-400 font-medium outline-none cursor-not-allowed">
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Batas Jam
                             Mengajar</label>
-                        <input type="number" name="max_jam" x-model="editData.max" required min="1"
+                        <input type="number" name="max_jam" x-model="max" required min="1"
                             class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition text-sm font-medium text-slate-700">
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Status
                             Hari</label>
-                        <select name="is_active" x-model="editData.active"
+                        <select name="is_active" x-model="active"
                             class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition text-sm font-medium text-slate-700 appearance-none">
                             <option value="1">Aktif / Masuk</option>
                             <option value="0">Libur</option>
@@ -273,6 +283,6 @@
                 </form>
             </div>
         </div>
-    </template>
+    </div>
 </div>
 @endsection

@@ -12,9 +12,7 @@ class MasterWaktuController extends Controller
      */
     public function index()
     {
-        // Mengambil data urut berdasarkan jam_ke (memanfaatkan helper dari Model)
         $waktus = MasterWaktu::getOrdered();
-
         return view('penjadwalan.master_waktu', compact('waktus'));
     }
 
@@ -54,13 +52,18 @@ class MasterWaktuController extends Controller
     {
         $request->validate([
             'jam_ke' => 'required|integer|min:1',
-            'waktu_mulai' => 'required|date_format:H:i', // Format jam dan menit
+            'waktu_mulai' => 'required|date_format:H:i', 
             'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
             'tipe' => 'required|string|max:50',
         ]);
 
         try {
-            $waktu = MasterWaktu::findOrFail($id);
+            // FIX: Pakai find() biar anti-error kalau data tidak ada
+            $waktu = MasterWaktu::find($id);
+            if (!$waktu) {
+                return redirect()->back()->with('error', 'Gagal: Data tidak ditemukan atau sudah dihapus.');
+            }
+
             $waktu->update([
                 'jam_ke' => $request->jam_ke,
                 'waktu_mulai' => $request->waktu_mulai,
@@ -83,8 +86,11 @@ class MasterWaktuController extends Controller
     public function destroy($id)
     {
         try {
-            $waktu = MasterWaktu::findOrFail($id);
-            $waktu->delete();
+            // FIX: Pakai find() untuk mencegah error double-click
+            $waktu = MasterWaktu::find($id);
+            if ($waktu) {
+                $waktu->delete();
+            }
 
             return redirect()->route('master-waktu.index')
                              ->with('success', 'Data jam pelajaran berhasil dihapus.');

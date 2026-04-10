@@ -19,7 +19,7 @@ class MasterHariController extends Controller
     }
 
     /**
-     * Menyimpan Data Hari Baru (Jika sekolah nambah hari khusus)
+     * Menyimpan Data Hari Baru
      */
     public function store(Request $request)
     {
@@ -45,7 +45,7 @@ class MasterHariController extends Controller
     }
 
     /**
-     * Mengupdate Data Hari (Misal mengubah batas max jam atau meliburkan hari)
+     * Mengupdate Data Hari
      */
     public function update(Request $request, $id)
     {
@@ -56,7 +56,12 @@ class MasterHariController extends Controller
         ]);
 
         try {
-            $hari = MasterHari::findOrFail($id);
+            // FIX: Pakai find() biar anti-error
+            $hari = MasterHari::find($id);
+            if (!$hari) {
+                return redirect()->back()->with('error', 'Gagal: Data hari tidak ditemukan.');
+            }
+
             $hari->update([
                 'nama_hari' => $request->nama_hari,
                 'max_jam' => $request->max_jam,
@@ -78,8 +83,11 @@ class MasterHariController extends Controller
     public function destroy($id)
     {
         try {
-            $hari = MasterHari::findOrFail($id);
-            $hari->delete();
+            // FIX: Pakai find() untuk mencegah error double-click
+            $hari = MasterHari::find($id);
+            if ($hari) {
+                $hari->delete();
+            }
 
             return redirect()->route('master-hari.index')
                              ->with('success', 'Data Hari berhasil dihapus.');
