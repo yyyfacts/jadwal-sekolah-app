@@ -20,6 +20,10 @@ class MasterWaktuController extends Controller
             'waktu_mulai'   => 'required|date_format:H:i',
             'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
             'tipe'          => 'required|string|max:50',
+            // --- TAMBAHAN BUAT HARI JUMAT ---
+            'mulai_jumat'   => 'nullable|date_format:H:i',
+            'selesai_jumat' => 'nullable|date_format:H:i',
+            'tipe_jumat'    => 'nullable|string|max:50',
         ]);
 
         MasterWaktu::create($request->all());
@@ -33,6 +37,10 @@ class MasterWaktuController extends Controller
             'waktu_mulai'   => 'required|date_format:H:i', 
             'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
             'tipe'          => 'required|string|max:50',
+            // --- TAMBAHAN BUAT HARI JUMAT ---
+            'mulai_jumat'   => 'nullable|date_format:H:i',
+            'selesai_jumat' => 'nullable|date_format:H:i',
+            'tipe_jumat'    => 'nullable|string|max:50',
         ]);
 
         MasterWaktu::findOrFail($id)->update($request->all());

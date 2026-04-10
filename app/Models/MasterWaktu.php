@@ -14,11 +14,9 @@ class MasterWaktu extends Model
 
     // Kolom yang boleh diisi (Mass Assignment)
     protected $fillable = [
-        'jam_ke',
-        'waktu_mulai',
-        'waktu_selesai',
-        'tipe'
-    ];
+    'jam_ke', 'waktu_mulai', 'waktu_selesai', 'tipe',
+    'mulai_jumat', 'selesai_jumat', 'tipe_jumat'
+];
 
     // Konversi tipe data otomatis
     protected $casts = [
