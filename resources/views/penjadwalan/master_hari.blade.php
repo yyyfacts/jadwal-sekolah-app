@@ -1,7 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"
+    x-data="{ openEdit: false, editData: { id: '', nama: '', max: '', active: 1 } }">
 
     {{-- Header Halaman --}}
     <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -177,39 +178,101 @@
                         </td>
 
                         <td class="px-6 py-4 text-right">
-                            <form action="{{ route('master-hari.destroy', $h->id) }}" method="POST"
-                                onsubmit="return confirm('Hapus konfigurasi hari {{ $h->nama_hari }}?')">
-                                @csrf @method('DELETE')
-                                <button type="submit"
-                                    class="text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1.5 rounded transition"
-                                    title="Hapus Data">
+                            <div class="flex items-center justify-end gap-2">
+                                {{-- Tombol Edit --}}
+                                <button
+                                    @click="openEdit = true; editData = { id: '{{ $h->id }}', nama: '{{ $h->nama_hari }}', max: '{{ $h->max_jam }}', active: '{{ $h->is_active ? 1 : 0 }}' }"
+                                    class="text-xs font-bold text-amber-600 hover:text-amber-800 hover:bg-amber-50 px-2 py-1.5 rounded transition border border-transparent hover:border-amber-100">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                            d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4L16.5 3.5z">
                                         </path>
                                     </svg>
                                 </button>
-                            </form>
+
+                                <div class="w-px h-4 bg-slate-200"></div>
+
+                                {{-- Tombol Delete --}}
+                                <form action="{{ route('master-hari.destroy', $h->id) }}" method="POST"
+                                    onsubmit="return confirm('Hapus konfigurasi hari {{ $h->nama_hari }}?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit"
+                                        class="text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1.5 rounded transition"
+                                        title="Hapus Data">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                            </path>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="px-6 py-12 text-center">
-                            <div class="flex flex-col items-center justify-center opacity-50">
-                                <svg class="w-12 h-12 mb-3 text-slate-300" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
-                                    </path>
-                                </svg>
-                                <span class="text-sm font-medium text-slate-500">Belum ada data hari aktif.</span>
-                            </div>
-                        </td>
+                        <td colspan="4" class="px-6 py-12 text-center text-slate-400 font-medium">Belum ada data hari
+                            aktif.</td>
                     </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
     </div>
+
+    {{-- MODAL EDIT HARI --}}
+    <template x-if="openEdit">
+        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+            x-transition.opacity>
+            <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden"
+                @click.away="openEdit = false">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                    <h3 class="font-bold text-slate-800">Edit Konfigurasi Hari</h3>
+                    <button @click="openEdit = false" class="text-slate-400 hover:text-slate-600 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <form :action="'{{ url('master-hari') }}/' + editData.id" method="POST" class="p-6 space-y-5">
+                    @csrf @method('PUT')
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Hari
+                            (Read Only)</label>
+                        <input type="text" name="nama_hari" x-model="editData.nama" readonly
+                            class="w-full border border-slate-200 rounded-lg px-4 py-2.5 bg-slate-50 text-slate-400 font-medium outline-none cursor-not-allowed">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Batas Jam
+                            Mengajar</label>
+                        <input type="number" name="max_jam" x-model="editData.max" required min="1"
+                            class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition text-sm font-medium text-slate-700">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Status
+                            Hari</label>
+                        <select name="is_active" x-model="editData.active"
+                            class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition text-sm font-medium text-slate-700 appearance-none">
+                            <option value="1">Aktif / Masuk</option>
+                            <option value="0">Libur</option>
+                        </select>
+                    </div>
+
+                    <div class="pt-4 flex gap-3">
+                        <button type="button" @click="openEdit = false"
+                            class="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-50 transition">Batal</button>
+                        <button type="submit"
+                            class="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-bold uppercase hover:bg-indigo-700 transition shadow-md">Simpan
+                            Perubahan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
 </div>
 @endsection

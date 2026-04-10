@@ -1,7 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"
+    x-data="{ openEdit: false, editData: { id: '', jam_ke: '', mulai: '', selesai: '', tipe: '' } }">
 
     {{-- Header Halaman --}}
     <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -68,36 +69,30 @@
 
         <form action="{{ route('master-waktu.store') }}" method="POST" class="p-6">
             @csrf
-            {{-- Menggunakan CSS Grid agar 4 input + 1 tombol sejajar rapi --}}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-
-                {{-- Input Jam Ke --}}
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Jam Ke</label>
                     <input type="number" name="jam_ke" placeholder="Contoh: 1" min="1" required
-                        class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm font-medium text-slate-700 placeholder-slate-400">
+                        class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm font-medium text-slate-700 placeholder-slate-400">
                 </div>
 
-                {{-- Input Waktu Mulai --}}
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mulai</label>
                     <input type="time" name="waktu_mulai" required
-                        class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm font-medium text-slate-700">
+                        class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm font-medium text-slate-700">
                 </div>
 
-                {{-- Input Waktu Selesai --}}
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Selesai</label>
                     <input type="time" name="waktu_selesai" required
-                        class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm font-medium text-slate-700">
+                        class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm font-medium text-slate-700">
                 </div>
 
-                {{-- Input Tipe --}}
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tipe</label>
                     <div class="relative">
                         <select name="tipe" required
-                            class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm font-medium text-slate-700 appearance-none cursor-pointer">
+                            class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm font-medium text-slate-700 appearance-none cursor-pointer">
                             <option value="Belajar" selected>Belajar</option>
                             <option value="Istirahat">Istirahat</option>
                         </select>
@@ -111,7 +106,6 @@
                     </div>
                 </div>
 
-                {{-- Tombol Simpan --}}
                 <div>
                     <button type="submit"
                         class="w-full inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold uppercase tracking-wide rounded-lg shadow-md hover:shadow-lg hover:shadow-indigo-500/30 transition-all duration-200 transform active:scale-95">
@@ -172,50 +166,117 @@
                         <td class="px-6 py-4 text-center">
                             @if($w->tipe == 'Belajar')
                             <span
-                                class="inline-flex items-center px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-600 border border-indigo-100 text-xs font-bold">
-                                Belajar
-                            </span>
+                                class="inline-flex items-center px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-600 border border-indigo-100 text-xs font-bold">Belajar</span>
                             @else
                             <span
-                                class="inline-flex items-center px-2.5 py-1 rounded-md bg-amber-50 text-amber-600 border border-amber-100 text-xs font-bold">
-                                Istirahat
-                            </span>
+                                class="inline-flex items-center px-2.5 py-1 rounded-md bg-amber-50 text-amber-600 border border-amber-100 text-xs font-bold">Istirahat</span>
                             @endif
                         </td>
 
                         <td class="px-6 py-4 text-right">
-                            <form action="{{ route('master-waktu.destroy', $w->id) }}" method="POST"
-                                onsubmit="return confirm('Hapus jam ke-{{ $w->jam_ke }}?')">
-                                @csrf @method('DELETE')
-                                <button type="submit"
-                                    class="text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1.5 rounded transition"
-                                    title="Hapus Data">
+                            <div class="flex items-center justify-end gap-2">
+                                {{-- Tombol Edit --}}
+                                <button
+                                    @click="openEdit = true; editData = { id: '{{ $w->id }}', jam_ke: '{{ $w->jam_ke }}', mulai: '{{ substr($w->waktu_mulai, 0, 5) }}', selesai: '{{ substr($w->waktu_selesai, 0, 5) }}', tipe: '{{ $w->tipe }}' }"
+                                    class="text-xs font-bold text-amber-600 hover:text-amber-800 hover:bg-amber-50 px-2 py-1.5 rounded transition border border-transparent hover:border-amber-100">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                            d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4L16.5 3.5z">
                                         </path>
                                     </svg>
                                 </button>
-                            </form>
+
+                                <div class="w-px h-4 bg-slate-200"></div>
+
+                                {{-- Tombol Delete --}}
+                                <form action="{{ route('master-waktu.destroy', $w->id) }}" method="POST"
+                                    onsubmit="return confirm('Hapus jam ke-{{ $w->jam_ke }}?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit"
+                                        class="text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1.5 rounded transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                            </path>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="px-6 py-12 text-center">
-                            <div class="flex flex-col items-center justify-center opacity-50">
-                                <svg class="w-12 h-12 mb-3 text-slate-300" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                <span class="text-sm font-medium text-slate-500">Belum ada data jam pelajaran.</span>
-                            </div>
-                        </td>
+                        <td colspan="4" class="px-6 py-12 text-center text-slate-400 font-medium tracking-wide italic">
+                            Belum ada data jam pelajaran.</td>
                     </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
     </div>
+
+    {{-- MODAL EDIT WAKTU --}}
+    <template x-if="openEdit">
+        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+            x-transition.opacity>
+            <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden"
+                @click.away="openEdit = false">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                    <h3 class="font-bold text-slate-800 tracking-tight">Edit Jam Pelajaran</h3>
+                    <button @click="openEdit = false" class="text-slate-400 hover:text-slate-600 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <form :action="'{{ url('master-waktu') }}/' + editData.id" method="POST" class="p-6 space-y-5">
+                    @csrf @method('PUT')
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Jam
+                                Ke</label>
+                            <input type="number" name="jam_ke" x-model="editData.jam_ke" required min="1"
+                                class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition text-sm font-medium text-slate-700">
+                        </div>
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tipe</label>
+                            <select name="tipe" x-model="editData.tipe"
+                                class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition text-sm font-medium text-slate-700 appearance-none">
+                                <option value="Belajar">Belajar</option>
+                                <option value="Istirahat">Istirahat</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mulai</label>
+                            <input type="time" name="waktu_mulai" x-model="editData.mulai" required
+                                class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition text-sm font-medium text-slate-700">
+                        </div>
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Selesai</label>
+                            <input type="time" name="waktu_selesai" x-model="editData.selesai" required
+                                class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none transition text-sm font-medium text-slate-700">
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex gap-3">
+                        <button type="button" @click="openEdit = false"
+                            class="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-50 transition">Batal</button>
+                        <button type="submit"
+                            class="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-bold uppercase hover:bg-indigo-700 transition shadow-md">Update
+                            Waktu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
 </div>
 @endsection
