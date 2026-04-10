@@ -7,97 +7,43 @@ use Illuminate\Http\Request;
 
 class MasterWaktuController extends Controller
 {
-    /**
-     * Menampilkan Daftar Jam / Waktu Pembelajaran
-     */
     public function index()
     {
         $waktus = MasterWaktu::getOrdered();
         return view('penjadwalan.master_waktu', compact('waktus'));
     }
 
-    /**
-     * Menyimpan Data Jam Pelajaran Baru
-     */
     public function store(Request $request)
     {
         $request->validate([
-            'jam_ke' => 'required|integer|min:1',
-            'waktu_mulai' => 'required|date_format:H:i',
+            'jam_ke'        => 'required|integer|min:1',
+            'waktu_mulai'   => 'required|date_format:H:i',
             'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
-            'tipe' => 'required|string|max:50',
+            'tipe'          => 'required|string|max:50',
         ]);
 
-        try {
-            MasterWaktu::create([
-                'jam_ke' => $request->jam_ke,
-                'waktu_mulai' => $request->waktu_mulai,
-                'waktu_selesai' => $request->waktu_selesai,
-                'tipe' => $request->tipe,
-            ]);
-
-            return redirect()->route('master-waktu.index')
-                             ->with('success', "Jam ke-{$request->jam_ke} berhasil ditambahkan.");
-
-        } catch (\Exception $e) {
-            return redirect()->back()
-                             ->with('error', 'Gagal menyimpan data waktu: ' . $e->getMessage());
-        }
+        MasterWaktu::create($request->all());
+        return redirect()->route('master-waktu.index')->with('success', "Jam ke-{$request->jam_ke} berhasil ditambahkan.");
     }
 
-    /**
-     * Mengupdate Data Jam Pelajaran
-     */
     public function update(Request $request, $id)
     {
         $request->validate([
-            'jam_ke' => 'required|integer|min:1',
-            'waktu_mulai' => 'required|date_format:H:i', 
+            'jam_ke'        => 'required|integer|min:1',
+            'waktu_mulai'   => 'required|date_format:H:i', 
             'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
-            'tipe' => 'required|string|max:50',
+            'tipe'          => 'required|string|max:50',
         ]);
 
-        try {
-            // FIX: Pakai find() biar anti-error kalau data tidak ada
-            $waktu = MasterWaktu::find($id);
-            if (!$waktu) {
-                return redirect()->back()->with('error', 'Gagal: Data tidak ditemukan atau sudah dihapus.');
-            }
-
-            $waktu->update([
-                'jam_ke' => $request->jam_ke,
-                'waktu_mulai' => $request->waktu_mulai,
-                'waktu_selesai' => $request->waktu_selesai,
-                'tipe' => $request->tipe,
-            ]);
-
-            return redirect()->route('master-waktu.index')
-                             ->with('success', "Data jam ke-{$waktu->jam_ke} berhasil diperbarui.");
-
-        } catch (\Exception $e) {
-            return redirect()->back()
-                             ->with('error', 'Gagal memperbarui data waktu: ' . $e->getMessage());
-        }
+        MasterWaktu::findOrFail($id)->update($request->all());
+        return redirect()->route('master-waktu.index')->with('success', "Data jam pelajaran diperbarui.");
     }
 
-    /**
-     * Menghapus Data Jam Pelajaran
-     */
     public function destroy($id)
     {
-        try {
-            // FIX: Pakai find() untuk mencegah error double-click
-            $waktu = MasterWaktu::find($id);
-            if ($waktu) {
-                $waktu->delete();
-            }
+        $waktu = MasterWaktu::find($id);
+        if ($waktu) $waktu->delete();
 
-            return redirect()->route('master-waktu.index')
-                             ->with('success', 'Data jam pelajaran berhasil dihapus.');
-
-        } catch (\Exception $e) {
-            return redirect()->back()
-                             ->with('error', 'Gagal menghapus data: ' . $e->getMessage());
-        }
+        return redirect()->route('master-waktu.index')->with('success', 'Data jam pelajaran dihapus.');
     }
 }

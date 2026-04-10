@@ -9,31 +9,25 @@ class MasterWaktu extends Model
 {
     use HasFactory;
 
-    // Mendefinisikan nama tabel secara eksplisit
+    // Nama tabel di database
     protected $table = 'master_waktu';
 
-    protected $fillable = ['jam_ke', 'waktu_mulai', 'waktu_selesai', 'tipe'];
+    // Kolom yang boleh diisi (Mass Assignment)
+    protected $fillable = [
+        'jam_ke',
+        'waktu_mulai',
+        'waktu_selesai',
+        'tipe'
+    ];
 
-    // Cast 'jam_ke' agar otomatis terdeteksi sebagai angka/integer
+    // Konversi tipe data otomatis
     protected $casts = [
         'jam_ke' => 'integer',
     ];
 
-    /**
-     * Helper statis untuk mengambil jadwal waktu secara berurutan.
-     * Cara pakainya di Controller: MasterWaktu::getOrdered()
-     */
+    // Helper: Ambil data urut dari jam pertama
     public static function getOrdered()
     {
         return self::orderBy('jam_ke', 'asc')->get();
-    }
-
-    /**
-     * Helper dinamis untuk mengecek apakah record ini adalah jam istirahat.
-     * Cara pakainya saat dilooping di Blade: if($waktu->isIstirahat()) { ... }
-     */
-    public function isIstirahat()
-    {
-        return $this->tipe === 'Istirahat';
     }
 }
