@@ -142,8 +142,9 @@
 
                         <td class="px-6 py-5">
                             <div class="flex items-center justify-end gap-2">
+                                {{-- FIX: Tombol Edit Pakai Murni Javascript --}}
                                 <button type="button"
-                                    @click="$dispatch('buka-modal-edit-waktu', { id: '{{ $w->id }}', jam_ke: '{{ $w->jam_ke }}', mulai: '{{ substr($w->waktu_mulai, 0, 5) }}', selesai: '{{ substr($w->waktu_selesai, 0, 5) }}', tipe: '{{ $w->tipe }}' })"
+                                    onclick="openEditModal({{ $w->id }}, {{ $w->jam_ke }}, '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}')"
                                     class="p-2 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg transition-colors bg-white"
                                     title="Edit">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -216,8 +217,7 @@
     {{-- 1. Modal Tambah --}}
     <div id="modaltambah"
         class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden flex items-center justify-center p-4">
-        <div
-            class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-scale-in border border-white/20">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-white/20">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <h3 class="font-bold text-slate-800 flex items-center gap-2">
                     <span class="w-1.5 h-5 bg-indigo-600 rounded-full"></span> Tambah Jam Pelajaran
@@ -265,16 +265,135 @@
         </div>
     </div>
 
-    {{-- 2. Modal Edit (AlpineJS) --}}
-    <div x-data="{ openEditWaktu: false, editData: { id: '', jam_ke: '', mulai: '', selesai: '', tipe: '' } }"
-        @buka-modal-edit-waktu.window="
-            openEditWaktu = true;
-            editData.id = $event.detail.id;
-            editData.jam_ke = $event.detail.jam_ke;
-            editData.mulai = $event.detail.mulai;
-            editData.selesai = $event.detail.selesai;
-            editData.tipe = $event.detail.tipe;
-         ">
+    {{-- 2. Modal Edit (Vanilla JS) --}}
+    <div id="modaledit"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-white/20">
+            <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
+                <h3 class="font-bold text-amber-800 flex items-center gap-2">
+                    <span class="w-1.5 h-5 bg-amber-500 rounded-full"></span> Edit Jam Pelajaran
+                </h3>
+                <button onclick="closeModal('modaledit')"
+                    class="text-amber-400 hover:text-amber-600 text-2xl leading-none">&times;</button>
+            </div>
 
-        <div x-show="openEditWaktu" style="display: none;"
-            class="fixed inset-0 z-[99] flex items-center justify-center p-4 bg-slate-9
+            <form id="form-edit-waktu" method="POST" class="p-6 space-y-5">
+                @csrf @method('PUT')
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Jam Ke</label>
+                        <input type="number" id="edit_jam_ke" name="jam_ke"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition"
+                            required min="1">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Tipe</label>
+                        <select id="edit_tipe" name="tipe"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition"
+                            required>
+                            <option value="Belajar">Belajar</option>
+                            <option value="Istirahat">Istirahat</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Waktu Mulai</label>
+                        <input type="time" id="edit_waktu_mulai" name="waktu_mulai"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition"
+                            required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Waktu Selesai</label>
+                        <input type="time" id="edit_waktu_selesai" name="waktu_selesai"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition"
+                            required>
+                    </div>
+                </div>
+                <button type="submit"
+                    class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">UPDATE
+                    DATA</button>
+            </form>
+        </div>
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<script>
+// Pencarian Table
+function searchMainTable() {
+    const input = document.getElementById('search-waktu-main').value.toLowerCase();
+    const rows = document.querySelectorAll('#tbody-waktu-main tr[data-filter]');
+    const noResultRow = document.getElementById('search-no-result');
+    let hasResult = false;
+
+    rows.forEach(row => {
+        const filterText = row.getAttribute('data-filter');
+        if (filterText && filterText.includes(input)) {
+            row.style.display = "";
+            hasResult = true;
+        } else {
+            row.style.display = "none";
+        }
+    });
+
+    if (noResultRow) {
+        if (!hasResult && input.length > 0) {
+            noResultRow.classList.remove('hidden');
+        } else {
+            noResultRow.classList.add('hidden');
+        }
+    }
+}
+
+// Buka Modal Tambah
+function openModal(modalID) {
+    const modal = document.getElementById(modalID);
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
+
+// Tutup Modal Apapun
+function closeModal(modalID) {
+    const modal = document.getElementById(modalID);
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+// FIX: Fungsi Buka Modal Edit Pakai Vanilla JS Murni
+function openEditModal(id, jam_ke, mulai, selesai, tipe) {
+    const modal = document.getElementById('modaledit');
+
+    // Set action form URL-nya
+    document.getElementById('form-edit-waktu').action = `{{ url('master-waktu') }}/${id}`;
+
+    // Isi data ke inputan
+    document.getElementById('edit_jam_ke').value = jam_ke;
+    document.getElementById('edit_waktu_mulai').value = mulai;
+    document.getElementById('edit_waktu_selesai').value = selesai;
+    document.getElementById('edit_tipe').value = tipe;
+
+    // Tampilkan modal
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+// Tutup modal kalau klik area luar (background gelap)
+window.onclick = function(event) {
+    const modalTambah = document.getElementById('modaltambah');
+    const modalEdit = document.getElementById('modaledit');
+
+    if (event.target === modalTambah) {
+        closeModal('modaltambah');
+    }
+    if (event.target === modalEdit) {
+        closeModal('modaledit');
+    }
+}
+</script>
+@endpush

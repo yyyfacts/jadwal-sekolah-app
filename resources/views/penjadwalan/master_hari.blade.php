@@ -147,8 +147,9 @@
 
                         <td class="px-6 py-5">
                             <div class="flex items-center justify-end gap-2">
+                                {{-- FIX: Panggil fungsi Javascript murni untuk Edit --}}
                                 <button type="button"
-                                    @click="$dispatch('buka-modal-edit-hari', { id: '{{ $h->id }}', nama: '{{ $h->nama_hari }}', max: '{{ $h->max_jam }}', active: '{{ $h->is_active ? 1 : 0 }}' })"
+                                    onclick="openEditModal({{ $h->id }}, '{{ $h->nama_hari }}', {{ $h->max_jam }}, {{ $h->is_active ? 1 : 0 }})"
                                     class="p-2 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg transition-colors bg-white"
                                     title="Edit">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -222,8 +223,7 @@
     {{-- 1. Modal Tambah --}}
     <div id="modaltambah"
         class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden flex items-center justify-center p-4">
-        <div
-            class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-scale-in border border-white/20">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-white/20">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <h3 class="font-bold text-slate-800 flex items-center gap-2">
                     <span class="w-1.5 h-5 bg-indigo-600 rounded-full"></span> Tambah Hari Aktif
@@ -261,55 +261,44 @@
         </div>
     </div>
 
-    {{-- 2. Modal Edit (AlpineJS) --}}
-    <div x-data="{ openEditHari: false, editData: { id: '', nama: '', max: '', active: 1 } }"
-        @buka-modal-edit-hari.window="
-            openEditHari = true;
-            editData.id = $event.detail.id;
-            editData.nama = $event.detail.nama;
-            editData.max = $event.detail.max;
-            editData.active = $event.detail.active;
-         ">
-
-        <div x-show="openEditHari" style="display: none;"
-            class="fixed inset-0 z-[99] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
-            x-transition.opacity>
-            <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20"
-                @click.away="openEditHari = false">
-                <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
-                    <h3 class="font-bold text-amber-800 flex items-center gap-2">
-                        <span class="w-1.5 h-5 bg-amber-500 rounded-full"></span> Edit Konfigurasi Hari
-                    </h3>
-                    <button type="button" @click="openEditHari = false"
-                        class="text-amber-400 hover:text-amber-600 text-2xl leading-none">&times;</button>
-                </div>
-                <form :action="'{{ url('master-hari') }}/' + editData.id" method="POST" class="p-6 space-y-5">
-                    @csrf @method('PUT')
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Hari</label>
-                        <input type="text" name="nama_hari" x-model="editData.nama"
-                            class="w-full border border-slate-200 rounded-xl px-4 py-3 bg-slate-50 text-slate-400 text-sm outline-none cursor-not-allowed"
-                            readonly>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Batas Jam Mengajar</label>
-                        <input type="number" name="max_jam" x-model="editData.max"
-                            class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition"
-                            required min="1">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Status Hari</label>
-                        <select name="is_active" x-model="editData.active"
-                            class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition">
-                            <option value="1">Aktif / Masuk</option>
-                            <option value="0">Libur</option>
-                        </select>
-                    </div>
-                    <button type="submit"
-                        class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">UPDATE
-                        DATA</button>
-                </form>
+    {{-- 2. Modal Edit (Vanilla JS) --}}
+    <div id="modaledit"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
+            <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
+                <h3 class="font-bold text-amber-800 flex items-center gap-2">
+                    <span class="w-1.5 h-5 bg-amber-500 rounded-full"></span> Edit Konfigurasi Hari
+                </h3>
+                <button onclick="closeModal('modaledit')"
+                    class="text-amber-400 hover:text-amber-600 text-2xl leading-none">&times;</button>
             </div>
+
+            <form id="form-edit-hari" method="POST" class="p-6 space-y-5">
+                @csrf @method('PUT')
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Hari</label>
+                    <input type="text" id="edit_nama_hari" name="nama_hari"
+                        class="w-full border border-slate-200 rounded-xl px-4 py-3 bg-slate-50 text-slate-400 text-sm outline-none cursor-not-allowed"
+                        readonly>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Batas Jam Mengajar</label>
+                    <input type="number" id="edit_max_jam" name="max_jam"
+                        class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition"
+                        required min="1">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Status Hari</label>
+                    <select id="edit_is_active" name="is_active"
+                        class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition">
+                        <option value="1">Aktif / Masuk</option>
+                        <option value="0">Libur</option>
+                    </select>
+                </div>
+                <button type="submit"
+                    class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">UPDATE
+                    DATA</button>
+            </form>
         </div>
     </div>
 </div>
@@ -317,6 +306,7 @@
 
 @push('scripts')
 <script>
+// Pencarian Table
 function searchMainTable() {
     const input = document.getElementById('search-hari-main').value.toLowerCase();
     const rows = document.querySelectorAll('#tbody-hari-main tr[data-filter]');
@@ -342,6 +332,7 @@ function searchMainTable() {
     }
 }
 
+// Buka Modal Tambah
 function openModal(modalID) {
     const modal = document.getElementById(modalID);
     if (modal) {
@@ -350,6 +341,7 @@ function openModal(modalID) {
     }
 }
 
+// Tutup Modal Apapun
 function closeModal(modalID) {
     const modal = document.getElementById(modalID);
     if (modal) {
@@ -358,10 +350,33 @@ function closeModal(modalID) {
     }
 }
 
+// FIX: Fungsi Buka Modal Edit Pakai Vanilla JS
+function openEditModal(id, nama, max, active) {
+    const modal = document.getElementById('modaledit');
+
+    // Set action form URL-nya
+    document.getElementById('form-edit-hari').action = `{{ url('master-hari') }}/${id}`;
+
+    // Isi data ke inputan
+    document.getElementById('edit_nama_hari').value = nama;
+    document.getElementById('edit_max_jam').value = max;
+    document.getElementById('edit_is_active').value = active;
+
+    // Tampilkan modal
+    moda l.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+// Tutup modal kalau klik area luar (background gelap)
 window.onclick = function(event) {
-    if (event.target.classList.contains('fixed') && !event.target.closest('[x-data]')) {
-        event.target.classList.add('hidden');
-        event.target.classList.remove('flex');
+    const modalTambah = document.getElementById('modaltambah');
+    const modalEdit = document.getElementById('modaledit');
+
+    if (event.target === modalTambah) {
+        closeModal('modaltambah');
+    }
+    if (event.target === modalEdit) {
+        closeModal('modaledit');
     }
 }
 </script>

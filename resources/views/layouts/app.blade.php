@@ -61,13 +61,15 @@
     </style>
 </head>
 
-<body class="bg-slate-50 font-sans text-slate-800 antialiased flex flex-col min-h-screen">
+{{-- FIX: Hapus overflow dari body agar scroll hanya di dalam card --}}
+
+<body class="bg-slate-50 font-sans text-slate-800 antialiased h-screen flex flex-col overflow-hidden">
 
     {{-- ========================================================= --}}
     {{-- 1. NAVBAR UTAMA (STICKY) --}}
     {{-- ========================================================= --}}
     <nav x-data="{ mobileMenuOpen: false }"
-        class="bg-[#0f172a] text-white shadow-xl sticky top-0 z-50 h-20 transition-all duration-300">
+        class="bg-[#0f172a] text-white shadow-xl shrink-0 z-50 h-20 transition-all duration-300 relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
             <div class="flex items-center justify-between h-full">
 
@@ -291,21 +293,10 @@
     {{-- ========================================================= --}}
     {{-- 2. CONTENT AREA --}}
     {{-- ========================================================= --}}
-    <main class="flex-grow max-w-7xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    {{-- FIX: Hapus container redundan karena container sudah ada di dalam file blade masing-masing halaman --}}
+    <main class="flex-grow w-full overflow-hidden flex flex-col relative z-0">
         @yield('content')
     </main>
-
-    {{-- ========================================================= --}}
-    {{-- 3. FOOTER --}}
-    {{-- ========================================================= --}}
-    <footer class="bg-white border-t border-slate-200 py-8 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 text-center">
-            <p class="text-slate-400 text-xs font-semibold tracking-wide">
-                &copy; {{ date('Y') }} SMAN 1 SAMPANG. <span class="hidden sm:inline">Sistem Penjadwalan
-                    Terintegrasi.</span>
-            </p>
-        </div>
-    </footer>
 
     @stack('scripts')
 </body>
