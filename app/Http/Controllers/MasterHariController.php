@@ -15,7 +15,7 @@ class MasterHariController extends Controller
         // Mengambil semua data hari
         $haris = MasterHari::all();
 
-        return view('penjadwalan.master_hari.index', compact('haris'));
+        return view('penjadwalan.master_hari', compact('haris'));
     }
 
     /**

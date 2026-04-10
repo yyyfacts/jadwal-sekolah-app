@@ -15,7 +15,7 @@ class MasterWaktuController extends Controller
         // Mengambil data urut berdasarkan jam_ke (memanfaatkan helper dari Model)
         $waktus = MasterWaktu::getOrdered();
 
-        return view('penjadwalan.master_waktu.index', compact('waktus'));
+        return view('penjadwalan.master_waktu', compact('waktus'));
     }
 
     /**
