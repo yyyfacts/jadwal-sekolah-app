@@ -15,30 +15,14 @@
     @if(session('success'))
     <div x-data="{ show: true }" x-show="show" x-transition
         class="mb-4 flex items-center justify-between p-4 bg-emerald-50 border border-emerald-100 rounded-xl shadow-sm text-emerald-800 shrink-0">
-        <div class="flex items-center gap-3">
-            <div class="p-2 bg-emerald-100 rounded-full text-emerald-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-            </div>
-            <span class="font-semibold text-sm">{{ session('success') }}</span>
-        </div>
+        <span class="font-semibold text-sm">✅ {{ session('success') }}</span>
         <button @click="show = false" class="text-emerald-400 hover:text-emerald-700">&times;</button>
     </div>
     @endif
     @if(session('error'))
     <div x-data="{ show: true }" x-show="show" x-transition
         class="mb-4 flex items-center justify-between p-4 bg-red-50 border border-red-100 rounded-xl shadow-sm text-red-800 shrink-0">
-        <div class="flex items-center gap-3">
-            <div class="p-2 bg-red-100 rounded-full text-red-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
-                    </path>
-                </svg>
-            </div>
-            <span class="font-semibold text-sm">{{ session('error') }}</span>
-        </div>
+        <span class="font-semibold text-sm">❌ {{ session('error') }}</span>
         <button @click="show = false" class="text-red-400 hover:text-red-700">&times;</button>
     </div>
     @endif
@@ -54,8 +38,8 @@
                     <div class="w-2.5 h-8 bg-indigo-600 rounded-full mt-0.5"></div>
                     <div>
                         <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Master Waktu</h1>
-                        <p class="text-slate-500 text-sm mt-1 font-medium">Kelola urutan jam pelajaran dan seting khusus
-                            hari Jumat.</p>
+                        <p class="text-slate-500 text-sm mt-1 font-medium">Kelola jam normal, khusus Senin, dan khusus
+                            Jumat.</p>
                     </div>
                 </div>
 
@@ -94,20 +78,23 @@
 
         {{-- 2. TABLE SECTION --}}
         <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white px-2">
-            <table class="w-full text-left border-collapse min-w-[800px]">
+            <table class="w-full text-left border-collapse min-w-[1000px]">
                 <thead class="bg-slate-50 sticky top-0 z-10">
                     <tr>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-400 uppercase text-center border-b-2 border-slate-200">
+                            class="px-4 py-4 text-xs font-bold text-slate-400 uppercase text-center border-b-2 border-slate-200">
                             Jam Ke</th>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-indigo-500 uppercase text-center border-b-2 border-indigo-200 bg-indigo-50/50">
-                            Waktu Normal (Senin - Kamis)</th>
+                            class="px-4 py-4 text-xs font-bold text-cyan-600 uppercase text-center border-b-2 border-cyan-200 bg-cyan-50/50">
+                            Khusus Senin</th>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-emerald-600 uppercase text-center border-b-2 border-emerald-200 bg-emerald-50/50">
-                            Waktu Khusus Jumat</th>
+                            class="px-4 py-4 text-xs font-bold text-indigo-500 uppercase text-center border-b-2 border-indigo-200 bg-indigo-50/50">
+                            Normal (Sel - Kam)</th>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-400 uppercase text-right border-b-2 border-slate-200">
+                            class="px-4 py-4 text-xs font-bold text-emerald-600 uppercase text-center border-b-2 border-emerald-200 bg-emerald-50/50">
+                            Khusus Jumat</th>
+                        <th
+                            class="px-4 py-4 text-xs font-bold text-slate-400 uppercase text-right border-b-2 border-slate-200 w-24">
                             Aksi</th>
                     </tr>
                 </thead>
@@ -115,257 +102,211 @@
                     @forelse($waktus as $w)
                     <tr class="hover:bg-slate-50 transition-colors"
                         data-filter="{{ strtolower($w->jam_ke) }} {{ strtolower($w->tipe) }}">
-                        <td class="px-6 py-5 text-center">
+                        <td class="px-4 py-5 text-center">
                             <span
                                 class="font-extrabold text-slate-700 text-lg bg-slate-100 px-4 py-2 rounded-xl">{{ $w->jam_ke }}</span>
                         </td>
 
-                        {{-- SENIN - KAMIS --}}
-                        <td class="px-6 py-5 text-center border-x border-slate-50">
+                        {{-- SENIN --}}
+                        <td class="px-4 py-5 text-center border-x border-slate-50">
+                            @if($w->mulai_senin && $w->selesai_senin)
+                            <div class="font-bold text-slate-700 text-base">
+                                {{ \Carbon\Carbon::parse($w->mulai_senin)->format('H:i') }} -
+                                {{ \Carbon\Carbon::parse($w->selesai_senin)->format('H:i') }}
+                            </div>
+                            <span
+                                class="inline-block mt-1 px-2.5 py-1 rounded {{ $w->tipe_senin == 'Istirahat' ? 'bg-amber-50 text-amber-600' : 'bg-cyan-50 text-cyan-600' }} text-[10px] font-bold uppercase tracking-wider">{{ $w->tipe_senin }}</span>
+                            @else
+                            <span
+                                class="text-xs font-semibold text-slate-400 italic bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">Sama
+                                spt Normal</span>
+                            @endif
+                        </td>
+
+                        {{-- SELASA - KAMIS (NORMAL) --}}
+                        <td class="px-4 py-5 text-center border-r border-slate-50">
                             <div class="font-bold text-slate-700 text-base">
                                 {{ \Carbon\Carbon::parse($w->waktu_mulai)->format('H:i') }} -
                                 {{ \Carbon\Carbon::parse($w->waktu_selesai)->format('H:i') }}
                             </div>
-                            @if($w->tipe == 'Belajar')
                             <span
-                                class="inline-block mt-1 px-2.5 py-1 rounded bg-indigo-50 text-indigo-600 text-[10px] font-bold uppercase tracking-wider">Belajar</span>
-                            @else
-                            <span
-                                class="inline-block mt-1 px-2.5 py-1 rounded bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-wider">Istirahat</span>
-                            @endif
+                                class="inline-block mt-1 px-2.5 py-1 rounded {{ $w->tipe == 'Istirahat' ? 'bg-amber-50 text-amber-600' : 'bg-indigo-50 text-indigo-600' }} text-[10px] font-bold uppercase tracking-wider">{{ $w->tipe }}</span>
                         </td>
 
                         {{-- JUMAT --}}
-                        <td class="px-6 py-5 text-center border-r border-slate-50">
+                        <td class="px-4 py-5 text-center border-r border-slate-50">
                             @if($w->mulai_jumat && $w->selesai_jumat)
                             <div class="font-bold text-slate-700 text-base">
                                 {{ \Carbon\Carbon::parse($w->mulai_jumat)->format('H:i') }} -
                                 {{ \Carbon\Carbon::parse($w->selesai_jumat)->format('H:i') }}
                             </div>
-                            @if($w->tipe_jumat == 'Belajar')
                             <span
-                                class="inline-block mt-1 px-2.5 py-1 rounded bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase tracking-wider">Belajar</span>
-                            @else
-                            <span
-                                class="inline-block mt-1 px-2.5 py-1 rounded bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-wider">Istirahat</span>
-                            @endif
+                                class="inline-block mt-1 px-2.5 py-1 rounded {{ $w->tipe_jumat == 'Istirahat' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600' }} text-[10px] font-bold uppercase tracking-wider">{{ $w->tipe_jumat }}</span>
                             @else
                             <span
                                 class="text-xs font-semibold text-slate-400 italic bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">Sama
-                                seperti normal</span>
+                                spt Normal</span>
                             @endif
                         </td>
 
-                        <td class="px-6 py-5 text-right">
+                        <td class="px-4 py-5 text-right">
                             <div class="flex items-center justify-end gap-2">
-                                {{-- TOMBOL EDIT VANILLA JS (ANTI NYANGKUT) --}}
                                 <button type="button"
-                                    onclick="openEditModal({{ $w->id }}, {{ $w->jam_ke }}, '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}', '{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}', '{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}', '{{ $w->tipe_jumat }}')"
-                                    class="p-2 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 hover:bg-amber-50 rounded-lg transition-all"
-                                    title="Edit">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
-                                        </path>
-                                    </svg>
-                                </button>
+                                    onclick="openEditModal({{ $w->id }}, {{ $w->jam_ke }}, '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}', '{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}', '{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}', '{{ $w->tipe_senin }}', '{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}', '{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}', '{{ $w->tipe_jumat }}')"
+                                    class="p-2 text-amber-500 hover:bg-amber-50 rounded-lg">EDIT</button>
 
-                                <form action="{{ route('master-waktu.destroy', $w->id) }}" method="POST" class="inline"
-                                    onsubmit="return confirm('Yakin hapus jam ke-{{ $w->jam_ke }}?');">
+                                <form action="{{ route('master-waktu.destroy', $w->id) }}" method="POST"
+                                    onsubmit="return confirm('Hapus jam ke-{{ $w->jam_ke }}?');">
                                     @csrf @method('DELETE')
                                     <button type="submit"
-                                        class="p-2 border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300 hover:bg-red-50 rounded-lg transition-all"
-                                        title="Hapus">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                            </path>
-                                        </svg>
-                                    </button>
+                                        class="p-2 text-red-500 hover:bg-red-50 rounded-lg">HAPUS</button>
                                 </form>
                             </div>
                         </td>
                     </tr>
                     @empty
-                    <tr id="no-data-row">
-                        <td colspan="4" class="px-6 py-20 text-center text-slate-400">Belum ada data jam pelajaran.</td>
+                    <tr>
+                        <td colspan="5" class="text-center py-10 text-slate-400">Belum ada data jam pelajaran.</td>
                     </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-
-        {{-- 3. FOOTER SECTION --}}
-        <div class="bg-white border-t border-slate-100 px-8 py-4 flex justify-between items-center shrink-0">
-            <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Sistem Penjadwalan</span>
-            <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Secure Data</span>
-        </div>
     </div>
 </div>
 
-{{-- ========================================== --}}
-{{-- MODAL TAMBAH JAM --}}
-{{-- ========================================== --}}
+{{-- MODAL TAMBAH --}}
 <div id="modaltambah"
     class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
-    <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-white/20 animate-scale-in">
-        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-            <h3 class="font-bold text-slate-800 flex items-center gap-2"><span
-                    class="w-1.5 h-5 bg-indigo-600 rounded-full"></span> Tambah Jam Pelajaran</h3>
-            <button onclick="closeModal('modaltambah')"
-                class="text-slate-400 hover:text-red-500 text-2xl leading-none">&times;</button>
+    <div class="bg-white rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl">
+        <div class="p-4 border-b flex justify-between">
+            <h3 class="font-bold text-lg text-indigo-700">Tambah Jam Pelajaran</h3><button
+                onclick="closeModal('modaltambah')">✖</button>
         </div>
         <form action="{{ route('master-waktu.store') }}" method="POST" class="p-6">
             @csrf
-            <div class="mb-5">
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Jam Ke</label>
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-slate-500 mb-1">Jam Ke</label>
                 <input type="number" name="jam_ke"
-                    class="w-1/3 border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
-                    placeholder="Contoh: 1" min="1" required>
+                    class="w-1/4 border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    required>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {{-- SETTING NORMAL --}}
-                <div class="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4">
-                    <h4 class="font-bold text-indigo-700 text-xs uppercase mb-4 tracking-wider">Seting Normal (Senin -
-                        Kamis)</h4>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Mulai</label>
-                            <input type="time" name="waktu_mulai"
-                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                                required>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Selesai</label>
-                            <input type="time" name="waktu_selesai"
-                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                                required>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tipe</label>
-                            <select name="tipe"
-                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                                required>
-                                <option value="Belajar">Belajar</option>
-                                <option value="Istirahat">Istirahat</option>
-                            </select>
-                        </div>
-                    </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {{-- SENIN --}}
+                <div class="p-4 bg-cyan-50/50 border border-cyan-100 rounded-xl">
+                    <h4 class="font-bold text-cyan-700 mb-3 text-[11px] uppercase tracking-wider">Khusus Senin</h4>
+                    <input type="time" name="mulai_senin"
+                        class="w-full mb-2 border border-slate-300 p-2 rounded outline-none focus:ring-2 focus:ring-cyan-500 text-sm">
+                    <input type="time" name="selesai_senin"
+                        class="w-full mb-2 border border-slate-300 p-2 rounded outline-none focus:ring-2 focus:ring-cyan-500 text-sm">
+                    <select name="tipe_senin" class="w-full border border-slate-300 p-2 rounded outline-none text-sm">
+                        <option value="Belajar">Belajar</option>
+                        <option value="Istirahat">Istirahat</option>
+                    </select>
                 </div>
 
-                {{-- SETTING JUMAT --}}
-                <div class="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4">
-                    <h4 class="font-bold text-emerald-700 text-xs uppercase mb-4 tracking-wider">Seting Khusus Jumat
+                {{-- NORMAL --}}
+                <div class="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl">
+                    <h4 class="font-bold text-indigo-700 mb-3 text-[11px] uppercase tracking-wider">Normal (Sel - Kam)
                     </h4>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Mulai <span
-                                    class="text-slate-400 normal-case font-normal">(Kosongkan jika sama)</span></label>
-                            <input type="time" name="mulai_jumat"
-                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Selesai</label>
-                            <input type="time" name="selesai_jumat"
-                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tipe</label>
-                            <select name="tipe_jumat"
-                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-                                <option value="Belajar">Belajar</option>
-                                <option value="Istirahat">Istirahat</option>
-                            </select>
-                        </div>
-                    </div>
+                    <input type="time" name="waktu_mulai"
+                        class="w-full mb-2 border border-slate-300 p-2 rounded outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                        required>
+                    <input type="time" name="waktu_selesai"
+                        class="w-full mb-2 border border-slate-300 p-2 rounded outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                        required>
+                    <select name="tipe" class="w-full border border-slate-300 p-2 rounded outline-none text-sm"
+                        required>
+                        <option value="Belajar">Belajar</option>
+                        <option value="Istirahat">Istirahat</option>
+                    </select>
+                </div>
+
+                {{-- JUMAT --}}
+                <div class="p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl">
+                    <h4 class="font-bold text-emerald-700 mb-3 text-[11px] uppercase tracking-wider">Khusus Jumat</h4>
+                    <input type="time" name="mulai_jumat"
+                        class="w-full mb-2 border border-slate-300 p-2 rounded outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                    <input type="time" name="selesai_jumat"
+                        class="w-full mb-2 border border-slate-300 p-2 rounded outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                    <select name="tipe_jumat" class="w-full border border-slate-300 p-2 rounded outline-none text-sm">
+                        <option value="Belajar">Belajar</option>
+                        <option value="Istirahat">Istirahat</option>
+                    </select>
                 </div>
             </div>
             <button type="submit"
-                class="w-full mt-6 bg-slate-900 hover:bg-indigo-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">SIMPAN
+                class="w-full bg-slate-900 text-white font-bold mt-6 py-3.5 rounded-lg shadow-lg hover:bg-indigo-600 transition tracking-widest text-sm">SIMPAN
                 DATA</button>
         </form>
     </div>
 </div>
 
-{{-- ========================================== --}}
-{{-- MODAL EDIT JAM (VANILLA JS ANTI NYANGKUT) --}}
-{{-- ========================================== --}}
-<div id="modaledit"
-    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-white/20">
-        <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
-            <h3 class="font-bold text-amber-800 flex items-center gap-2"><span
-                    class="w-1.5 h-5 bg-amber-500 rounded-full"></span> Edit Jam Pelajaran</h3>
-            <button onclick="closeModal('modaledit')"
-                class="text-amber-400 hover:text-amber-600 text-2xl leading-none">&times;</button>
+{{-- MODAL EDIT --}}
+<div id="modaledit" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl">
+        <div class="p-4 border-b flex justify-between">
+            <h3 class="font-bold text-lg text-amber-600">Edit Jam Pelajaran</h3><button
+                onclick="closeModal('modaledit')">✖</button>
         </div>
         <form id="form-edit-waktu" method="POST" class="p-6">
             @csrf @method('PUT')
-            <div class="mb-5">
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Jam Ke</label>
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-slate-500 mb-1">Jam Ke</label>
                 <input type="number" id="edit_jam_ke" name="jam_ke"
-                    class="w-1/3 border border-slate-300 bg-slate-100 rounded-xl px-4 py-3 outline-none text-sm text-slate-500"
-                    required readonly>
+                    class="w-1/4 border border-slate-300 bg-slate-100 text-slate-500 rounded-lg p-2 text-sm" required
+                    readonly>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {{-- SETTING NORMAL EDIT --}}
-                <div class="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4">
-                    <h4 class="font-bold text-indigo-700 text-xs uppercase mb-4 tracking-wider">Seting Normal (Senin -
-                        Kamis)</h4>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Mulai</label>
-                            <input type="time" id="edit_waktu_mulai" name="waktu_mulai"
-                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none"
-                                required>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Selesai</label>
-                            <input type="time" id="edit_waktu_selesai" name="waktu_selesai"
-                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none"
-                                required>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tipe</label>
-                            <select id="edit_tipe" name="tipe"
-                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none"
-                                required>
-                                <option value="Belajar">Belajar</option>
-                                <option value="Istirahat">Istirahat</option>
-                            </select>
-                        </div>
-                    </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {{-- SENIN EDIT --}}
+                <div class="p-4 bg-cyan-50/50 border border-cyan-100 rounded-xl">
+                    <h4 class="font-bold text-cyan-700 mb-3 text-[11px] uppercase tracking-wider">Khusus Senin</h4>
+                    <input type="time" id="edit_mulai_senin" name="mulai_senin"
+                        class="w-full mb-2 border border-slate-300 p-2 rounded outline-none focus:ring-2 focus:ring-amber-500 text-sm">
+                    <input type="time" id="edit_selesai_senin" name="selesai_senin"
+                        class="w-full mb-2 border border-slate-300 p-2 rounded outline-none focus:ring-2 focus:ring-amber-500 text-sm">
+                    <select id="edit_tipe_senin" name="tipe_senin"
+                        class="w-full border border-slate-300 p-2 rounded outline-none text-sm">
+                        <option value="Belajar">Belajar</option>
+                        <option value="Istirahat">Istirahat</option>
+                    </select>
                 </div>
 
-                {{-- SETTING JUMAT EDIT --}}
-                <div class="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4">
-                    <h4 class="font-bold text-emerald-700 text-xs uppercase mb-4 tracking-wider">Seting Khusus Jumat
+                {{-- NORMAL EDIT --}}
+                <div class="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl">
+                    <h4 class="font-bold text-indigo-700 mb-3 text-[11px] uppercase tracking-wider">Normal (Sel - Kam)
                     </h4>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Mulai</label>
-                            <input type="time" id="edit_mulai_jumat" name="mulai_jumat"
-                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Selesai</label>
-                            <input type="time" id="edit_selesai_jumat" name="selesai_jumat"
-                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tipe</label>
-                            <select id="edit_tipe_jumat" name="tipe_jumat"
-                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-                                <option value="Belajar">Belajar</option>
-                                <option value="Istirahat">Istirahat</option>
-                            </select>
-                        </div>
-                    </div>
+                    <input type="time" id="edit_mulai" name="waktu_mulai"
+                        class="w-full mb-2 border border-slate-300 p-2 rounded outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                        required>
+                    <input type="time" id="edit_selesai" name="waktu_selesai"
+                        class="w-full mb-2 border border-slate-300 p-2 rounded outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                        required>
+                    <select id="edit_tipe" name="tipe"
+                        class="w-full border border-slate-300 p-2 rounded outline-none text-sm" required>
+                        <option value="Belajar">Belajar</option>
+                        <option value="Istirahat">Istirahat</option>
+                    </select>
+                </div>
+
+                {{-- JUMAT EDIT --}}
+                <div class="p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl">
+                    <h4 class="font-bold text-emerald-700 mb-3 text-[11px] uppercase tracking-wider">Khusus Jumat</h4>
+                    <input type="time" id="edit_mulai_jumat" name="mulai_jumat"
+                        class="w-full mb-2 border border-slate-300 p-2 rounded outline-none focus:ring-2 focus:ring-amber-500 text-sm">
+                    <input type="time" id="edit_selesai_jumat" name="selesai_jumat"
+                        class="w-full mb-2 border border-slate-300 p-2 rounded outline-none focus:ring-2 focus:ring-amber-500 text-sm">
+                    <select id="edit_tipe_jumat" name="tipe_jumat"
+                        class="w-full border border-slate-300 p-2 rounded outline-none text-sm">
+                        <option value="Belajar">Belajar</option>
+                        <option value="Istirahat">Istirahat</option>
+                    </select>
                 </div>
             </div>
             <button type="submit"
-                class="w-full mt-6 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">UPDATE
+                class="w-full bg-amber-500 text-white font-bold mt-6 py-3.5 rounded-lg shadow-lg hover:bg-amber-600 transition tracking-widest text-sm">UPDATE
                 DATA</button>
         </form>
     </div>
@@ -374,23 +315,6 @@
 
 @push('scripts')
 <script>
-// Pencarian Table
-function searchMainTable() {
-    const input = document.getElementById('search-waktu-main').value.toLowerCase();
-    const rows = document.querySelectorAll('#tbody-waktu-main tr[data-filter]');
-    let hasResult = false;
-    rows.forEach(row => {
-        if (row.getAttribute('data-filter').includes(input)) {
-            row.style.display = "";
-            hasResult = true;
-        } else {
-            row.style.display = "none";
-        }
-    });
-    document.getElementById('search-no-result')?.classList.toggle('hidden', hasResult || input === '');
-}
-
-// Tutup/Buka Modal Dasar
 function openModal(id) {
     document.getElementById(id).classList.replace('hidden', 'flex');
 }
@@ -399,31 +323,27 @@ function closeModal(id) {
     document.getElementById(id).classList.replace('flex', 'hidden');
 }
 
-// FUNGSI JAVASCRIPT UNTUK MODAL EDIT (MENJAMIN POP UP MUNCUL)
-function openEditModal(id, jam, mulai, selesai, tipe, mulaiJ, selesaiJ, tipeJ) {
-    // Arahin form ke URL ID yang bener
+// FIX: Tambah parameter buat Senin
+function openEditModal(id, jam, mulai, selesai, tipe, mulaiS, selesaiS, tipeS, mulaiJ, selesaiJ, tipeJ) {
     document.getElementById('form-edit-waktu').action = `/master-waktu/${id}`;
-
-    // Setel data ke form Normal
     document.getElementById('edit_jam_ke').value = jam;
-    document.getElementById('edit_waktu_mulai').value = mulai;
-    document.getElementById('edit_waktu_selesai').value = selesai;
+
+    // Normal
+    document.getElementById('edit_mulai').value = mulai;
+    document.getElementById('edit_selesai').value = selesai;
     document.getElementById('edit_tipe').value = tipe;
 
-    // Setel data ke form Jumat
+    // Senin
+    document.getElementById('edit_mulai_senin').value = mulaiS || '';
+    document.getElementById('edit_selesai_senin').value = selesaiS || '';
+    document.getElementById('edit_tipe_senin').value = tipeS || 'Belajar';
+
+    // Jumat
     document.getElementById('edit_mulai_jumat').value = mulaiJ || '';
     document.getElementById('edit_selesai_jumat').value = selesaiJ || '';
     document.getElementById('edit_tipe_jumat').value = tipeJ || 'Belajar';
 
-    // Munculin Modalnya
     openModal('modaledit');
-}
-
-// Tutup modal kalau klik area gelap
-window.onclick = function(event) {
-    if (event.target.classList.contains('fixed')) {
-        event.target.classList.replace('flex', 'hidden');
-    }
 }
 </script>
 @endpush

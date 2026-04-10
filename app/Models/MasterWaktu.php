@@ -15,6 +15,9 @@ class MasterWaktu extends Model
     // Kolom yang boleh diisi (Mass Assignment)
     protected $fillable = [
     'jam_ke', 'waktu_mulai', 'waktu_selesai', 'tipe',
+    'mulai_senin',    // Tambahan Senin
+        'selesai_senin',  // Tambahan Senin
+        'tipe_senin',
     'mulai_jumat', 'selesai_jumat', 'tipe_jumat'
 ];
 

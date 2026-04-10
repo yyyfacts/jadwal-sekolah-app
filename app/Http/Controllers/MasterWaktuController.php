@@ -18,9 +18,11 @@ class MasterWaktuController extends Controller
         $request->validate([
             'jam_ke'        => 'required|integer|min:1',
             'waktu_mulai'   => 'required|date_format:H:i',
-            'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
+            'waktu_selesai' => 'required|date_format:H:i',
             'tipe'          => 'required|string|max:50',
-            // --- TAMBAHAN BUAT HARI JUMAT ---
+            'mulai_senin'   => 'nullable|date_format:H:i',
+            'selesai_senin' => 'nullable|date_format:H:i',
+            'tipe_senin'    => 'nullable|string|max:50',
             'mulai_jumat'   => 'nullable|date_format:H:i',
             'selesai_jumat' => 'nullable|date_format:H:i',
             'tipe_jumat'    => 'nullable|string|max:50',
@@ -35,15 +37,20 @@ class MasterWaktuController extends Controller
         $request->validate([
             'jam_ke'        => 'required|integer|min:1',
             'waktu_mulai'   => 'required|date_format:H:i', 
-            'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
+            'waktu_selesai' => 'required|date_format:H:i',
             'tipe'          => 'required|string|max:50',
-            // --- TAMBAHAN BUAT HARI JUMAT ---
+            'mulai_senin'   => 'nullable|date_format:H:i',
+            'selesai_senin' => 'nullable|date_format:H:i',
+            'tipe_senin'    => 'nullable|string|max:50',
             'mulai_jumat'   => 'nullable|date_format:H:i',
             'selesai_jumat' => 'nullable|date_format:H:i',
             'tipe_jumat'    => 'nullable|string|max:50',
         ]);
 
-        MasterWaktu::findOrFail($id)->update($request->all());
+        $waktu = MasterWaktu::find($id);
+        if (!$waktu) return redirect()->back()->with('error', 'Data tidak ditemukan.');
+        
+        $waktu->update($request->all());
         return redirect()->route('master-waktu.index')->with('success', "Data jam pelajaran diperbarui.");
     }
 
