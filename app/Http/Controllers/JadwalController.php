@@ -170,32 +170,38 @@ class JadwalController extends Controller
     /**
      * Proses Generate Algoritma (Sekarang Mengirim Data Hari Dinamis ke Python)
      */
-    public function generate(Request $request)
+  public function generate(Request $request)
     {
         set_time_limit(600);
 
         try {
             $waktuList = MasterWaktu::orderBy('jam_ke')->get();
 
-            // A. Data Hari Aktif (Kalkulasi max_jam otomatis dari MasterWaktu)
+            // A. Data Hari Aktif (Kalkulasi max_jam & jam_istirahat otomatis)
             $hariAktif = MasterHari::getActiveDays()->map(function($h) use ($waktuList) {
                 $namaHariLower = strtolower($h->nama_hari);
                 $maxJamTerakhir = 0;
+                $jamIstirahat = []; // <-- WADAH JAM ISTIRAHAT
 
                 foreach($waktuList as $w) {
                     $tipeSlot = $w->tipe;
                     if ($namaHariLower == 'senin' && $w->tipe_senin) $tipeSlot = $w->tipe_senin;
                     if ($namaHariLower == 'jumat' && $w->tipe_jumat) $tipeSlot = $w->tipe_jumat;
 
-                    // Selama bukan "Tidak Ada", berarti slot ini exist
                     if ($tipeSlot !== 'Tidak Ada') {
-                        $maxJamTerakhir = $w->jam_ke;
+                        $maxJamTerakhir = max($maxJamTerakhir, $w->jam_ke); // Gunakan max()
+                    }
+
+                    // Kumpulkan jam yang dilarang untuk mengajar
+                    if (in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
+                        $jamIstirahat[] = $w->jam_ke;
                     }
                 }
 
                 return [
                     'nama' => $h->nama_hari,
-                    'max_jam' => $maxJamTerakhir // Python tetap dapat data max_jam yang akurat
+                    'max_jam' => $maxJamTerakhir,
+                    'jam_istirahat' => $jamIstirahat // <-- KIRIM KE PYTHON
                 ];
             });
 
@@ -219,7 +225,7 @@ class JadwalController extends Controller
                 ];
             });
 
-            // D. Data Kelas (Kirim juga limit hariannya ke Python kalau scriptnya siap nerima)
+            // D. Data Kelas
             $kelassData = Kelas::all()->map(function ($k) {
                 return [
                     'id' => $k->id,
@@ -236,6 +242,7 @@ class JadwalController extends Controller
                 'gurus' => $gurus,
                 'kelass' => $kelassData,
                 'assignments' => $assignments,
+                // Jangan lupa kalau ada 'mapel_constraints' tetap dikirim di sini
             ];
 
             // F. Simpan JSON & Eksekusi Python
@@ -291,7 +298,6 @@ class JadwalController extends Controller
             return redirect()->route('jadwal.index')->with('error', 'Error: ' . $e->getMessage());
         }
     }
-
     /**
      * Export Excel
      */
