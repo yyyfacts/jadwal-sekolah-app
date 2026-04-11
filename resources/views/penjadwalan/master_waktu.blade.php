@@ -25,6 +25,22 @@
         <button @click="show = false" class="text-emerald-400 hover:text-emerald-700">&times;</button>
     </div>
     @endif
+    @if(session('error'))
+    <div x-data="{ show: true }" x-show="show" x-transition
+        class="mb-4 flex items-center justify-between p-4 bg-red-50 border border-red-100 rounded-xl shadow-sm text-red-800 shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-red-100 rounded-full text-red-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                    </path>
+                </svg>
+            </div>
+            <span class="font-semibold text-sm">{{ session('error') }}</span>
+        </div>
+        <button @click="show = false" class="text-red-400 hover:text-red-700">&times;</button>
+    </div>
+    @endif
 
     {{-- UNIFIED CARD --}}
     <div
@@ -51,7 +67,7 @@
                     </div>
 
                     <button onclick="openModal('modaltambah')"
-                        class="px-6 py-2.5 font-bold text-white transition-all duration-300 bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-md hover:-translate-y-0.5 flex items-center gap-2">
+                        class="px-6 py-2.5 font-bold text-white transition-all duration-300 bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:-translate-y-0.5 flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
                             </path>
@@ -61,7 +77,7 @@
                 </div>
             </div>
 
-            {{-- TABS MENU (Khusus Senin | Normal | Khusus Jumat) --}}
+            {{-- TABS MENU --}}
             <div class="flex gap-8">
                 <button @click="setTab('senin')"
                     :class="activeTab === 'senin' ? 'border-cyan-500 text-cyan-600' : 'border-transparent text-slate-400 hover:text-slate-600'"
@@ -85,15 +101,23 @@
         <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white px-2 py-2">
 
             {{-- ==================== TABEL SENIN ==================== --}}
-            <table x-show="activeTab === 'senin'" x-cloak class="w-full text-left border-collapse min-w-[800px]">
-                <thead class="bg-cyan-50 sticky top-0 z-10">
+            {{-- FIX: Ganti border-collapse jadi border-separate biar sticky background nggak numpuk --}}
+            <table x-show="activeTab === 'senin'" x-cloak
+                class="w-full text-left border-separate border-spacing-0 min-w-[800px]">
+                <thead>
                     <tr>
-                        <th class="px-8 py-4 text-xs font-bold text-cyan-600 uppercase text-center w-[15%]">Jam Ke</th>
-                        <th class="px-6 py-4 text-xs font-bold text-cyan-600 uppercase text-center w-[40%]">Waktu Senin
-                        </th>
-                        <th class="px-6 py-4 text-xs font-bold text-cyan-600 uppercase text-center w-[25%]">Kegiatan
-                        </th>
-                        <th class="px-6 py-4 text-xs font-bold text-cyan-600 uppercase text-right w-[20%]">Aksi</th>
+                        <th
+                            class="sticky top-0 z-20 bg-cyan-50 px-8 py-4 text-xs font-bold text-cyan-700 uppercase text-center w-[15%] border-b-2 border-cyan-100">
+                            Jam Ke</th>
+                        <th
+                            class="sticky top-0 z-20 bg-cyan-50 px-6 py-4 text-xs font-bold text-cyan-700 uppercase text-center w-[40%] border-b-2 border-cyan-100">
+                            Waktu Senin</th>
+                        <th
+                            class="sticky top-0 z-20 bg-cyan-50 px-6 py-4 text-xs font-bold text-cyan-700 uppercase text-center w-[25%] border-b-2 border-cyan-100">
+                            Kegiatan</th>
+                        <th
+                            class="sticky top-0 z-20 bg-cyan-50 px-6 py-4 text-xs font-bold text-cyan-700 uppercase text-right w-[20%] border-b-2 border-cyan-100">
+                            Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -110,7 +134,7 @@
                                 {{ \Carbon\Carbon::parse($w->selesai_senin)->format('H:i') }}
                             </div>
                             @else
-                            <span class="text-xs text-slate-400 italic">Mengikuti Waktu Normal
+                            <span class="text-xs text-slate-400 italic">Mengikuti Normal
                                 ({{ \Carbon\Carbon::parse($w->waktu_mulai)->format('H:i') }} -
                                 {{ \Carbon\Carbon::parse($w->waktu_selesai)->format('H:i') }})</span>
                             @endif
@@ -121,10 +145,20 @@
                                 class="inline-block px-3 py-1.5 rounded-md {{ $tipeS == 'Belajar' ? 'bg-cyan-50 text-cyan-600' : 'bg-amber-50 text-amber-600' }} text-xs font-bold uppercase">{{ $tipeS }}</span>
                         </td>
                         <td class="px-6 py-5 text-right">
-                            <button
-                                onclick="openEditSenin({{ $w->id }}, {{ $w->jam_ke }}, '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}', '{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}', '{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}', '{{ $w->tipe_senin }}', '{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}', '{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}', '{{ $w->tipe_jumat }}')"
-                                class="px-4 py-2 text-cyan-600 border border-cyan-200 font-bold text-xs hover:bg-cyan-50 rounded-lg transition">EDIT
-                                HARI SENIN</button>
+                            <div class="flex items-center justify-end gap-2">
+                                <button
+                                    onclick="openEditSenin({{ $w->id }}, {{ $w->jam_ke }}, '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}', '{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}', '{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}', '{{ $w->tipe_senin }}', '{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}', '{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}', '{{ $w->tipe_jumat }}')"
+                                    class="px-4 py-2 text-cyan-600 border border-cyan-200 font-bold text-xs hover:bg-cyan-50 rounded-lg transition">EDIT
+                                    HARI SENIN</button>
+
+                                <form action="{{ route('master-waktu.destroy', $w->id) }}" method="POST" class="inline"
+                                    onsubmit="return confirm('PENTING: Menghapus akan membuang jam ke-{{ $w->jam_ke }} di SEMUA HARI. Lanjutkan?');">
+                                    @csrf @method('DELETE')
+                                    <button type="submit"
+                                        class="px-4 py-2 text-red-500 font-bold text-xs hover:bg-red-50 rounded-lg transition">HAPUS
+                                        SLOT</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @endforeach
@@ -132,16 +166,22 @@
             </table>
 
             {{-- ==================== TABEL NORMAL ==================== --}}
-            <table x-show="activeTab === 'normal'" class="w-full text-left border-collapse min-w-[800px]">
-                <thead class="bg-indigo-50 sticky top-0 z-10">
+            <table x-show="activeTab === 'normal'"
+                class="w-full text-left border-separate border-spacing-0 min-w-[800px]">
+                <thead>
                     <tr>
-                        <th class="px-8 py-4 text-xs font-bold text-indigo-600 uppercase text-center w-[15%]">Jam Ke
-                        </th>
-                        <th class="px-6 py-4 text-xs font-bold text-indigo-600 uppercase text-center w-[40%]">Waktu
-                            Normal</th>
-                        <th class="px-6 py-4 text-xs font-bold text-indigo-600 uppercase text-center w-[25%]">Kegiatan
-                        </th>
-                        <th class="px-6 py-4 text-xs font-bold text-indigo-600 uppercase text-right w-[20%]">Aksi</th>
+                        <th
+                            class="sticky top-0 z-20 bg-indigo-50 px-8 py-4 text-xs font-bold text-indigo-700 uppercase text-center w-[15%] border-b-2 border-indigo-100">
+                            Jam Ke</th>
+                        <th
+                            class="sticky top-0 z-20 bg-indigo-50 px-6 py-4 text-xs font-bold text-indigo-700 uppercase text-center w-[40%] border-b-2 border-indigo-100">
+                            Waktu Normal</th>
+                        <th
+                            class="sticky top-0 z-20 bg-indigo-50 px-6 py-4 text-xs font-bold text-indigo-700 uppercase text-center w-[25%] border-b-2 border-indigo-100">
+                            Kegiatan</th>
+                        <th
+                            class="sticky top-0 z-20 bg-indigo-50 px-6 py-4 text-xs font-bold text-indigo-700 uppercase text-right w-[20%] border-b-2 border-indigo-100">
+                            Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -161,19 +201,21 @@
                             <span
                                 class="inline-block px-3 py-1.5 rounded-md {{ $w->tipe == 'Belajar' ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600' }} text-xs font-bold uppercase">{{ $w->tipe }}</span>
                         </td>
-                        <td class="px-6 py-5 text-right flex justify-end gap-2">
-                            <button
-                                onclick="openEditNormal({{ $w->id }}, {{ $w->jam_ke }}, '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}', '{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}', '{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}', '{{ $w->tipe_senin }}', '{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}', '{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}', '{{ $w->tipe_jumat }}')"
-                                class="px-4 py-2 text-indigo-600 border border-indigo-200 font-bold text-xs hover:bg-indigo-50 rounded-lg transition">EDIT
-                                WAKTU</button>
+                        <td class="px-6 py-5 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <button
+                                    onclick="openEditNormal({{ $w->id }}, {{ $w->jam_ke }}, '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}', '{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}', '{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}', '{{ $w->tipe_senin }}', '{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}', '{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}', '{{ $w->tipe_jumat }}')"
+                                    class="px-4 py-2 text-indigo-600 border border-indigo-200 font-bold text-xs hover:bg-indigo-50 rounded-lg transition">EDIT
+                                    WAKTU</button>
 
-                            <form action="{{ route('master-waktu.destroy', $w->id) }}" method="POST"
-                                onsubmit="return confirm('Hapus jam ke-{{ $w->jam_ke }} di SEMUA HARI?');">
-                                @csrf @method('DELETE')
-                                <button type="submit"
-                                    class="px-4 py-2 text-red-500 font-bold text-xs hover:bg-red-50 rounded-lg">HAPUS
-                                    SLOT</button>
-                            </form>
+                                <form action="{{ route('master-waktu.destroy', $w->id) }}" method="POST" class="inline"
+                                    onsubmit="return confirm('Hapus jam ke-{{ $w->jam_ke }} di SEMUA HARI?');">
+                                    @csrf @method('DELETE')
+                                    <button type="submit"
+                                        class="px-4 py-2 text-red-500 font-bold text-xs hover:bg-red-50 rounded-lg">HAPUS
+                                        SLOT</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @endforeach
@@ -181,16 +223,22 @@
             </table>
 
             {{-- ==================== TABEL JUMAT ==================== --}}
-            <table x-show="activeTab === 'jumat'" x-cloak class="w-full text-left border-collapse min-w-[800px]">
-                <thead class="bg-emerald-50 sticky top-0 z-10">
+            <table x-show="activeTab === 'jumat'" x-cloak
+                class="w-full text-left border-separate border-spacing-0 min-w-[800px]">
+                <thead>
                     <tr>
-                        <th class="px-8 py-4 text-xs font-bold text-emerald-600 uppercase text-center w-[15%]">Jam Ke
-                        </th>
-                        <th class="px-6 py-4 text-xs font-bold text-emerald-600 uppercase text-center w-[40%]">Waktu
-                            Jumat</th>
-                        <th class="px-6 py-4 text-xs font-bold text-emerald-600 uppercase text-center w-[25%]">Kegiatan
-                        </th>
-                        <th class="px-6 py-4 text-xs font-bold text-emerald-600 uppercase text-right w-[20%]">Aksi</th>
+                        <th
+                            class="sticky top-0 z-20 bg-emerald-50 px-8 py-4 text-xs font-bold text-emerald-700 uppercase text-center w-[15%] border-b-2 border-emerald-100">
+                            Jam Ke</th>
+                        <th
+                            class="sticky top-0 z-20 bg-emerald-50 px-6 py-4 text-xs font-bold text-emerald-700 uppercase text-center w-[40%] border-b-2 border-emerald-100">
+                            Waktu Jumat</th>
+                        <th
+                            class="sticky top-0 z-20 bg-emerald-50 px-6 py-4 text-xs font-bold text-emerald-700 uppercase text-center w-[25%] border-b-2 border-emerald-100">
+                            Kegiatan</th>
+                        <th
+                            class="sticky top-0 z-20 bg-emerald-50 px-6 py-4 text-xs font-bold text-emerald-700 uppercase text-right w-[20%] border-b-2 border-emerald-100">
+                            Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -207,7 +255,7 @@
                                 {{ \Carbon\Carbon::parse($w->selesai_jumat)->format('H:i') }}
                             </div>
                             @else
-                            <span class="text-xs text-slate-400 italic">Mengikuti Waktu Normal
+                            <span class="text-xs text-slate-400 italic">Mengikuti Normal
                                 ({{ \Carbon\Carbon::parse($w->waktu_mulai)->format('H:i') }} -
                                 {{ \Carbon\Carbon::parse($w->waktu_selesai)->format('H:i') }})</span>
                             @endif
@@ -218,10 +266,20 @@
                                 class="inline-block px-3 py-1.5 rounded-md {{ $tipeJ == 'Belajar' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600' }} text-xs font-bold uppercase">{{ $tipeJ }}</span>
                         </td>
                         <td class="px-6 py-5 text-right">
-                            <button
-                                onclick="openEditJumat({{ $w->id }}, {{ $w->jam_ke }}, '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}', '{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}', '{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}', '{{ $w->tipe_senin }}', '{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}', '{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}', '{{ $w->tipe_jumat }}')"
-                                class="px-4 py-2 text-emerald-600 border border-emerald-200 font-bold text-xs hover:bg-emerald-50 rounded-lg transition">EDIT
-                                HARI JUMAT</button>
+                            <div class="flex items-center justify-end gap-2">
+                                <button
+                                    onclick="openEditJumat({{ $w->id }}, {{ $w->jam_ke }}, '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}', '{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}', '{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}', '{{ $w->tipe_senin }}', '{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}', '{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}', '{{ $w->tipe_jumat }}')"
+                                    class="px-4 py-2 text-emerald-600 border border-emerald-200 font-bold text-xs hover:bg-emerald-50 rounded-lg transition">EDIT
+                                    HARI JUMAT</button>
+
+                                <form action="{{ route('master-waktu.destroy', $w->id) }}" method="POST" class="inline"
+                                    onsubmit="return confirm('PENTING: Menghapus akan membuang jam ke-{{ $w->jam_ke }} di SEMUA HARI. Lanjutkan?');">
+                                    @csrf @method('DELETE')
+                                    <button type="submit"
+                                        class="px-4 py-2 text-red-500 font-bold text-xs hover:bg-red-50 rounded-lg transition">HAPUS
+                                        SLOT</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @endforeach
@@ -243,7 +301,7 @@
 </datalist>
 
 {{-- ========================================== --}}
-{{-- MODAL TAMBAH SLOT (HANYA 1 KOLOM / NORMAL) --}}
+{{-- MODAL TAMBAH SLOT --}}
 {{-- ========================================== --}}
 <div id="modaltambah"
     class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
@@ -296,7 +354,7 @@
     <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
         <div class="p-5 border-b flex justify-between items-center bg-indigo-50">
             <h3 class="font-bold text-indigo-800">Edit Waktu Normal (Sel-Kam)</h3>
-            <button onclick="closeModal('modaledit_normal')"
+            <button type="button" onclick="closeModal('modaledit_normal')"
                 class="text-slate-400 hover:text-red-500 text-2xl leading-none">&times;</button>
         </div>
         <form id="form-edit-normal" method="POST" class="p-6 space-y-4">
@@ -349,7 +407,7 @@
     <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
         <div class="p-5 border-b flex justify-between items-center bg-cyan-50">
             <h3 class="font-bold text-cyan-800">Edit Waktu Khusus Senin</h3>
-            <button onclick="closeModal('modaledit_senin')"
+            <button type="button" onclick="closeModal('modaledit_senin')"
                 class="text-slate-400 hover:text-red-500 text-2xl leading-none">&times;</button>
         </div>
         <form id="form-edit-senin" method="POST" class="p-6 space-y-4">
@@ -400,7 +458,7 @@
     <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
         <div class="p-5 border-b flex justify-between items-center bg-emerald-50">
             <h3 class="font-bold text-emerald-800">Edit Waktu Khusus Jumat</h3>
-            <button onclick="closeModal('modaledit_jumat')"
+            <button type="button" onclick="closeModal('modaledit_jumat')"
                 class="text-slate-400 hover:text-red-500 text-2xl leading-none">&times;</button>
         </div>
         <form id="form-edit-jumat" method="POST" class="p-6 space-y-4">
