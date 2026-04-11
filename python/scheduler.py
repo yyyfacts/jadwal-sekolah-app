@@ -29,7 +29,7 @@ def main():
     kelas_limits = {k['id']: {'normal': int(k.get('limit_harian', 10)), 'jumat': int(k.get('limit_jumat', 7))} for k in kelass}
 
     # =================================================================
-    # 🚨 FITUR BARU: PRE-CHECK (SCANNER DETEKSI ERROR DATA ADMIN) 🚨
+    # 🚨 FITUR BARU: PRE-CHECK DENGAN SISTEM REKOMENDASI 🚨
     # =================================================================
     
     # 1. DETEKSI KELAS OVERLOAD (Kelebihan Beban SKS)
@@ -48,7 +48,10 @@ def main():
             print(json.dumps({
                 "status": "INFEASIBLE", 
                 "waktu_komputasi_detik": 0,
-                "message": f"🚨 ERROR DI KELAS: Total beban {nama_kelas} adalah {beban} Jam. Tapi Limit Kelas hanya muat {kapasitas_seminggu} Jam/Minggu! Silakan kurangi beban mapel atau naikkan limit hariannya."
+                "error_code": "CLASS_OVERLOAD",
+                "target_error": nama_kelas,
+                "message": f"Kapasitas Kelas {nama_kelas} Kepenuhan (Beban: {beban} JP, Kapasitas Maks: {kapasitas_seminggu} JP).",
+                "rekomendasi": f"1. Masuk ke menu Data Kelas, edit kelas {nama_kelas} dan naikkan Limit Harian/Jumatnya minimal total {beban} JP.\n2. Atau, hapus sebagian mata pelajaran di kelas {nama_kelas} agar total beban berkurang."
             }))
             return
 
@@ -71,7 +74,10 @@ def main():
             print(json.dumps({
                 "status": "INFEASIBLE", 
                 "waktu_komputasi_detik": 0,
-                "message": f"🚨 ERROR DI GURU: {nama_guru} ngajar total {beban} Jam, tapi kapasitas waktunya cuma muat {kapasitas_guru} Jam! Silakan kurangi beban mengajarnya atau tambah hari ketersediaannya."
+                "error_code": "TEACHER_OVERLOAD",
+                "target_error": nama_guru,
+                "message": f"Beban Mengajar {nama_guru} Terlalu Banyak (Beban: {beban} JP, Waktu Tersedia: {kapasitas_guru} JP).",
+                "rekomendasi": f"1. Masuk ke menu Data Guru, edit {nama_guru} dan tambah jumlah 'Hari Mengajar' atau hapus 'Waktu Kosong' (jam blokir) beliau.\n2. Atau, kurangi jam mengajar {nama_guru} dan oper ke guru lain."
             }))
             return
 
@@ -80,10 +86,14 @@ def main():
     for t in raw_assignments:
         durasi = int(t['jumlah_jam'])
         if durasi > max_daily:
+            t_id = t['id']
             print(json.dumps({
                 "status": "INFEASIBLE", 
                 "waktu_komputasi_detik": 0,
-                "message": f"🚨 ERROR MAPEL: Ada mata pelajaran yang berdurasi {durasi} Jam sekaligus. Melebihi jam sekolah harian ({max_daily} Jam)."
+                "error_code": "DURATION_TOO_LONG",
+                "target_error": f"Mapel ID: {t_id}",
+                "message": f"Ada mapel yang SKS-nya ({durasi} JP) lebih panjang dari jam masuk sekolah ({max_daily} JP).",
+                "rekomendasi": "Cek menu plotting jadwal, cari mata pelajaran yang durasi gabungannya kelewat batas. Pecah durasi mapel tersebut (Misal: 5 JP dipecah jadi 3 JP dan 2 JP)."
             }))
             return
 
@@ -143,7 +153,14 @@ def main():
         if possible_days:
             model.Add(sum(possible_days) == 1)
         else:
-            print(json.dumps({"status": "INFEASIBLE", "waktu_komputasi_detik": 0, "message": f"🚨 ERROR MAPEL: Mapel ID {t_id} tidak bisa diletakkan di hari apapun."}))
+            print(json.dumps({
+                "status": "INFEASIBLE", 
+                "waktu_komputasi_detik": 0, 
+                "error_code": "MAPEL_UNPLACEABLE",
+                "target_error": f"Mapel ID: {t_id}",
+                "message": f"Mapel ID {t_id} tidak bisa ditempatkan di hari apapun.",
+                "rekomendasi": "Periksa apakah Guru yang mengajar mapel ini memiliki jadwal kosong (Libur) yang memblokir seluruh hari mengajarnya."
+            }))
             return
 
     for k_id in intervals_per_kelas:
@@ -164,11 +181,12 @@ def main():
                     intervals.append(model.NewIntervalVar(jam_libur, 1, jam_libur+1, 'libur_guru'))
             if intervals: model.AddNoOverlap(intervals)
 
+    # ATURAN MAPEL DOBEL (Sudah diset <= 2 agar lebih fleksibel)
     for key, task_ids in tasks_per_mapel_group.items():
         if len(task_ids) > 1:
             for h in hari_list:
                 daily_presence = [presences[(tid, h)] for tid in task_ids if (tid, h) in presences]
-                if daily_presence: model.Add(sum(daily_presence) <= 1)
+                if daily_presence: model.Add(sum(daily_presence) <= 2)
 
     if all_start_vars: model.AddDecisionStrategy(all_start_vars, cp_model.CHOOSE_FIRST, cp_model.SELECT_MIN_VALUE)
 
@@ -188,13 +206,21 @@ def main():
                     final_solution.append({'id': t_id, 'hari': h, 'jam': solver.Value(starts[(t_id, h)])})
                     break
         
-        print(json.dumps({"status": "OPTIMAL", "solution": final_solution, "waktu_komputasi_detik": round(waktu_komputasi, 2), "message": f"Sukses! Jadwal berhasil disusun dalam {waktu_komputasi:.2f} detik."}))
+        print(json.dumps({
+            "status": "OPTIMAL", 
+            "solution": final_solution, 
+            "waktu_komputasi_detik": round(waktu_komputasi, 2), 
+            "message": f"Sukses! Jadwal berhasil disusun dalam {waktu_komputasi:.2f} detik."
+        }))
     else:
-        # JIKA LOLOS PRE-CHECK TAPI MASIH GAGAL MATEMATIS
+        # JIKA LOLOS PRE-CHECK TAPI MASIH GAGAL (DEADLOCK TETRIS)
         print(json.dumps({
             "status": "INFEASIBLE", 
             "waktu_komputasi_detik": round(waktu_komputasi, 2), 
-            "message": "🚨 LOGIKA BENTROK! Penyebab: Ada mapel yang dipecah terlalu banyak (misal 6x input @1 Jam), sehingga AI terpaksa meletakkan mapel yang sama 2x di hari yang sama (DILARANG SISTEM). Gabungkan input jam mapelnya!"
+            "error_code": "CSP_DEADLOCK",
+            "target_error": "Sistem Puzzle AI",
+            "message": "AI gagal menyusun jadwal karena terjadi deadlock (jalan buntu). Kepingan SKS tidak muat di sisa jam yang ada.",
+            "rekomendasi": "1. Terlalu banyak mapel yang diinput pecah-pecah (misal: 6x @1 JP), gabungkan menjadi (2x @3 JP).\n2. Longgarkan batasan hari mengajar guru-guru yang jam mengajarnya (SKS) sangat padat."
         }))
 
 if __name__ == '__main__': main()
