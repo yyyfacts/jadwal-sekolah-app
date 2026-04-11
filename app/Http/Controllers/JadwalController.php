@@ -7,8 +7,8 @@ use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Mapel;
 use App\Models\TahunPelajaran;
-use App\Models\MasterHari; // Import Model Baru
-use App\Models\MasterWaktu; // Import Model Baru
+use App\Models\MasterHari;
+use App\Models\MasterWaktu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Process;
@@ -55,7 +55,6 @@ class JadwalController extends Controller
         // --- 2. INISIALISASI GRID KOSONG (BERDASARKAN MASTER WAKTU) ---
         foreach ($kelass as $k) {
             foreach ($hariList as $h) {
-                // Inisialisasi sesuai jumlah slot di Master Waktu
                 for ($j = 1; $j <= $totalSlotJam; $j++) {
                     $jadwals[$k->id][$h][$j] = null;
                 }
@@ -76,7 +75,6 @@ class JadwalController extends Controller
 
             for ($i = 0; $i < $durasi; $i++) {
                 $jamSekarang = $row->jam + $i;
-                // Cek agar tidak melebihi kapasitas slot jam yang tersedia
                 if ($jamSekarang <= $totalSlotJam) {
                     if (!isset($jadwals[$row->kelas_id])) continue;
 
@@ -93,20 +91,31 @@ class JadwalController extends Controller
             }
         }
 
-        // --- 4. LOGIKA VISUAL JAM KOSONG & ISTIRAHAT ---
+        // --- 4. LOGIKA VISUAL JAM KOSONG, ISTIRAHAT & JAM NONAKTIF (TIDAK ADA) ---
         foreach ($kelass as $k) {
             foreach ($dataHari as $hariObj) {
                 $namaHari = $hariObj->nama_hari;
-                $limitJamHariIni = $hariObj->max_jam;
+                $namaHariLower = strtolower($namaHari);
 
                 foreach ($dataWaktu as $waktuObj) {
                     $j = $waktuObj->jam_ke;
 
-                    // Skip jika jam melebihi batas max harian hari tersebut
-                    if ($j > $limitJamHariIni) continue;
+                    // Tentukan Tipe Jam Hari Ini berdasarkan Master Waktu
+                    $tipeSlot = $waktuObj->tipe;
+                    if ($namaHariLower == 'senin' && $waktuObj->tipe_senin) {
+                        $tipeSlot = $waktuObj->tipe_senin;
+                    } elseif ($namaHariLower == 'jumat' && $waktuObj->tipe_jumat) {
+                        $tipeSlot = $waktuObj->tipe_jumat;
+                    }
 
-                    // Jika ini jam Istirahat, beri tanda visual khusus
-                    if ($waktuObj->tipe === 'Istirahat') {
+                    // SKIP JIKA "TIDAK ADA" (Misal Jumat pulang cepat, slot dihapus dari grid)
+                    if ($tipeSlot === 'Tidak Ada') {
+                        unset($jadwals[$k->id][$namaHari][$j]); // Hapus slot dari grid array
+                        continue;
+                    }
+
+                    // Jika ini jam Istirahat / Upacara / Dll, beri tanda visual khusus
+                    if ($tipeSlot === 'Istirahat') {
                         $jadwals[$k->id][$namaHari][$j] = [
                             'id' => null,
                             'mapel' => 'ISTIRAHAT',
@@ -115,10 +124,19 @@ class JadwalController extends Controller
                             'tipe' => 'break'
                         ];
                         continue;
+                    } elseif (in_array($tipeSlot, ['Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
+                        $jadwals[$k->id][$namaHari][$j] = [
+                            'id' => null,
+                            'mapel' => strtoupper($tipeSlot),
+                            'guru' => '',
+                            'color' => 'bg-cyan-50 text-cyan-600 font-bold italic text-[10px]',
+                            'tipe' => 'kegiatan'
+                        ];
+                        continue;
                     }
 
-                    // Jika masih null setelah mapping, berarti ini jam kosong
-                    if (($jadwals[$k->id][$namaHari][$j] ?? null) === null) {
+                    // Jika masih null (Jam Kosong belum terisi AI)
+                    if (!isset($jadwals[$k->id][$namaHari][$j]['id']) && !isset($jadwals[$k->id][$namaHari][$j]['tipe'])) {
                         $jadwals[$k->id][$namaHari][$j] = [
                             'id' => null,
                             'mapel' => '',
@@ -157,11 +175,27 @@ class JadwalController extends Controller
         set_time_limit(600);
 
         try {
-            // A. Data Hari Aktif (Dikirim agar Python tahu batas per hari)
-            $hariAktif = MasterHari::getActiveDays()->map(function($h) {
+            $waktuList = MasterWaktu::orderBy('jam_ke')->get();
+
+            // A. Data Hari Aktif (Kalkulasi max_jam otomatis dari MasterWaktu)
+            $hariAktif = MasterHari::getActiveDays()->map(function($h) use ($waktuList) {
+                $namaHariLower = strtolower($h->nama_hari);
+                $maxJamTerakhir = 0;
+
+                foreach($waktuList as $w) {
+                    $tipeSlot = $w->tipe;
+                    if ($namaHariLower == 'senin' && $w->tipe_senin) $tipeSlot = $w->tipe_senin;
+                    if ($namaHariLower == 'jumat' && $w->tipe_jumat) $tipeSlot = $w->tipe_jumat;
+
+                    // Selama bukan "Tidak Ada", berarti slot ini exist
+                    if ($tipeSlot !== 'Tidak Ada') {
+                        $maxJamTerakhir = $w->jam_ke;
+                    }
+                }
+
                 return [
                     'nama' => $h->nama_hari,
-                    'max_jam' => $h->max_jam
+                    'max_jam' => $maxJamTerakhir // Python tetap dapat data max_jam yang akurat
                 ];
             });
 
@@ -181,15 +215,18 @@ class JadwalController extends Controller
                     'guru_id' => $j->guru_id,
                     'kelas_id' => $j->kelas_id,
                     'mapel_id' => $j->mapel_id,
-                    'jumlah_jam' => $j->jumlah_jam, // Nanti bisa dipisah offline/online di sini
+                    'jumlah_jam' => $j->jumlah_jam,
                 ];
             });
 
-            // D. Data Kelas
+            // D. Data Kelas (Kirim juga limit hariannya ke Python kalau scriptnya siap nerima)
             $kelassData = Kelas::all()->map(function ($k) {
                 return [
                     'id' => $k->id,
-                    'nama_kelas' => $k->nama_kelas
+                    'nama_kelas' => $k->nama_kelas,
+                    'limit_harian' => $k->limit_harian ?? 10,
+                    'limit_jumat' => $k->limit_jumat ?? 7,
+                    'max_jam_total' => $k->max_jam ?? 48
                 ];
             });
 

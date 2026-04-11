@@ -29,6 +29,21 @@
         <button @click="show = false" class="text-emerald-400 hover:text-emerald-700 transition">&times;</button>
     </div>
     @endif
+    @if(session('error'))
+    <div x-data="{ show: true }" x-show="show" x-transition
+        class="mb-6 flex items-center justify-between p-4 bg-rose-50 border border-rose-100 rounded-xl shadow-sm text-rose-800 shrink-0 relative z-[90]">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-rose-100 rounded-full text-rose-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </div>
+            <span class="font-bold text-sm">{{ session('error') }}</span>
+        </div>
+        <button @click="show = false" class="text-rose-400 hover:text-rose-700 transition">&times;</button>
+    </div>
+    @endif
 
     {{-- MAIN CARD UI --}}
     <div
@@ -46,7 +61,7 @@
                             Jadwal Pelajaran Terpadu
                         </h1>
                         <p class="text-slate-500 text-sm mt-1.5 font-medium">
-                            Tahun Ajaran {{ $judulTahun ?? date('Y').'/'.(date('Y')+1) }} Semester Genap
+                            Tahun Ajaran {{ $judulTahun ?? date('Y').'/'.(date('Y')+1) }}
                         </p>
                     </div>
                 </div>
@@ -65,7 +80,7 @@
                     <form action="{{ route('jadwal.generate') }}" method="POST" onsubmit="showLoading()">
                         @csrf
                         <button type="button"
-                            onclick="if(confirm('Generate ulang akan menimpa jadwal lama. Lanjut?')) this.form.submit()"
+                            onclick="if(confirm('Generate ulang akan menimpa jadwal lama. AI akan menyusun berdasarkan ketersediaan jam di Master Waktu. Lanjut?')) this.form.submit()"
                             class="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md shadow-indigo-500/30 hover:-translate-y-0.5">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -95,13 +110,13 @@
             </div>
         </div>
 
-        {{-- 2. TABLE SECTION (Freeze Pane Anti Bocor) --}}
+        {{-- 2. TABLE SECTION (Freeze Pane Anti Bocor - DINAMIS) --}}
         <div class="flex-1 overflow-auto custom-scrollbar relative bg-slate-50/30 z-10">
-            @if($kelass->isEmpty())
+            @if($kelass->isEmpty() || empty($jadwals))
             <div class="flex flex-col items-center justify-center h-full py-20 text-center">
                 <div class="text-6xl mb-4 opacity-30">🗂️</div>
                 <h3 class="text-lg font-bold text-slate-600">Data Tidak Ditemukan</h3>
-                <p class="text-slate-400 text-sm mt-1">Sistem belum memiliki jadwal atau data kelas.</p>
+                <p class="text-slate-400 text-sm mt-1">Sistem belum memiliki jadwal, data kelas, atau Master Waktu.</p>
             </div>
             @else
             <table class="w-full min-w-max border-separate border-spacing-0" id="jadwal-tabel">
@@ -115,7 +130,7 @@
                             class="h-[50px] w-[50px] min-w-[50px] max-w-[50px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[60px] z-[70]">
                         </th>
                         <th
-                            class="h-[50px] w-[90px] min-w-[90px] max-w-[90px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[110px] z-[70] shadow-[4px_0_8px_-2px_rgba(0,0,0,0.15)]">
+                            class="h-[50px] w-[100px] min-w-[100px] max-w-[100px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[110px] z-[70] shadow-[4px_0_8px_-2px_rgba(0,0,0,0.15)]">
                         </th>
                         @foreach($kelass as $kelas)
                         <th class="h-[50px] min-w-[170px] bg-[#242b3d] sticky top-0 z-[50] border-r border-b border-slate-700 text-center font-extrabold text-[14px] tracking-wider uppercase jadwal-header"
@@ -134,7 +149,7 @@
                             class="h-[40px] w-[50px] min-w-[50px] max-w-[50px] sticky top-[50px] left-[60px] z-[70] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400">
                             JP</th>
                         <th
-                            class="h-[40px] w-[90px] min-w-[90px] max-w-[90px] sticky top-[50px] left-[110px] z-[70] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.05)]">
+                            class="h-[40px] w-[100px] min-w-[100px] max-w-[100px] sticky top-[50px] left-[110px] z-[70] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.05)]">
                             WAKTU</th>
                         @foreach($kelass as $kelas)
                         <th
@@ -146,141 +161,142 @@
                 </thead>
 
                 <tbody class="bg-white">
+                    @foreach($dataHari as $hariItem)
                     @php
-                    $hariList = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
-                    $waktu = [
-                    'Senin' => [0=>'07.00-07.45', 1=>'07.45-08.25', 2=>'08.25-09.05', 3=>'09.05-09.45',
-                    4=>'10.00-10.40', 5=>'10.40-11.20', 6=>'11.20-12.00', 7=>'12.50-13.30', 8=>'13.30-14.10',
-                    9=>'14.10-14.50', 10=>'14.50-15.30'],
-                    'Jumat' => [0=>'07.00-07.45', 1=>'07.45-08.20', 2=>'08.20-08.55', 3=>'08.55-09.30',
-                    4=>'09.30-10.00', 5=>'10.15-10.45', 6=>'10.45-11.15', 7=>'11.15-11.45', 8=>'12.45-13.15',
-                    9=>'13.15-13.45', 10=>'13.45-14.15'],
-                    'Default' => [0=>'07.00-07.40', 1=>'07.40-08.20', 2=>'08.20-09.00', 3=>'09.00-09.40',
-                    4=>'09.50-10.30', 5=>'10.30-11.10', 6=>'11.10-11.50', 7=>'12.35-13.15', 8=>'13.15-13.55',
-                    9=>'13.55-14.35', 10=>'14.35-15.15']
-                    ];
+                    $namaHari = $hariItem->nama_hari;
+                    $namaHariLower = strtolower($namaHari);
+
+                    // Hitung jumlah row yang aktif di hari ini (untuk rowspan kolom Hari)
+                    $rowSpanTotal = 0;
+                    foreach($dataWaktu as $w) {
+                    $tipeCheck = $w->tipe;
+                    if ($namaHariLower == 'senin' && $w->tipe_senin) $tipeCheck = $w->tipe_senin;
+                    if ($namaHariLower == 'jumat' && $w->tipe_jumat) $tipeCheck = $w->tipe_jumat;
+                    if ($tipeCheck !== 'Tidak Ada') $rowSpanTotal++;
+                    }
+                    $firstRow =ue;
                     @endphp
 
-                    @foreach($hariList as $hari)
+                    @if($rowSpanTotal > 0)
+                    @foreach($dataWaktu as $waktuItem)
                     @php
-                    $maxJam = 10;
-                    $startJam = ($hari == 'Senin' || $hari == 'Jumat') ? 0 : 1;
-                    $rowSpanTotal = ($maxJam - $startJam) + 1 + (($hari != 'Jumat') ? 2 : 0);
+                    $j = $waktuItem->jam_ke;
+
+                    // Ambil Waktu & Tipe Dinamis Sesuai Hari
+                    $waktuTampil = \Carbon\Carbon::parse($waktuItem->waktu_mulai)->format('H:i') . ' - ' .
+                    \Carbon\Carbon::parse($waktuItem->waktu_selesai)->format('H:i');
+                    $tipeTampil = $waktuItem->tipe;
+
+                    if ($namaHariLower == 'senin' && $waktuItem->mulai_senin) {
+                    $waktuTampil = \Carbon\Carbon::parse($waktuItem->mulai_senin)->format('H:i') . ' - ' .
+                    \Carbon\Carbon::parse($waktuItem->selesai_senin)->format('H:i');
+                    $tipeTampil = $waktuItem->tipe_senin;
+                    } elseif ($namaHariLower == 'jumat' && $waktuItem->mulai_jumat) {
+                    $waktuTampil = \Carbon\Carbon::parse($waktuItem->mulai_jumat)->format('H:i') . ' - ' .
+                    \Carbon\Carbon::parse($waktuItem->selesai_jumat)->format('H:i');
+                    $tipeTampil = $waktuItem->tipe_jumat;
+                    }
                     @endphp
 
-                    @for($jam = $startJam; $jam <= $maxJam; $jam++) <tr
-                        class="hover:bg-slate-50 transition-colors duration-150">
+                    {{-- JIKA TIDAK ADA JAM (Misal Jumat pulang awal), JANGAN RENDER BARIS INI --}}
+                    @if($tipeTampil !== 'Tidak Ada')
+                    <tr class="hover:bg-slate-50 transition-colors duration-150">
 
-                        {{-- Kolom HARI --}}
-                        @if($jam == $startJam)
+                        {{-- Kolom HARI (Rowspan) --}}
+                        @if($firstRow)
                         <td rowspan="{{ $rowSpanTotal }}"
-                            class="w-[60px] min-w-[60px] max-w-[60px] sticky left-0 z-[40] p-0 bg-white border-r border-b border-slate-200 align-middle text-center">
+                            class="w-[60px] min-w-[60px] max-w-[60px] sticky left-0 z-[40] p-0 bg-white border-r border-b border-slate-200 align-middle text-center shadow-[4px_0_8px_-2px_rgba(0,0,0,0.02)]">
                             <div class="font-extrabold text-slate-400 uppercase tracking-[0.2em] text-[12px] h-full flex items-center justify-center py-4 px-2"
                                 style="writing-mode: vertical-lr; transform: rotate(180deg);">
-                                {{ $hari }}
+                                {{ $namaHari }}
                             </div>
                         </td>
+                        @php $firstRow = false; @endphp
                         @endif
 
                         {{-- Kolom JP --}}
                         <td
                             class="w-[50px] min-w-[50px] max-w-[50px] sticky left-[60px] z-[40] p-2 bg-white border-r border-b border-slate-200 text-center font-bold text-slate-600 text-[11px]">
-                            {{ $jam }}
+                            @if($tipeTampil == 'Istirahat')
+                            <span class="text-amber-500">IST</span>
+                            @else
+                            {{ $j }}
+                            @endif
                         </td>
 
                         {{-- Kolom WAKTU --}}
                         <td
-                            class="w-[90px] min-w-[90px] max-w-[90px] sticky left-[110px] z-[40] p-2 bg-white border-r border-b border-slate-200 text-center text-[10px] font-mono font-medium text-slate-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.05)]">
-                            @php
-                            $w = ($hari == 'Senin') ? $waktu['Senin'][$jam] : (($hari == 'Jumat') ?
-                            $waktu['Jumat'][$jam] : $waktu['Default'][$jam]);
-                            $w_parts = explode('-', $w);
-                            @endphp
-                            @if(count($w_parts) == 2)
+                            class="w-[100px] min-w-[100px] max-w-[100px] sticky left-[110px] z-[40] p-2 bg-white border-r border-b border-slate-200 text-center text-[10px] font-mono font-medium text-slate-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.05)]">
+                            @php $w_parts = explode(' - ', $waktuTampil); @endphp
                             <div class="flex flex-col items-center justify-center space-y-0.5">
-                                <span>{{ trim($w_parts[0]) }}</span>
-                                <span class="text-[8px] text-slate-300 leading-none">-</span>
-                                <span>{{ trim($w_parts[1]) }}</span>
+                                <span>{{ $w_parts[0] ?? '' }}</span>
+                                <span class="text-[8px] text-slate-300 leading-none">sd</span>
+                                <span>{{ $w_parts[1] ?? '' }}</span>
                             </div>
-                            @else
-                            {{ $w }}
-                            @endif
                         </td>
 
-                        {{-- Kolom Kelas / Sel Jadwal --}}
-                        @if($jam == 0)
+                        {{-- Kolom Sel Jadwal per Kelas --}}
+                        @if($tipeTampil == 'Istirahat')
                         <td colspan="{{ $kelass->count() }}"
-                            class="p-2 border-b border-slate-100 align-middle bg-slate-50/80 z-[10] relative">
+                            class="p-2 border-b border-slate-100 bg-amber-50/30 align-middle z-[10] relative">
                             <div
-                                class="w-full h-full border border-slate-200 bg-white rounded-lg flex items-center justify-center p-2">
-                                <span class="text-xs font-extrabold text-indigo-600 uppercase tracking-widest">
-                                    @if($hari == 'Senin') 🇮🇩 UPACARA BENDERA @else 📖 IMTAQ / SENAM @endif
-                                </span>
+                                class="w-full h-[60px] bg-amber-100/50 border border-amber-200/50 rounded flex items-center justify-center p-1.5">
+                                <span class="font-extrabold text-amber-500 text-[10px] tracking-[0.3em] uppercase">☕
+                                    WAKTU ISTIRAHAT</span>
+                            </div>
+                        </td>
+                        @elseif(in_array($tipeTampil, ['Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']))
+                        <td colspan="{{ $kelass->count() }}"
+                            class="p-2 border-b border-slate-100 bg-cyan-50/30 align-middle z-[10] relative">
+                            <div
+                                class="w-full h-[60px] bg-cyan-100/50 border border-cyan-200/50 rounded flex items-center justify-center p-1.5">
+                                <span class="font-extrabold text-cyan-600 text-[10px] tracking-[0.3em] uppercase">✨
+                                    {{ $tipeTampil }}</span>
                             </div>
                         </td>
                         @else
+                        {{-- SEL BELAJAR BIASA --}}
                         @foreach($kelass as $kelas)
-                        @php $data = $jadwals[$kelas->id][$hari][$jam] ?? null; @endphp
+                        @php
+                        $data = $jadwals[$kelas->id][$namaHari][$j] ?? null;
+                        // Pastikan tidak merender sel yang kosong dari logika Controller (yang sudah di unset)
+                        if($data && $data['tipe'] == 'empty' && empty($data['mapel'])) {
+                        $data = null;
+                        }
+                        @endphp
 
-                        <td class="p-2 border-r border-b border-slate-100 text-center align-middle h-[75px] jadwal-cell transition-all duration-300 z-[10] relative bg-white"
+                        <td class="p-2 border-r border-b border-slate-100 text-center align-middle h-[75px] min-w-[170px] max-w-[170px] jadwal-cell transition-all duration-300 z-[10] relative bg-white"
                             data-search="{{ $data ? strtolower($data['mapel'].' '.$data['guru'].' '.$kelas->nama_kelas) : '' }}"
                             data-kelas="{{ strtolower($kelas->nama_kelas) }}">
 
                             @if($data)
                             <div
-                                class="w-full h-full rounded-xl flex flex-col justify-center items-center px-2 py-1.5 {{ $data['color'] ?? 'bg-[#f5f3ff] text-[#6d28d9]' }} cursor-pointer transition-all duration-300 relative group sel-content">
+                                class="w-full h-full rounded-xl flex flex-col justify-center items-center px-2 py-1.5 {{ $data['color'] ?? 'bg-[#f5f3ff] text-[#6d28d9]' }} cursor-pointer transition-all duration-300 relative group sel-content border border-transparent hover:border-indigo-200">
                                 <span
                                     class="font-bold text-[13px] leading-tight mb-1 line-clamp-1 text-slate-800">{{ $data['mapel'] }}</span>
                                 <span
-                                    class="text-[10px] font-medium leading-tight line-clamp-1 opacity-90 text-blue-600">{{ $data['guru'] }}</span>
+                                    class="text-[10px] font-medium leading-tight line-clamp-1 opacity-90 text-indigo-600">{{ $data['guru'] }}</span>
                             </div>
                             @else
                             <div
-                                class="w-full h-full flex items-center justify-center transition-all duration-300 opacity-20 sel-content">
+                                class="w-full h-full rounded-xl border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center transition-all duration-300 sel-content group hover:bg-slate-100 cursor-not-allowed">
+                                <span
+                                    class="text-[10px] font-bold text-slate-300 group-hover:text-slate-400">KOSONG</span>
                             </div>
                             @endif
                         </td>
                         @endforeach
                         @endif
-                        </tr>
+                    </tr>
+                    @endif
+                    @endforeach
 
-                        {{-- Row Istirahat --}}
-                        @if(($jam == 4 || $jam == 8) && $hari != 'Jumat')
-                        <tr class="z-[10] relative">
-                            <td
-                                class="w-[50px] sticky left-[60px] z-[40] p-1 border-r border-b border-slate-200 bg-slate-50/80 text-center font-bold text-slate-400 text-[10px]">
-                                IST
-                            </td>
-                            <td
-                                class="w-[90px] sticky left-[110px] z-[40] p-1 border-r border-b border-slate-200 bg-slate-50/80 text-center text-[10px] font-mono font-medium text-slate-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.05)]">
-                                @php
-                                $w_ist = $jam==4 ? '10.00-10.15' : '13.30-13.50';
-                                $w_ist_parts = explode('-', $w_ist);
-                                @endphp
-                                <div class="flex flex-col items-center justify-center space-y-0.5">
-                                    <span>{{ trim($w_ist_parts[0]) }}</span>
-                                    <span class="text-[8px] text-slate-300 leading-none">-</span>
-                                    <span>{{ trim($w_ist_parts[1] ?? '') }}</span>
-                                </div>
-                            </td>
-                            <td colspan="{{ $kelass->count() }}"
-                                class="p-2 border-b border-slate-100 bg-slate-50/80 align-middle z-[10] relative">
-                                <div
-                                    class="w-full h-full bg-slate-100/80 rounded flex items-center justify-center p-1.5">
-                                    <span class="font-bold text-slate-400 text-[10px] tracking-[0.3em] uppercase">☕
-                                        Istirahat</span>
-                                </div>
-                            </td>
-                        </tr>
-                        @endif
-                        @endfor
-
-                        {{-- Pemisah Antar Hari --}}
-                        <tr class="z-[10] relative">
-                            <td colspan="{{ $kelass->count() + 3 }}"
-                                class="bg-slate-100/50 h-3 border-b border-slate-200 z-[10] relative"></td>
-                        </tr>
-                        @endforeach
+                    {{-- Pemisah Antar Hari (Garis Tebal) --}}
+                    <tr class="z-[10] relative">
+                        <td colspan="{{ $kelass->count() + 3 }}" class="bg-slate-200 h-[3px] z-[10] relative"></td>
+                    </tr>
+                    @endif
+                    @endforeach
                 </tbody>
             </table>
             @endif
@@ -296,7 +312,7 @@
                     viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
                 </svg>
-                Secure Data
+                Secure AI Core
             </span>
         </div>
     </div>
@@ -312,9 +328,9 @@
             </div>
             <div class="absolute inset-0 flex items-center justify-center text-3xl">⚙️</div>
         </div>
-        <h3 class="text-xl font-extrabold text-slate-800">Menyusun Jadwal...</h3>
-        <p class="text-slate-500 text-sm mt-2 font-medium">Sistem sedang mendistribusikan durasi mengajar agar tidak
-            terjadi bentrok.</p>
+        <h3 class="text-xl font-extrabold text-slate-800">AI Sedang Bekerja...</h3>
+        <p class="text-slate-500 text-sm mt-2 font-medium">Memproses ribuan kombinasi algoritma constraint programming
+            untuk mencegah jadwal bentrok.</p>
     </div>
 </div>
 @endsection
@@ -330,19 +346,18 @@ table {
 
 /* Custom Scrollbar Clean */
 .custom-scrollbar::-webkit-scrollbar {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
     background: #f8fafc;
-    border-radius: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 8px;
-    border: 3px solid #f8fafc;
+    border: 2px solid #f8fafc;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -366,13 +381,10 @@ function filterJadwalRealtime() {
             cell.style.opacity = '1';
             cell.style.filter = 'none';
             const innerBox = cell.querySelector('.sel-content');
-            if (innerBox) {
-                innerBox.classList.remove('ring-4', 'ring-indigo-400', 'ring-offset-2', 'scale-[1.05]');
-            }
+            if (innerBox) innerBox.classList.remove('ring-4', 'ring-indigo-400', 'ring-offset-2',
+                'scale-[1.05]');
         });
-        headers.forEach(header => {
-            header.style.opacity = '1';
-        });
+        headers.forEach(header => header.style.opacity = '1');
         return;
     }
 
@@ -382,14 +394,11 @@ function filterJadwalRealtime() {
         const searchData = cell.getAttribute('data-search');
         const dataKelas = cell.getAttribute('data-kelas');
 
-        if (dataKelas === input) {
-            classMatched = true;
-        }
+        if (dataKelas === input) classMatched = true;
 
         if (searchData && searchData.includes(input)) {
             cell.style.opacity = '1';
             cell.style.filter = 'none';
-
             const innerBox = cell.querySelector('.sel-content');
             if (innerBox && !innerBox.classList.contains('opacity-20')) {
                 innerBox.classList.add('ring-4', 'ring-indigo-400', 'ring-offset-2', 'scale-[1.05]');
@@ -398,9 +407,8 @@ function filterJadwalRealtime() {
             cell.style.opacity = '0.15';
             cell.style.filter = 'grayscale(100%)';
             const innerBox = cell.querySelector('.sel-content');
-            if (innerBox) {
-                innerBox.classList.remove('ring-4', 'ring-indigo-400', 'ring-offset-2', 'scale-[1.05]');
-            }
+            if (innerBox) innerBox.classList.remove('ring-4', 'ring-indigo-400', 'ring-offset-2',
+                'scale-[1.05]');
         }
     });
 
