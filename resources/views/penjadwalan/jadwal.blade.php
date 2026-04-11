@@ -174,7 +174,7 @@
                     if ($namaHariLower == 'jumat' && $w->tipe_jumat) $tipeCheck = $w->tipe_jumat;
                     if ($tipeCheck !== 'Tidak Ada') $rowSpanTotal++;
                     }
-                    $firstRow =ue;
+                    $firstRow =true;
                     @endphp
 
                     @if($rowSpanTotal > 0)
