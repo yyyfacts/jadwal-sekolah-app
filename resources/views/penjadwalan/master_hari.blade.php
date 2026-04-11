@@ -147,7 +147,7 @@
 
                         <td class="px-6 py-5">
                             <div class="flex items-center justify-end gap-2">
-                                {{-- FIX: Panggil fungsi Javascript murni untuk Edit --}}
+                                {{-- Tombol Edit --}}
                                 <button type="button"
                                     onclick="openEditModal({{ $h->id }}, '{{ $h->nama_hari }}', {{ $h->max_jam }}, {{ $h->is_active ? 1 : 0 }})"
                                     class="p-2 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg transition-colors bg-white"
@@ -159,11 +159,12 @@
                                     </svg>
                                 </button>
 
+                                {{-- Tombol Hapus --}}
                                 <form action="{{ route('master-hari.destroy', $h->id) }}" method="POST" class="inline"
-                                    onsubmit="if(confirm('Hapus data {{ $h->nama_hari }}?')) { this.querySelector('button[type=submit]').disabled = true; return true; } return false;">
+                                    onsubmit="return confirm('Hapus data {{ $h->nama_hari }}?');">
                                     @csrf @method('DELETE')
                                     <button type="submit"
-                                        class="p-2 border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300 rounded-lg transition-colors bg-white disabled:opacity-50"
+                                        class="p-2 border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300 rounded-lg transition-colors bg-white"
                                         title="Hapus">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -221,8 +222,8 @@
     {{-- MODALS AREA --}}
 
     {{-- 1. Modal Tambah --}}
-    <div id="modaltambah"
-        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden flex items-center justify-center p-4">
+    <div id="modaltambah" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4"
+        style="z-index: 9999;">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-white/20">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <h3 class="font-bold text-slate-800 flex items-center gap-2">
@@ -261,9 +262,9 @@
         </div>
     </div>
 
-    {{-- 2. Modal Edit (Vanilla JS) --}}
-    <div id="modaledit"
-        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
+    {{-- 2. Modal Edit --}}
+    <div id="modaledit" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4"
+        style="z-index: 9999;">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
             <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
                 <h3 class="font-bold text-amber-800 flex items-center gap-2">
@@ -306,78 +307,45 @@
 
 @push('scripts')
 <script>
-// Pencarian Table
 function searchMainTable() {
     const input = document.getElementById('search-hari-main').value.toLowerCase();
     const rows = document.querySelectorAll('#tbody-hari-main tr[data-filter]');
-    const noResultRow = document.getElementById('search-no-result');
     let hasResult = false;
-
     rows.forEach(row => {
-        const filterText = row.getAttribute('data-filter');
-        if (filterText && filterText.includes(input)) {
+        if (row.getAttribute('data-filter').includes(input)) {
             row.style.display = "";
             hasResult = true;
         } else {
             row.style.display = "none";
         }
     });
-
-    if (noResultRow) {
-        if (!hasResult && input.length > 0) {
-            noResultRow.classList.remove('hidden');
-        } else {
-            noResultRow.classList.add('hidden');
-        }
-    }
+    document.getElementById('search-no-result')?.classList.toggle('hidden', hasResult || input === '');
 }
 
-// Buka Modal Tambah
-function openModal(modalID) {
-    const modal = document.getElementById(modalID);
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
+function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+    document.getElementById(id).classList.add('flex');
 }
 
-// Tutup Modal Apapun
-function closeModal(modalID) {
-    const modal = document.getElementById(modalID);
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
+function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+    document.getElementById(id).classList.remove('flex');
 }
 
-// FIX: Fungsi Buka Modal Edit Pakai Vanilla JS
 function openEditModal(id, nama, max, active) {
-    const modal = document.getElementById('modaledit');
-
-    // Set action form URL-nya
     document.getElementById('form-edit-hari').action = `{{ url('master-hari') }}/${id}`;
-
-    // Isi data ke inputan
     document.getElementById('edit_nama_hari').value = nama;
     document.getElementById('edit_max_jam').value = max;
     document.getElementById('edit_is_active').value = active;
-
-    // Tampilkan modal
-    moda l.classList.remove('hidden');
-    modal.classList.add('flex');
+    openModal('modaledit');
 }
 
-// Tutup modal kalau klik area luar (background gelap)
 window.onclick = function(event) {
     const modalTambah = document.getElementById('modaltambah');
     const modalEdit = document.getElementById('modaledit');
 
-    if (event.target === modalTambah) {
-        closeModal('modaltambah');
-    }
-    if (event.target === modalEdit) {
-        closeModal('modaledit');
-    }
+    if (event.target === modalTambah) closeModal('modaltambah');
+    if (event.target === modalEdit) closeModal('modaledit');
 }
 </script>
 @endpush
