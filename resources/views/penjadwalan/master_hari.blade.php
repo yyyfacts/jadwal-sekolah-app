@@ -38,8 +38,7 @@
                     <div class="w-2.5 h-8 bg-indigo-600 rounded-full mt-0.5"></div>
                     <div>
                         <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Master Hari</h1>
-                        <p class="text-slate-500 text-sm mt-1 font-medium">Kelola data hari aktif dan batas maksimal jam
-                            mengajar.</p>
+                        <p class="text-slate-500 text-sm mt-1 font-medium">Kelola data status hari aktif dan libur.</p>
                     </div>
                 </div>
 
@@ -79,19 +78,17 @@
 
         {{-- 2. TABLE SECTION --}}
         <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white px-2">
-            <table class="w-full text-left border-collapse min-w-[800px]">
+            <table class="w-full text-left border-separate border-spacing-0 min-w-[600px]">
                 <thead class="bg-white sticky top-0 z-10 shadow-sm">
                     <tr>
-                        <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider w-[30%]">Nama
-                            Hari</th>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center w-[25%]">
-                            Batas Jam</th>
+                            class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider w-[40%] border-b-2 border-slate-100 bg-white">
+                            Nama Hari</th>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center w-[25%]">
+                            class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center w-[30%] border-b-2 border-slate-100 bg-white">
                             Status</th>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right w-[20%]">
+                            class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right w-[30%] border-b-2 border-slate-100 bg-white">
                             Aksi</th>
                     </tr>
                 </thead>
@@ -102,13 +99,6 @@
                         data-filter="{{ strtolower($h->nama_hari) }}">
                         <td class="px-8 py-5">
                             <span class="font-bold text-slate-700 text-sm">{{ $h->nama_hari }}</span>
-                        </td>
-
-                        <td class="px-6 py-5 text-center">
-                            <span
-                                class="inline-flex items-center px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-600 border border-indigo-100 text-xs font-bold">
-                                Maks: {{ $h->max_jam }} Jam
-                            </span>
                         </td>
 
                         <td class="px-6 py-5 text-center">
@@ -124,15 +114,15 @@
                             </div>
                             @else
                             <span
-                                class="text-slate-400 font-semibold text-xs bg-slate-100 px-3 py-1 rounded-full">LIBUR</span>
+                                class="text-slate-400 font-semibold text-xs bg-slate-100 border border-slate-200 px-3 py-1 rounded-full">LIBUR</span>
                             @endif
                         </td>
 
                         <td class="px-6 py-5 text-right">
                             <div class="flex items-center justify-end gap-2">
-                                {{-- Tombol Edit Vanilla JS yang Pasti Jalan --}}
+                                {{-- Tombol Edit --}}
                                 <button type="button"
-                                    onclick="openEditModal({{ $h->id }}, '{{ $h->nama_hari }}', {{ $h->max_jam }}, {{ $h->is_active ? 1 : 0 }})"
+                                    onclick="openEditModal({{ $h->id }}, '{{ $h->nama_hari }}', {{ $h->is_active ? 1 : 0 }})"
                                     class="p-2 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg transition-colors bg-white"
                                     title="Edit">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,6 +132,7 @@
                                     </svg>
                                 </button>
 
+                                {{-- Tombol Hapus --}}
                                 <form action="{{ route('master-hari.destroy', $h->id) }}" method="POST" class="inline"
                                     onsubmit="return confirm('Yakin hapus data hari {{ $h->nama_hari }}?');">
                                     @csrf @method('DELETE')
@@ -159,96 +150,118 @@
                         </td>
                     </tr>
                     @empty
-                    <tr>
-                        <td colspan="4" class="px-6 py-20 text-center text-slate-400 font-medium">Belum ada data hari
-                            aktif.</td>
+                    <tr id="no-data-row">
+                        <td colspan="3" class="px-6 py-20 text-center text-slate-400">
+                            <div class="flex flex-col items-center justify-center opacity-50">
+                                <svg class="w-12 h-12 mb-3 text-slate-300" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                                    </path>
+                                </svg>
+                                <span class="text-sm font-medium">Belum ada data hari aktif.</span>
+                            </div>
+                        </td>
                     </tr>
                     @endforelse
+
+                    <tr id="search-no-result" class="hidden">
+                        <td colspan="3" class="px-6 py-12 text-center text-slate-500">
+                            <div class="flex flex-col items-center">
+                                <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                                <p>Hari tidak ditemukan.</p>
+                            </div>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
-    </div>
-</div>
 
-{{-- MODALS AREA --}}
-
-{{-- 1. Modal Tambah --}}
-<div id="modaltambah"
-    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-            <h3 class="font-bold text-slate-800 flex items-center gap-2"><span
-                    class="w-1.5 h-5 bg-indigo-600 rounded-full"></span> Tambah Hari Aktif</h3>
-            <button onclick="closeModal('modaltambah')"
-                class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+        {{-- 3. FOOTER SECTION --}}
+        <div class="bg-white border-t border-slate-100 px-8 py-4 flex justify-between items-center shrink-0">
+            <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Sistem Penjadwalan</span>
+            <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Secure Data</span>
         </div>
-        <form action="{{ route('master-hari.store') }}" method="POST" class="p-6 space-y-5">
-            @csrf
-            <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Hari</label>
-                <select name="nama_hari"
-                    class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition"
-                    required>
-                    <option value="" disabled selected>-- Pilih Hari --</option>
-                    <option value="Senin">Senin</option>
-                    <option value="Selasa">Selasa</option>
-                    <option value="Rabu">Rabu</option>
-                    <option value="Kamis">Kamis</option>
-                    <option value="Jumat">Jumat</option>
-                    <option value="Sabtu">Sabtu</option>
-                    <option value="Minggu">Minggu</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Batas Jam Mengajar</label>
-                <input type="number" name="max_jam"
-                    class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition"
-                    placeholder="Contoh: 10" min="1" required>
-            </div>
-            <button type="submit"
-                class="w-full bg-slate-900 hover:bg-indigo-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">SIMPAN
-                DATA</button>
-        </form>
     </div>
-</div>
 
-{{-- 2. Modal Edit --}}
-<div id="modaledit"
-    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
-            <h3 class="font-bold text-amber-800 flex items-center gap-2"><span
-                    class="w-1.5 h-5 bg-amber-500 rounded-full"></span> Edit Konfigurasi Hari</h3>
-            <button type="button" onclick="closeModal('modaledit')"
-                class="text-amber-400 hover:text-amber-600 text-2xl leading-none">&times;</button>
+    <div class="text-center mt-6 text-slate-500 text-[11px] font-medium tracking-wide">
+        &copy; {{ date('Y') }} SMAN 1 SAMPANG. Sistem Penjadwalan Terintegrasi.
+    </div>
+
+    {{-- MODALS AREA --}}
+
+    {{-- 1. Modal Tambah --}}
+    <div id="modaltambah"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                    <span class="w-1.5 h-5 bg-indigo-600 rounded-full"></span> Tambah Hari Aktif
+                </h3>
+                <button onclick="closeModal('modaltambah')"
+                    class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+            </div>
+            <form action="{{ route('master-hari.store') }}" method="POST" class="p-6 space-y-5">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Hari</label>
+                    <select name="nama_hari"
+                        class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition"
+                        required>
+                        <option value="" disabled selected>-- Pilih Hari --</option>
+                        <option value="Senin">Senin</option>
+                        <option value="Selasa">Selasa</option>
+                        <option value="Rabu">Rabu</option>
+                        <option value="Kamis">Kamis</option>
+                        <option value="Jumat">Jumat</option>
+                        <option value="Sabtu">Sabtu</option>
+                        <option value="Minggu">Minggu</option>
+                    </select>
+                </div>
+                <button type="submit"
+                    class="w-full bg-slate-900 hover:bg-indigo-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">SIMPAN
+                    DATA</button>
+            </form>
         </div>
+    </div>
 
-        <form id="form-edit-hari" method="POST" class="p-6 space-y-5">
-            @csrf @method('PUT')
-            <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Hari</label>
-                <input type="text" id="edit_nama_hari" name="nama_hari"
-                    class="w-full border border-slate-200 rounded-xl px-4 py-3 bg-slate-100 text-slate-500 text-sm outline-none font-semibold cursor-not-allowed"
-                    readonly>
+    {{-- 2. Modal Edit --}}
+    <div id="modaledit"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
+                <h3 class="font-bold text-amber-800 flex items-center gap-2">
+                    <span class="w-1.5 h-5 bg-amber-500 rounded-full"></span> Edit Konfigurasi Hari
+                </h3>
+                <button type="button" onclick="closeModal('modaledit')"
+                    class="text-amber-400 hover:text-amber-600 text-2xl leading-none">&times;</button>
             </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Batas Jam Mengajar</label>
-                <input type="number" id="edit_max_jam" name="max_jam"
-                    class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition"
-                    required min="1">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Status Hari</label>
-                <select id="edit_is_active" name="is_active"
-                    class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition">
-                    <option value="1">Aktif / Masuk</option>
-                    <option value="0">Libur</option>
-                </select>
-            </div>
-            <button type="submit"
-                class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold mt-2 py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">UPDATE
-                DATA</button>
-        </form>
+
+            <form id="form-edit-hari" method="POST" class="p-6 space-y-5">
+                @csrf @method('PUT')
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Hari</label>
+                    <input type="text" id="edit_nama_hari" name="nama_hari"
+                        class="w-full border border-slate-200 rounded-xl px-4 py-3 bg-slate-100 text-slate-500 text-sm outline-none font-semibold cursor-not-allowed"
+                        readonly>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Status Hari</label>
+                    <select id="edit_is_active" name="is_active"
+                        class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition">
+                        <option value="1">Aktif / Masuk</option>
+                        <option value="0">Libur</option>
+                    </select>
+                </div>
+                <button type="submit"
+                    class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold mt-2 py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">UPDATE
+                    DATA</button>
+            </form>
+        </div>
     </div>
 </div>
 @endsection
@@ -258,6 +271,7 @@
 function searchMainTable() {
     const input = document.getElementById('search-hari-main').value.toLowerCase();
     const rows = document.querySelectorAll('#tbody-hari-main tr[data-filter]');
+    const noResultRow = document.getElementById('search-no-result');
     let hasResult = false;
 
     rows.forEach(row => {
@@ -268,6 +282,14 @@ function searchMainTable() {
             row.style.display = "none";
         }
     });
+
+    if (noResultRow) {
+        if (!hasResult && input.length > 0) {
+            noResultRow.classList.remove('hidden');
+        } else {
+            noResultRow.classList.add('hidden');
+        }
+    }
 }
 
 function openModal(id) {
@@ -278,10 +300,10 @@ function closeModal(id) {
     document.getElementById(id).classList.replace('flex', 'hidden');
 }
 
-function openEditModal(id, nama, max, active) {
+// Fungsi Edit tanpa max_jam
+function openEditModal(id, nama, active) {
     document.getElementById('form-edit-hari').action = `/master-hari/${id}`;
     document.getElementById('edit_nama_hari').value = nama;
-    document.getElementById('edit_max_jam').value = max;
     document.getElementById('edit_is_active').value = active;
     openModal('modaledit');
 }

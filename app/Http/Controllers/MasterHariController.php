@@ -17,10 +17,9 @@ class MasterHariController extends Controller
     {
         $request->validate([
             'nama_hari' => 'required|string|max:20',
-            'max_jam'   => 'required|integer|min:0',
         ]);
 
-        $data = $request->only('nama_hari', 'max_jam');
+        $data = $request->only('nama_hari');
         $data['is_active'] = true; // Default aktif saat ditambah
 
         MasterHari::create($data);
@@ -31,11 +30,10 @@ class MasterHariController extends Controller
     {
         $request->validate([
             'nama_hari' => 'required|string|max:20',
-            'max_jam'   => 'required|integer|min:0',
             'is_active' => 'required|boolean',
         ]);
 
-        MasterHari::findOrFail($id)->update($request->only('nama_hari', 'max_jam', 'is_active'));
+        MasterHari::findOrFail($id)->update($request->only('nama_hari', 'is_active'));
         return redirect()->route('master-hari.index')->with('success', 'Konfigurasi hari diperbarui.');
     }
 
