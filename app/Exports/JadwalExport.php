@@ -32,22 +32,14 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
         $gurus = Guru::orderBy('kode_guru')->get();
         $mapels = Mapel::orderBy('kode_mapel')->get();
 
-        // Ambil Data Hari dan Waktu Dinamis dari Database
         $dataHari = MasterHari::getActiveDays();
         $hariList = $dataHari->pluck('nama_hari')->toArray();
         $dataWaktu = MasterWaktu::getOrdered();
-        $maxJam = $dataWaktu->max('jam_ke'); // Cari jam maksimal yang disetting admin
+        $maxJam = $dataWaktu->max('jam_ke'); 
 
-        // Ambil Data Jadwal
-        $rawJadwals = Jadwal::with(['guru', 'mapel', 'kelas'])
-            ->whereNotNull('hari')
-            ->whereNotNull('jam')
-            ->get();
-
-        // Buat Grid Kosong
+        $rawJadwals = Jadwal::with(['guru', 'mapel', 'kelas'])->whereNotNull('hari')->whereNotNull('jam')->get();
         $jadwals = [];
 
-        // Inisialisasi Array Kosong berdasarkan Master Waktu (BUKAN hardcode 0-11)
         foreach ($kelass as $k) {
             foreach ($hariList as $h) {
                 foreach ($dataWaktu as $waktu) {
@@ -56,36 +48,52 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
             }
         }
 
-        // Isi Grid dengan Data Database
+        // BIKIN ARRAY LOMPATAN SAMA SEPERTI CONTROLLER
+        $belajarSlots = [];
+        foreach ($dataHari as $hariObj) {
+            $namaHari = $hariObj->nama_hari;
+            $namaHariLower = strtolower($namaHari);
+            $belajarSlots[$namaHari] = [];
+            foreach ($dataWaktu as $waktuObj) {
+                $tipeSlot = $waktuObj->tipe;
+                if ($namaHariLower == 'senin' && $waktuObj->tipe_senin) $tipeSlot = $waktuObj->tipe_senin;
+                if ($namaHariLower == 'jumat' && $waktuObj->tipe_jumat) $tipeSlot = $waktuObj->tipe_jumat;
+
+                if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']) && $tipeSlot !== 'Tidak Ada') {
+                    $belajarSlots[$namaHari][] = $waktuObj->jam_ke;
+                }
+            }
+        }
+
+        // ISI GRID EXCEL SAMBIL MELOMPATI ISTIRAHAT
         foreach ($rawJadwals as $row) {
             $durasi = $row->jumlah_jam;
-            for ($i = 0; $i < $durasi; $i++) {
-                $jamSekarang = $row->jam + $i;
-                
-                // Pastikan tidak tembus batas maksimal jam yang diset admin
-                if ($jamSekarang <= $maxJam) {
-                    // Cek apakah slot ini benar-benar ada di array (mencegah error jika jadwal AI meleset)
-                    if (isset($jadwals[$row->kelas_id][$row->hari])) {
-                        $jadwals[$row->kelas_id][$row->hari][$jamSekarang] = [
-                            'kode_mapel' => $row->mapel->kode_mapel ?? '-',
-                            'kode_guru'  => $row->guru->kode_guru ?? '-',
-                            // Logika warna: Putih (Single), Biru Muda (Double/Triple)
-                            'color'      => $row->tipe_jam == 'double' || $row->tipe_jam == 'triple' ? 'd9e1f2' : 'ffffff'
-                        ];
+            $hari = $row->hari;
+            $jamMulaiFisik = $row->jam;
+            
+            $slotsTersedia = $belajarSlots[$hari] ?? [];
+            $startIndex = array_search($jamMulaiFisik, $slotsTersedia);
+
+            if ($startIndex !== false) {
+                for ($i = 0; $i < $durasi; $i++) {
+                    if (isset($slotsTersedia[$startIndex + $i])) {
+                        $jamSekarang = $slotsTersedia[$startIndex + $i];
+                        
+                        if ($jamSekarang <= $maxJam && isset($jadwals[$row->kelas_id][$hari])) {
+                            $jadwals[$row->kelas_id][$hari][$jamSekarang] = [
+                                'kode_mapel' => $row->mapel->kode_mapel ?? '-',
+                                'kode_guru'  => $row->guru->kode_guru ?? '-',
+                                'color'      => $row->tipe_jam == 'double' || $row->tipe_jam == 'triple' ? 'd9e1f2' : 'ffffff'
+                            ];
+                        }
                     }
                 }
             }
         }
 
-        // 3. RETURN VIEW: Kirim semua variabel yang dibutuhkan termasuk dataHari & dataWaktu
         return view('exports.jadwal_excel', [
-            'kelass' => $kelass,
-            'jadwals' => $jadwals,
-            'gurus' => $gurus,
-            'mapels' => $mapels,
-            'judulTahun' => $this->judulTahun,
-            'dataHari' => $dataHari,    // <-- KIRIM KE BLADE
-            'dataWaktu' => $dataWaktu   // <-- KIRIM KE BLADE
+            'kelass' => $kelass, 'jadwals' => $jadwals, 'gurus' => $gurus, 'mapels' => $mapels, 
+            'judulTahun' => $this->judulTahun, 'dataHari' => $dataHari, 'dataWaktu' => $dataWaktu
         ]);
     }
 
