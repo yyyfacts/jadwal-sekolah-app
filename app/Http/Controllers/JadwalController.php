@@ -74,10 +74,10 @@ class JadwalController extends Controller
         foreach ($rawJadwals as $row) {
             $durasi = $row->jumlah_jam;
             $hari = $row->hari;
-            $jamMulaiFisik = $row->jam; // Misal di DB disave jam 4
+            $jamMulaiFisik = $row->jam; 
             
             $slotsTersedia = $belajarSlots[$hari] ?? [];
-            $startIndex = array_search($jamMulaiFisik, $slotsTersedia); // Cari urutan jam 4 itu ke-berapa
+            $startIndex = array_search($jamMulaiFisik, $slotsTersedia); 
             
             $color = match ($row->tipe_jam) {
                 'double' => 'bg-blue-100 text-blue-800 border-blue-200',
@@ -88,7 +88,7 @@ class JadwalController extends Controller
             if ($startIndex !== false) {
                 for ($i = 0; $i < $durasi; $i++) {
                     if (isset($slotsTersedia[$startIndex + $i])) {
-                        $jamSekarang = $slotsTersedia[$startIndex + $i]; // Otomatis ngelompatin index istirahat!
+                        $jamSekarang = $slotsTersedia[$startIndex + $i]; 
                         
                         if (!isset($jadwals[$row->kelas_id])) continue;
                         $jadwals[$row->kelas_id][$hari][$jamSekarang] = [
@@ -150,9 +150,8 @@ class JadwalController extends Controller
         try {
             $waktuList = MasterWaktu::orderBy('jam_ke')->get();
 
-            // Bikin mapping dari Jam AI (1,2,3..) ke Jam Fisik (1,2,3,4,6..)
             $slotMapping = []; 
-            $pToT = []; // Sebaliknya, untuk nangkep request manual admin
+            $pToT = []; 
 
             $hariAktif = MasterHari::getActiveDays()->map(function($h) use ($waktuList, &$slotMapping, &$pToT) {
                 $namaHariLower = strtolower($h->nama_hari);
@@ -161,11 +160,11 @@ class JadwalController extends Controller
                 foreach($waktuList as $w) {
                     $tipeSlot = $w->tipe;
                     if ($namaHariLower == 'senin' && $w->tipe_senin) $tipeSlot = $w->tipe_senin;
-                    if ($namaHariLower == 'jumat' && $w->tipe_jumat) $tipeSlot = $waktuObj->tipe_jumat ?? $w->tipe_jumat;
+                    // FIX TYPO: Dihapus $waktuObj->tipe_jumat menjadi $w->tipe_jumat
+                    if ($namaHariLower == 'jumat' && $w->tipe_jumat) $tipeSlot = $w->tipe_jumat;
 
                     if ($tipeSlot !== 'Tidak Ada') {
                         if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
-                            // Ini jam murni Belajar
                             $slotMapping[$h->nama_hari][$teachingSlotCounter] = $w->jam_ke;
                             $pToT[$h->nama_hari][$w->jam_ke] = $teachingSlotCounter;
                             $teachingSlotCounter++;
@@ -174,7 +173,7 @@ class JadwalController extends Controller
                 }
                 return [
                     'nama' => $h->nama_hari,
-                    'max_jam' => $teachingSlotCounter - 1 // Kirim ke AI total jam belajar aja
+                    'max_jam' => $teachingSlotCounter - 1 
                 ];
             });
 
@@ -217,8 +216,8 @@ class JadwalController extends Controller
                 try {
                     foreach ($result['solution'] as $item) {
                         $hari = $item['hari'];
-                        $tSlot = $item['jam']; // Ini jam versi AI
-                        $pSlot = $slotMapping[$hari][$tSlot] ?? $tSlot; // Otomatis disave jadi jam fisik yang benar!
+                        $tSlot = $item['jam']; 
+                        $pSlot = $slotMapping[$hari][$tSlot] ?? $tSlot; 
 
                         DB::table('jadwals')->where('id', $item['id'])->update([ 'hari' => $hari, 'jam' => $pSlot, 'updated_at' => now() ]);
                     }
@@ -236,6 +235,7 @@ class JadwalController extends Controller
             return redirect()->route('jadwal.index')->with('error', 'Error: ' . $e->getMessage());
         }
     }
+
     /**
      * Export Excel
      */

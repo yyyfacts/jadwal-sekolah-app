@@ -50,7 +50,6 @@ class KelasController extends Controller
             'nama_kelas'   => 'required|string',
             'kode_kelas'   => 'required|string|unique:kelas',
             'max_jam'      => 'required|integer|min:1',
-            // Tambahan Validasi Limit Harian
             'limit_harian' => 'required|integer|min:1|max:15',
             'limit_jumat'  => 'required|integer|min:0|max:10',
         ]);
@@ -65,7 +64,6 @@ class KelasController extends Controller
             'nama_kelas'   => 'required|string',
             'kode_kelas'   => 'required|string|unique:kelas,kode_kelas,' . $id,
             'max_jam'      => 'required|integer|min:1',
-            // Tambahan Validasi Limit Harian
             'limit_harian' => 'required|integer|min:1|max:15',
             'limit_jumat'  => 'required|integer|min:0|max:10',
         ]);
