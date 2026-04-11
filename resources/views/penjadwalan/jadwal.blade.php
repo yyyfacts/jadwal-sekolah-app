@@ -29,9 +29,11 @@
         <button @click="show = false" class="text-emerald-400 hover:text-emerald-700 transition">&times;</button>
     </div>
     @endif
+
+    {{-- ERROR & REKOMENDASI AI --}}
     @if(session('error'))
     <div x-data="{ show: true }" x-show="show" x-transition
-        class="mb-6 flex items-center justify-between p-4 bg-rose-50 border border-rose-100 rounded-xl shadow-sm text-rose-800 shrink-0 relative z-[90]">
+        class="mb-3 flex items-center justify-between p-4 bg-rose-50 border border-rose-100 rounded-xl shadow-sm text-rose-800 shrink-0 relative z-[90]">
         <div class="flex items-center gap-3">
             <div class="p-2 bg-rose-100 rounded-full text-rose-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,6 +45,30 @@
         </div>
         <button @click="show = false" class="text-rose-400 hover:text-rose-700 transition">&times;</button>
     </div>
+
+    {{-- KOTAK REKOMENDASI DSS (Decision Support System) --}}
+    @if(session('rekomendasi'))
+    <div x-data="{ show: true }" x-show="show" x-transition
+        class="mb-6 flex flex-col p-5 bg-amber-50 border border-amber-200 rounded-xl shadow-sm text-amber-800 shrink-0 relative z-[90]">
+        <div class="flex items-center gap-3 mb-2">
+            <div class="p-1.5 bg-amber-200 rounded-full text-amber-700">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <span class="font-extrabold text-[13px] uppercase tracking-wider text-amber-700">
+                💡 Rekomendasi Solusi untuk: <span
+                    class="text-indigo-600 border-b border-indigo-300 pb-0.5">{{ session('target_error') }}</span>
+            </span>
+        </div>
+        <div class="pl-11 text-[13px] font-medium leading-relaxed text-amber-900/80">
+            {!! nl2br(e(session('rekomendasi'))) !!}
+        </div>
+        <button @click="show = false"
+            class="absolute top-4 right-4 text-amber-400 hover:text-amber-700 transition">&times;</button>
+    </div>
+    @endif
     @endif
 
     {{-- MAIN CARD UI --}}
@@ -110,8 +136,8 @@
             </div>
         </div>
 
-        {{-- 2. TABLE SECTION (Freeze Pane Anti Bocor - DINAMIS) --}}
-        <div class="flex-1 overflow-auto custom-scrollbar relative bg-slate-50/30 z-10">
+        {{-- 2. TABLE SECTION (Scroll Horizontal Aktif & Anti Gepeng) --}}
+        <div class="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar relative bg-slate-50/30 z-10 w-full">
             @if($kelass->isEmpty() || empty($jadwals))
             <div class="flex flex-col items-center justify-center h-full py-20 text-center">
                 <div class="text-6xl mb-4 opacity-30">🗂️</div>
@@ -133,7 +159,7 @@
                             class="h-[50px] w-[100px] min-w-[100px] max-w-[100px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[110px] z-[70] shadow-[4px_0_8px_-2px_rgba(0,0,0,0.15)]">
                         </th>
                         @foreach($kelass as $kelas)
-                        <th class="h-[50px] min-w-[170px] bg-[#242b3d] sticky top-0 z-[50] border-r border-b border-slate-700 text-center font-extrabold text-[14px] tracking-wider uppercase jadwal-header"
+                        <th class="h-[50px] min-w-[170px] max-w-[170px] bg-[#242b3d] sticky top-0 z-[50] border-r border-b border-slate-700 text-center font-extrabold text-[14px] tracking-wider uppercase jadwal-header"
                             data-kelas="{{ strtolower($kelas->nama_kelas) }}">
                             {{ $kelas->nama_kelas }}
                         </th>
@@ -153,7 +179,7 @@
                             WAKTU</th>
                         @foreach($kelass as $kelas)
                         <th
-                            class="h-[40px] min-w-[170px] bg-slate-50/80 sticky top-[50px] z-[60] border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400">
+                            class="h-[40px] min-w-[170px] max-w-[170px] bg-slate-50/80 sticky top-[50px] z-[60] border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400">
                             {{ $kelas->nama_kelas }}
                         </th>
                         @endforeach
@@ -174,7 +200,7 @@
                     if ($namaHariLower == 'jumat' && $w->tipe_jumat) $tipeCheck = $w->tipe_jumat;
                     if ($tipeCheck !== 'Tidak Ada') $rowSpanTotal++;
                     }
-                    $firstRow =true;
+                    $firstRow = true;
                     @endphp
 
                     @if($rowSpanTotal > 0)
@@ -198,7 +224,7 @@
                     }
                     @endphp
 
-                    {{-- JIKA TIDAK ADA JAM (Misal Jumat pulang awal), JANGAN RENDER BARIS INI --}}
+                    {{-- JIKA TIDAK ADA JAM, JANGAN RENDER BARIS INI --}}
                     @if($tipeTampil !== 'Tidak Ada')
                     <tr class="hover:bg-slate-50 transition-colors duration-150">
 
@@ -259,13 +285,12 @@
                         @foreach($kelass as $kelas)
                         @php
                         $data = $jadwals[$kelas->id][$namaHari][$j] ?? null;
-                        // Pastikan tidak merender sel yang kosong dari logika Controller (yang sudah di unset)
                         if($data && $data['tipe'] == 'empty' && empty($data['mapel'])) {
                         $data = null;
                         }
                         @endphp
 
-                        <td class="p-2 border-r border-b border-slate-100 text-center align-middle h-[75px] min-w-[170px] max-w-[170px] jadwal-cell transition-all duration-300 z-[10] relative bg-white"
+                        <td class="p-2 border-r border-b border-slate-100 text-center align-middle h-[75px] min-w-[170px] max-w-[170px] w-[170px] jadwal-cell transition-all duration-300 z-[10] relative bg-white"
                             data-search="{{ $data ? strtolower($data['mapel'].' '.$data['guru'].' '.$kelas->nama_kelas) : '' }}"
                             data-kelas="{{ strtolower($kelas->nama_kelas) }}">
 
@@ -337,14 +362,14 @@
 
 @push('styles')
 <style>
-/* KEKAKUAN TABEL SUPER KETAT */
+/* Reset Table Behavior agar min-width berfungsi dan scroll muncul */
 table {
     border-collapse: separate;
     border-spacing: 0;
-    table-layout: fixed;
+    /* Dihapus: table-layout: fixed; agar bisa scroll horizontal! */
 }
 
-/* Custom Scrollbar Clean */
+/* Custom Scrollbar Clean & Elegan */
 .custom-scrollbar::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -352,6 +377,7 @@ table {
 
 .custom-scrollbar::-webkit-scrollbar-track {
     background: #f8fafc;
+    border-radius: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
