@@ -101,8 +101,9 @@
                     @foreach($waktus as $w)
                     <tr class="hover:bg-slate-50 transition-colors duration-200">
                         <td class="px-4 py-2 text-center h-[50px]">
-                            <span
-                                class="font-extrabold text-slate-700 text-sm bg-slate-100 px-3 py-1 rounded-lg">{{ $w->jam_ke }}</span>
+                            <span class="font-extrabold text-slate-700 text-sm bg-slate-100 px-3 py-1 rounded-lg">
+                                {{ $w->jam_ke ?? '-' }}
+                            </span>
                         </td>
 
                         <td class="px-4 py-2 text-center h-[50px]">
@@ -135,13 +136,13 @@
                             <div class="flex items-center justify-end gap-1.5">
                                 @if($w->tipe_senin != 'Tidak Ada')
                                 <button
-                                    onclick="openEditSenin({{ $w->id }}, {{ $w->jam_ke }}, '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}', '{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}', '{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}', '{{ $w->tipe_senin }}', '{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}', '{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}', '{{ $w->tipe_jumat }}')"
+                                    onclick="openEditSenin({{ $w->id }}, '{{ $w->jam_ke }}', '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}', '{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}', '{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}', '{{ $w->tipe_senin }}', '{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}', '{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}', '{{ $w->tipe_jumat }}')"
                                     class="px-3 py-1.5 text-cyan-600 border border-cyan-200 font-bold text-[10px] hover:bg-cyan-50 rounded-lg transition">EDIT
                                     WAKTU</button>
 
                                 {{-- FORM NONAKTIFKAN SENIN --}}
                                 <form action="{{ route('master-waktu.update', $w->id) }}" method="POST" class="inline"
-                                    onsubmit="return confirm('Nonaktifkan jam ke-{{ $w->jam_ke }} khusus hari Senin?');">
+                                    onsubmit="return confirm('Nonaktifkan jam ke-{{ $w->jam_ke ?? '-' }} khusus hari Senin?');">
                                     @csrf @method('PUT')
                                     <input type="hidden" name="jam_ke" value="{{ $w->jam_ke }}">
                                     <input type="hidden" name="waktu_mulai"
@@ -212,7 +213,9 @@
                     @foreach($waktus as $w)
                     <tr class="hover:bg-slate-50 transition-colors duration-200">
                         <td class="px-4 py-2 text-center h-[50px]"><span
-                                class="font-extrabold text-slate-700 text-sm bg-slate-100 px-3 py-1 rounded-lg">{{ $w->jam_ke }}</span>
+                                class="font-extrabold text-slate-700 text-sm bg-slate-100 px-3 py-1 rounded-lg">
+                                {{ $w->jam_ke ?? '-' }}
+                            </span>
                         </td>
                         <td class="px-4 py-2 text-center h-[50px]">
                             <div class="font-bold text-slate-700 text-sm font-mono">
@@ -226,13 +229,13 @@
                         <td class="px-4 py-2 text-right h-[50px]">
                             <div class="flex items-center justify-end gap-1.5">
                                 <button
-                                    onclick="openEditNormal({{ $w->id }}, {{ $w->jam_ke }}, '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}', '{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}', '{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}', '{{ $w->tipe_senin }}', '{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}', '{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}', '{{ $w->tipe_jumat }}')"
+                                    onclick="openEditNormal({{ $w->id }}, '{{ $w->jam_ke }}', '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}', '{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}', '{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}', '{{ $w->tipe_senin }}', '{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}', '{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}', '{{ $w->tipe_jumat }}')"
                                     class="px-3 py-1.5 text-indigo-600 border border-indigo-200 font-bold text-[10px] hover:bg-indigo-50 rounded-lg transition">EDIT
                                     WAKTU</button>
 
                                 {{-- INI HAPUS PERMANEN DARI DATABASE --}}
                                 <form action="{{ route('master-waktu.destroy', $w->id) }}" method="POST" class="inline"
-                                    onsubmit="return confirm('BAHAYA: Menghapus akan membuang jam ke-{{ $w->jam_ke }} di SEMUA HARI secara permanen. Lanjutkan?');">
+                                    onsubmit="return confirm('BAHAYA: Menghapus akan membuang baris ini di SEMUA HARI secara permanen. Lanjutkan?');">
                                     @csrf @method('DELETE')
                                     <button type="submit"
                                         class="px-3 py-1.5 text-white bg-red-500 font-bold text-[10px] hover:bg-red-600 rounded-lg">HAPUS</button>
@@ -267,7 +270,9 @@
                     @foreach($waktus as $w)
                     <tr class="hover:bg-slate-50 transition-colors duration-200">
                         <td class="px-4 py-2 text-center h-[50px]"><span
-                                class="font-extrabold text-slate-700 text-sm bg-slate-100 px-3 py-1 rounded-lg">{{ $w->jam_ke }}</span>
+                                class="font-extrabold text-slate-700 text-sm bg-slate-100 px-3 py-1 rounded-lg">
+                                {{ $w->jam_ke ?? '-' }}
+                            </span>
                         </td>
 
                         <td class="px-4 py-2 text-center h-[50px]">
@@ -300,13 +305,13 @@
                             <div class="flex items-center justify-end gap-1.5">
                                 @if($w->tipe_jumat != 'Tidak Ada')
                                 <button
-                                    onclick="openEditJumat({{ $w->id }}, {{ $w->jam_ke }}, '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}', '{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}', '{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}', '{{ $w->tipe_senin }}', '{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}', '{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}', '{{ $w->tipe_jumat }}')"
+                                    onclick="openEditJumat({{ $w->id }}, '{{ $w->jam_ke }}', '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}', '{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}', '{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}', '{{ $w->tipe_senin }}', '{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}', '{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}', '{{ $w->tipe_jumat }}')"
                                     class="px-3 py-1.5 text-emerald-600 border border-emerald-200 font-bold text-[10px] hover:bg-emerald-50 rounded-lg transition">EDIT
                                     JUMAT</button>
 
                                 {{-- FORM NONAKTIFKAN JUMAT --}}
                                 <form action="{{ route('master-waktu.update', $w->id) }}" method="POST" class="inline"
-                                    onsubmit="return confirm('Nonaktifkan jam ke-{{ $w->jam_ke }} khusus hari Jumat?');">
+                                    onsubmit="return confirm('Nonaktifkan jam ke-{{ $w->jam_ke ?? '-' }} khusus hari Jumat?');">
                                     @csrf @method('PUT')
                                     <input type="hidden" name="jam_ke" value="{{ $w->jam_ke }}">
                                     <input type="hidden" name="waktu_mulai"
@@ -385,8 +390,7 @@
             <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1">Jam Ke</label>
                 <input type="number" name="jam_ke"
-                    class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
-                    required>
+                    class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -439,8 +443,7 @@
             <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1">Jam Ke</label>
                 <input type="number" id="norm_jam_ke" name="jam_ke"
-                    class="w-full border border-slate-300 focus:ring-2 focus:ring-indigo-500 bg-white rounded-lg p-2 text-slate-700 font-bold outline-none transition-colors"
-                    required>
+                    class="w-full border border-slate-300 focus:ring-2 focus:ring-indigo-500 bg-white rounded-lg p-2 text-slate-700 font-bold outline-none transition-colors">
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -493,8 +496,7 @@
             <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1">Jam Ke</label>
                 <input type="number" id="senin_jam_ke" name="jam_ke"
-                    class="w-full border border-slate-300 focus:ring-2 focus:ring-cyan-500 bg-white rounded-lg p-2 text-slate-700 font-bold outline-none transition-colors"
-                    required>
+                    class="w-full border border-slate-300 focus:ring-2 focus:ring-cyan-500 bg-white rounded-lg p-2 text-slate-700 font-bold outline-none transition-colors">
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -545,8 +547,7 @@
             <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1">Jam Ke</label>
                 <input type="number" id="jumat_jam_ke" name="jam_ke"
-                    class="w-full border border-slate-300 focus:ring-2 focus:ring-emerald-500 bg-white rounded-lg p-2 text-slate-700 font-bold outline-none transition-colors"
-                    required>
+                    class="w-full border border-slate-300 focus:ring-2 focus:ring-emerald-500 bg-white rounded-lg p-2 text-slate-700 font-bold outline-none transition-colors">
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -587,7 +588,7 @@ function closeModal(id) {
 // 1. FUNGSI EDIT NORMAL
 function openEditNormal(id, jam, mN, sN, tN, mS, sS, tS, mJ, sJ, tJ) {
     document.getElementById('form-edit-normal').action = `/master-waktu/${id}`;
-    document.getElementById('norm_jam_ke').value = jam;
+    document.getElementById('norm_jam_ke').value = jam !== 'null' && jam !== '' ? jam : '';
 
     // Yg Diedit
     document.getElementById('norm_waktu_mulai').value = mN;
@@ -608,7 +609,7 @@ function openEditNormal(id, jam, mN, sN, tN, mS, sS, tS, mJ, sJ, tJ) {
 // 2. FUNGSI EDIT SENIN
 function openEditSenin(id, jam, mN, sN, tN, mS, sS, tS, mJ, sJ, tJ) {
     document.getElementById('form-edit-senin').action = `/master-waktu/${id}`;
-    document.getElementById('senin_jam_ke').value = jam;
+    document.getElementById('senin_jam_ke').value = jam !== 'null' && jam !== '' ? jam : '';
 
     // Yg Diedit
     document.getElementById('senin_mulai_senin').value = mS;
@@ -629,7 +630,7 @@ function openEditSenin(id, jam, mN, sN, tN, mS, sS, tS, mJ, sJ, tJ) {
 // 3. FUNGSI EDIT JUMAT
 function openEditJumat(id, jam, mN, sN, tN, mS, sS, tS, mJ, sJ, tJ) {
     document.getElementById('form-edit-jumat').action = `/master-waktu/${id}`;
-    document.getElementById('jumat_jam_ke').value = jam;
+    document.getElementById('jumat_jam_ke').value = jam !== 'null' && jam !== '' ? jam : '';
 
     // Yg Diedit
     document.getElementById('jumat_mulai_jumat').value = mJ;
