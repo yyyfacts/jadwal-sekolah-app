@@ -16,7 +16,7 @@ class MasterWaktuController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'jam_ke'        => 'required|integer|min:1',
+            'jam_ke'        => 'required|integer|min:0', // Diubah dari min:1 jadi min:0
             'waktu_mulai'   => 'required|date_format:H:i',
             'waktu_selesai' => 'required|date_format:H:i',
             'tipe'          => 'required|string|max:50',
@@ -35,7 +35,7 @@ class MasterWaktuController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'jam_ke'        => 'required|integer|min:1',
+            'jam_ke'        => 'required|integer|min:0', // Diubah dari min:1 jadi min:0
             'waktu_mulai'   => 'required|date_format:H:i', 
             'waktu_selesai' => 'required|date_format:H:i',
             'tipe'          => 'required|string|max:50',

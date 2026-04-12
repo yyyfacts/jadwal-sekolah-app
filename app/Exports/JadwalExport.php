@@ -6,8 +6,8 @@ use App\Models\Kelas;
 use App\Models\Jadwal;
 use App\Models\Guru;
 use App\Models\Mapel;
-use App\Models\MasterHari;   // <-- TAMBAHKAN INI
-use App\Models\MasterWaktu;  // <-- TAMBAHKAN INI
+use App\Models\MasterHari;
+use App\Models\MasterWaktu;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -40,6 +40,7 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
         $rawJadwals = Jadwal::with(['guru', 'mapel', 'kelas'])->whereNotNull('hari')->whereNotNull('jam')->get();
         $jadwals = [];
 
+        // Inisialisasi Grid Kosong
         foreach ($kelass as $k) {
             foreach ($hariList as $h) {
                 foreach ($dataWaktu as $waktu) {
@@ -65,17 +66,20 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
             }
         }
 
-        // ISI GRID EXCEL SAMBIL MELOMPATI ISTIRAHAT
+        // ISI GRID EXCEL SAMBIL MELOMPATI ISTIRAHAT (LOGIC DISAMAKAN DENGAN CONTROLLER)
         foreach ($rawJadwals as $row) {
             $durasi = $row->jumlah_jam;
             $hari = $row->hari;
             $jamMulaiFisik = $row->jam;
             
             $slotsTersedia = $belajarSlots[$hari] ?? [];
+            
+            // Cari indeks array dari jam mulai
             $startIndex = array_search($jamMulaiFisik, $slotsTersedia);
 
             if ($startIndex !== false) {
                 for ($i = 0; $i < $durasi; $i++) {
+                    // Cek apakah slot untuk durasi ke-n tersedia
                     if (isset($slotsTersedia[$startIndex + $i])) {
                         $jamSekarang = $slotsTersedia[$startIndex + $i];
                         
