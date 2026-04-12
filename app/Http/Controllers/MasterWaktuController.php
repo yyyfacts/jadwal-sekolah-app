@@ -16,7 +16,6 @@ class MasterWaktuController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            // Diubah jadi nullable agar boleh dikosongkan saat ngisi Istirahat/Upacara
             'jam_ke'        => 'nullable|integer|min:0', 
             'waktu_mulai'   => 'required|date_format:H:i',
             'waktu_selesai' => 'required|date_format:H:i',
@@ -31,21 +30,18 @@ class MasterWaktuController extends Controller
 
         $data = $request->all();
         
-        // Jika inputan jam_ke kosong, kita paksa jadi null untuk masuk ke database
+        // HANYA cek kalau inputan beneran dikosongin admin, baru jadikan null
         if (!isset($data['jam_ke']) || $data['jam_ke'] === '') {
             $data['jam_ke'] = null;
         }
 
         MasterWaktu::create($data);
-        
-        // Pesan sukses disesuaikan biar nggak error kalau jam_ke nya null
         return redirect()->route('master-waktu.index')->with('success', "Waktu kegiatan berhasil ditambahkan.");
     }
 
     public function update(Request $request, $id)
     {
         $request->validate([
-            // Diubah jadi nullable agar boleh dikosongkan saat diedit
             'jam_ke'        => 'nullable|integer|min:0', 
             'waktu_mulai'   => 'required|date_format:H:i', 
             'waktu_selesai' => 'required|date_format:H:i',
@@ -63,7 +59,7 @@ class MasterWaktuController extends Controller
         
         $data = $request->all();
         
-        // Jika inputan jam_ke dihapus/dikosongin saat edit, kita set jadi null
+        // HANYA cek kalau inputan beneran dikosongin admin, baru jadikan null
         if (!isset($data['jam_ke']) || $data['jam_ke'] === '') {
             $data['jam_ke'] = null;
         }
