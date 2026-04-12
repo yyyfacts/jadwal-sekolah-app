@@ -102,16 +102,17 @@
                 <thead>
                     <tr class="text-white shadow-sm">
                         <th
-                            class="h-[35px] w-[50px] min-w-[50px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-0 z-[60]">
+                            class="h-[35px] w-[40px] min-w-[40px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-0 z-[60]">
                         </th>
                         <th
-                            class="h-[35px] w-[40px] min-w-[40px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[50px] z-[60]">
+                            class="h-[35px] w-[35px] min-w-[35px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[40px] z-[60]">
                         </th>
                         <th
-                            class="h-[35px] w-[90px] min-w-[90px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[90px] z-[60] shadow-[2px_0_5px_-1px_rgba(0,0,0,0.15)]">
+                            class="h-[35px] w-[80px] min-w-[80px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[75px] z-[60] shadow-[2px_0_5px_-1px_rgba(0,0,0,0.15)]">
                         </th>
                         @foreach($kelass as $kelas)
-                        <th class="h-[35px] min-w-[150px] max-w-[150px] bg-[#242b3d] sticky top-0 z-[50] border-r border-b border-slate-700 text-center font-bold text-xs uppercase jadwal-header"
+                        {{-- LEBAR KELAS DIKURANGI BIAR LEBIH COMPACT --}}
+                        <th class="h-[35px] min-w-[140px] max-w-[140px] bg-[#242b3d] sticky top-0 z-[50] border-r border-b border-slate-700 text-center font-bold text-[11px] uppercase jadwal-header"
                             data-kelas="{{ strtolower($kelas->nama_kelas) }}">
                             {{ $kelas->nama_kelas }}
                         </th>
@@ -120,17 +121,17 @@
 
                     <tr class="text-slate-500 bg-white shadow-sm">
                         <th
-                            class="h-[30px] w-[50px] min-w-[50px] sticky top-[35px] left-0 z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[9px] uppercase tracking-widest text-slate-400">
+                            class="h-[30px] w-[40px] min-w-[40px] sticky top-[35px] left-0 z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[9px] uppercase tracking-widest text-slate-400">
                             HARI</th>
                         <th
-                            class="h-[30px] w-[40px] min-w-[40px] sticky top-[35px] left-[50px] z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[9px] uppercase tracking-widest text-slate-400">
+                            class="h-[30px] w-[35px] min-w-[35px] sticky top-[35px] left-[40px] z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[9px] uppercase tracking-widest text-slate-400">
                             JP</th>
                         <th
-                            class="h-[30px] w-[90px] min-w-[90px] sticky top-[35px] left-[90px] z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[9px] uppercase tracking-widest text-slate-400 shadow-[2px_0_5px_-1px_rgba(0,0,0,0.05)]">
+                            class="h-[30px] w-[80px] min-w-[80px] sticky top-[35px] left-[75px] z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[9px] uppercase tracking-widest text-slate-400 shadow-[2px_0_5px_-1px_rgba(0,0,0,0.05)]">
                             WAKTU</th>
                         @foreach($kelass as $kelas)
                         <th
-                            class="h-[30px] min-w-[150px] max-w-[150px] bg-slate-50 sticky top-[35px] z-[40] border-r border-b border-slate-200 text-center font-bold text-[9px] uppercase tracking-widest text-slate-400">
+                            class="h-[30px] min-w-[140px] max-w-[140px] bg-slate-50 sticky top-[35px] z-[40] border-r border-b border-slate-200 text-center font-bold text-[9px] uppercase tracking-widest text-slate-400">
                             {{ $kelas->nama_kelas }}
                         </th>
                         @endforeach
@@ -176,7 +177,7 @@
                     <tr class="hover:bg-slate-50/80 transition-colors">
                         @if($firstRow)
                         <td rowspan="{{ $rowSpanTotal }}"
-                            class="w-[50px] min-w-[50px] sticky left-0 z-[30] p-0 bg-white border-r border-b border-slate-200 align-middle text-center shadow-[2px_0_5px_-1px_rgba(0,0,0,0.02)]">
+                            class="w-[40px] min-w-[40px] sticky left-0 z-[30] p-0 bg-white border-r border-b border-slate-200 align-middle text-center shadow-[2px_0_5px_-1px_rgba(0,0,0,0.02)]">
                             <div class="font-extrabold text-slate-400 uppercase tracking-widest text-[11px] h-full flex items-center justify-center py-2"
                                 style="writing-mode: vertical-lr; transform: rotate(180deg);">
                                 {{ $namaHari }}
@@ -185,33 +186,33 @@
                         @php $firstRow = false; @endphp
                         @endif
 
-                        {{-- INI YANG SAYA BENARKAN: Murni memanggil data Jam Ke dari Database --}}
+                        {{-- KUNCI TINGGI SEMUA BARIS FIX 45px --}}
                         <td
-                            class="w-[40px] min-w-[40px] sticky left-[50px] z-[30] p-1 bg-white border-r border-b border-slate-200 text-center font-bold text-slate-600 text-[10px]">
+                            class="h-[45px] w-[35px] min-w-[35px] sticky left-[40px] z-[30] p-1 bg-white border-r border-b border-slate-200 text-center font-bold text-slate-600 text-[10px]">
                             {{ $j }}
                         </td>
 
                         <td
-                            class="w-[90px] min-w-[90px] sticky left-[90px] z-[30] p-1 bg-white border-r border-b border-slate-200 text-center text-[9px] font-mono font-bold text-slate-500 shadow-[2px_0_5px_-1px_rgba(0,0,0,0.05)]">
+                            class="h-[45px] w-[80px] min-w-[80px] sticky left-[75px] z-[30] p-1 bg-white border-r border-b border-slate-200 text-center text-[9px] font-mono font-bold text-slate-500 shadow-[2px_0_5px_-1px_rgba(0,0,0,0.05)]">
                             {{ $waktuTampil }}
                         </td>
 
                         @if($tipeTampil == 'Istirahat')
                         <td colspan="{{ $kelass->count() }}"
-                            class="p-1 border-b border-slate-200 bg-amber-50/60 align-middle">
+                            class="h-[45px] p-1 border-b border-slate-200 bg-amber-50/60 align-middle">
                             <div
-                                class="w-full py-1 bg-amber-100/50 border border-amber-200/50 rounded flex items-center justify-center">
+                                class="w-full h-full bg-amber-100/50 border border-amber-200/50 rounded flex items-center justify-center">
                                 <span
-                                    class="font-bold text-amber-500 text-[9px] tracking-widest uppercase">ISTIRAHAT</span>
+                                    class="font-bold text-amber-500 text-[10px] tracking-widest uppercase">ISTIRAHAT</span>
                             </div>
                         </td>
                         @elseif(in_array($tipeTampil, ['Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']))
                         <td colspan="{{ $kelass->count() }}"
-                            class="p-1 border-b border-slate-200 bg-cyan-50/60 align-middle">
+                            class="h-[45px] p-1 border-b border-slate-200 bg-cyan-50/60 align-middle">
                             <div
-                                class="w-full py-1 bg-cyan-100/50 border border-cyan-200/50 rounded flex items-center justify-center">
+                                class="w-full h-full bg-cyan-100/50 border border-cyan-200/50 rounded flex items-center justify-center">
                                 <span
-                                    class="font-bold text-cyan-600 text-[9px] tracking-widest uppercase">{{ $tipeTampil }}</span>
+                                    class="font-bold text-cyan-600 text-[10px] tracking-widest uppercase">{{ $tipeTampil }}</span>
                             </div>
                         </td>
                         @else
@@ -221,21 +222,21 @@
                         if($data && $data['tipe'] == 'empty' && empty($data['mapel'])) $data = null;
                         @endphp
 
-                        <td class="p-1 border-r border-b border-slate-100 text-center align-middle h-[55px] min-w-[150px] w-[150px] jadwal-cell transition-all bg-white"
+                        <td class="h-[45px] p-1 border-r border-b border-slate-100 text-center align-middle min-w-[140px] max-w-[140px] jadwal-cell transition-all bg-white"
                             data-search="{{ $data ? strtolower($data['mapel'].' '.$data['guru'].' '.$kelas->nama_kelas) : '' }}"
                             data-kelas="{{ strtolower($kelas->nama_kelas) }}">
 
                             @if($data)
                             <div
-                                class="w-full h-full rounded-lg flex flex-col justify-center items-center px-1 py-1 {{ $data['color'] ?? 'bg-[#f5f3ff] text-[#6d28d9]' }} group sel-content border border-transparent">
+                                class="w-full h-full rounded-md flex flex-col justify-center items-center px-1 {{ $data['color'] ?? 'bg-[#f5f3ff] text-[#6d28d9]' }} group sel-content border border-transparent">
                                 <span
                                     class="font-bold text-[11px] leading-tight text-slate-800 break-words line-clamp-1">{{ $data['mapel'] }}</span>
                                 <span
-                                    class="text-[9px] font-medium leading-tight text-indigo-600 truncate max-w-full">{{ $data['guru'] }}</span>
+                                    class="text-[9px] font-medium leading-none mt-0.5 text-indigo-600 truncate max-w-full">{{ $data['guru'] }}</span>
                             </div>
                             @else
                             <div
-                                class="w-full h-full rounded-lg border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center sel-content opacity-50">
+                                class="w-full h-full rounded-md border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center sel-content opacity-50">
                                 <span class="text-[9px] font-bold text-slate-300">KOSONG</span>
                             </div>
                             @endif

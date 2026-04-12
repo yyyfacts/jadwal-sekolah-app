@@ -80,62 +80,63 @@
 
             {{-- ==================== TABEL SENIN ==================== --}}
             <table x-show="activeTab === 'senin'" x-cloak
-                class="w-full text-left border-separate border-spacing-0 min-w-[800px]">
+                class="w-full text-left border-separate border-spacing-0 min-w-[700px]">
                 <thead>
                     <tr>
                         <th
-                            class="sticky top-0 z-20 bg-cyan-50 px-8 py-4 text-xs font-bold text-cyan-700 uppercase text-center w-[10%] border-b-2 border-cyan-100">
+                            class="sticky top-0 z-20 bg-cyan-50 px-4 py-3 text-[11px] font-bold text-cyan-700 uppercase text-center w-[15%] border-b-2 border-cyan-100">
                             Jam Ke</th>
                         <th
-                            class="sticky top-0 z-20 bg-cyan-50 px-6 py-4 text-xs font-bold text-cyan-700 uppercase text-center w-[40%] border-b-2 border-cyan-100">
+                            class="sticky top-0 z-20 bg-cyan-50 px-4 py-3 text-[11px] font-bold text-cyan-700 uppercase text-center w-[30%] border-b-2 border-cyan-100">
                             Waktu Senin</th>
                         <th
-                            class="sticky top-0 z-20 bg-cyan-50 px-6 py-4 text-xs font-bold text-cyan-700 uppercase text-center w-[20%] border-b-2 border-cyan-100">
+                            class="sticky top-0 z-20 bg-cyan-50 px-4 py-3 text-[11px] font-bold text-cyan-700 uppercase text-center w-[25%] border-b-2 border-cyan-100">
                             Kegiatan</th>
                         <th
-                            class="sticky top-0 z-20 bg-cyan-50 px-6 py-4 text-xs font-bold text-cyan-700 uppercase text-right w-[30%] border-b-2 border-cyan-100">
+                            class="sticky top-0 z-20 bg-cyan-50 px-4 py-3 text-[11px] font-bold text-cyan-700 uppercase text-right w-[30%] border-b-2 border-cyan-100">
                             Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @foreach($waktus as $w)
                     <tr class="hover:bg-slate-50 transition-colors duration-200">
-                        <td class="px-8 py-5 text-center"><span
-                                class="font-extrabold text-slate-700 text-lg bg-slate-100 px-4 py-2 rounded-xl">{{ $w->jam_ke }}</span>
+                        <td class="px-4 py-2 text-center h-[50px]">
+                            <span
+                                class="font-extrabold text-slate-700 text-sm bg-slate-100 px-3 py-1 rounded-lg">{{ $w->jam_ke }}</span>
                         </td>
 
-                        <td class="px-6 py-5 text-center">
+                        <td class="px-4 py-2 text-center h-[50px]">
                             @if($w->tipe_senin == 'Tidak Ada')
                             <span
-                                class="text-xs text-red-500 font-bold bg-red-50 px-3 py-1.5 rounded-lg border border-red-200">❌
-                                TIDAK ADA JAM (PULANG)</span>
+                                class="text-[10px] text-red-500 font-bold bg-red-50 px-2 py-1 rounded border border-red-200">❌
+                                PULANG</span>
                             @elseif($w->mulai_senin)
-                            <div class="font-bold text-slate-700 text-base">
+                            <div class="font-bold text-slate-700 text-sm font-mono">
                                 {{ \Carbon\Carbon::parse($w->mulai_senin)->format('H:i') }} -
                                 {{ \Carbon\Carbon::parse($w->selesai_senin)->format('H:i') }}</div>
                             @else
-                            <span class="text-xs text-slate-400 italic">Mengikuti Normal
-                                ({{ \Carbon\Carbon::parse($w->waktu_mulai)->format('H:i') }} -
-                                {{ \Carbon\Carbon::parse($w->waktu_selesai)->format('H:i') }})</span>
+                            <span
+                                class="text-[10px] text-slate-400 italic font-mono">{{ \Carbon\Carbon::parse($w->waktu_mulai)->format('H:i') }}
+                                - {{ \Carbon\Carbon::parse($w->waktu_selesai)->format('H:i') }}</span>
                             @endif
                         </td>
 
-                        <td class="px-6 py-5 text-center">
+                        <td class="px-4 py-2 text-center h-[50px]">
                             @php $tipeS = $w->mulai_senin ? $w->tipe_senin : $w->tipe; @endphp
                             @if($tipeS == 'Tidak Ada')
                             <span class="text-slate-300 font-bold">-</span>
                             @else
                             <span
-                                class="inline-block px-3 py-1.5 rounded-md {{ $tipeS == 'Belajar' ? 'bg-cyan-50 text-cyan-600' : 'bg-amber-50 text-amber-600' }} text-xs font-bold uppercase">{{ $tipeS }}</span>
+                                class="inline-block px-2 py-1 rounded-md {{ $tipeS == 'Belajar' ? 'bg-cyan-50 text-cyan-600' : 'bg-amber-50 text-amber-600' }} text-[10px] font-bold uppercase tracking-wider">{{ $tipeS }}</span>
                             @endif
                         </td>
 
-                        <td class="px-6 py-5 text-right">
-                            <div class="flex items-center justify-end gap-2">
+                        <td class="px-4 py-2 text-right h-[50px]">
+                            <div class="flex items-center justify-end gap-1.5">
                                 @if($w->tipe_senin != 'Tidak Ada')
                                 <button
                                     onclick="openEditSenin({{ $w->id }}, {{ $w->jam_ke }}, '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}', '{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}', '{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}', '{{ $w->tipe_senin }}', '{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}', '{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}', '{{ $w->tipe_jumat }}')"
-                                    class="px-4 py-2 text-cyan-600 border border-cyan-200 font-bold text-xs hover:bg-cyan-50 rounded-lg transition">EDIT
+                                    class="px-3 py-1.5 text-cyan-600 border border-cyan-200 font-bold text-[10px] hover:bg-cyan-50 rounded-lg transition">EDIT
                                     WAKTU</button>
 
                                 {{-- FORM NONAKTIFKAN SENIN --}}
@@ -157,8 +158,7 @@
                                         name="selesai_senin" value="00:00"><input type="hidden" name="tipe_senin"
                                         value="Tidak Ada">
                                     <button type="submit"
-                                        class="px-4 py-2 text-red-500 border border-red-200 font-bold text-xs hover:bg-red-50 rounded-lg transition">NONAKTIFKAN
-                                        SLOT</button>
+                                        class="px-3 py-1.5 text-red-500 border border-red-200 font-bold text-[10px] hover:bg-red-50 rounded-lg transition">NONAKTIFKAN</button>
                                 </form>
                                 @else
                                 {{-- FORM AKTIFKAN KEMBALI SENIN --}}
@@ -178,7 +178,7 @@
                                     <input type="hidden" name="mulai_senin" value=""><input type="hidden"
                                         name="selesai_senin" value=""><input type="hidden" name="tipe_senin" value="">
                                     <button type="submit"
-                                        class="px-4 py-2 text-emerald-600 bg-emerald-50 border border-emerald-200 font-bold text-xs hover:bg-emerald-100 rounded-lg transition">AKTIFKAN
+                                        class="px-3 py-1.5 text-emerald-600 bg-emerald-50 border border-emerald-200 font-bold text-[10px] hover:bg-emerald-100 rounded-lg transition">AKTIFKAN
                                         LAGI</button>
                                 </form>
                                 @endif
@@ -191,43 +191,43 @@
 
             {{-- ==================== TABEL NORMAL ==================== --}}
             <table x-show="activeTab === 'normal'"
-                class="w-full text-left border-separate border-spacing-0 min-w-[800px]">
+                class="w-full text-left border-separate border-spacing-0 min-w-[700px]">
                 <thead>
                     <tr>
                         <th
-                            class="sticky top-0 z-20 bg-indigo-50 px-8 py-4 text-xs font-bold text-indigo-700 uppercase text-center w-[10%] border-b-2 border-indigo-100">
+                            class="sticky top-0 z-20 bg-indigo-50 px-4 py-3 text-[11px] font-bold text-indigo-700 uppercase text-center w-[15%] border-b-2 border-indigo-100">
                             Jam Ke</th>
                         <th
-                            class="sticky top-0 z-20 bg-indigo-50 px-6 py-4 text-xs font-bold text-indigo-700 uppercase text-center w-[40%] border-b-2 border-indigo-100">
+                            class="sticky top-0 z-20 bg-indigo-50 px-4 py-3 text-[11px] font-bold text-indigo-700 uppercase text-center w-[30%] border-b-2 border-indigo-100">
                             Waktu Normal</th>
                         <th
-                            class="sticky top-0 z-20 bg-indigo-50 px-6 py-4 text-xs font-bold text-indigo-700 uppercase text-center w-[20%] border-b-2 border-indigo-100">
+                            class="sticky top-0 z-20 bg-indigo-50 px-4 py-3 text-[11px] font-bold text-indigo-700 uppercase text-center w-[25%] border-b-2 border-indigo-100">
                             Kegiatan</th>
                         <th
-                            class="sticky top-0 z-20 bg-indigo-50 px-6 py-4 text-xs font-bold text-indigo-700 uppercase text-right w-[30%] border-b-2 border-indigo-100">
-                            Aksi (Hapus Permanen)</th>
+                            class="sticky top-0 z-20 bg-indigo-50 px-4 py-3 text-[11px] font-bold text-indigo-700 uppercase text-right w-[30%] border-b-2 border-indigo-100">
+                            Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @foreach($waktus as $w)
                     <tr class="hover:bg-slate-50 transition-colors duration-200">
-                        <td class="px-8 py-5 text-center"><span
-                                class="font-extrabold text-slate-700 text-lg bg-slate-100 px-4 py-2 rounded-xl">{{ $w->jam_ke }}</span>
+                        <td class="px-4 py-2 text-center h-[50px]"><span
+                                class="font-extrabold text-slate-700 text-sm bg-slate-100 px-3 py-1 rounded-lg">{{ $w->jam_ke }}</span>
                         </td>
-                        <td class="px-6 py-5 text-center">
-                            <div class="font-bold text-slate-700 text-base">
+                        <td class="px-4 py-2 text-center h-[50px]">
+                            <div class="font-bold text-slate-700 text-sm font-mono">
                                 {{ \Carbon\Carbon::parse($w->waktu_mulai)->format('H:i') }} -
                                 {{ \Carbon\Carbon::parse($w->waktu_selesai)->format('H:i') }}</div>
                         </td>
-                        <td class="px-6 py-5 text-center">
+                        <td class="px-4 py-2 text-center h-[50px]">
                             <span
-                                class="inline-block px-3 py-1.5 rounded-md {{ $w->tipe == 'Belajar' ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600' }} text-xs font-bold uppercase">{{ $w->tipe }}</span>
+                                class="inline-block px-2 py-1 rounded-md {{ $w->tipe == 'Belajar' ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600' }} text-[10px] font-bold uppercase tracking-wider">{{ $w->tipe }}</span>
                         </td>
-                        <td class="px-6 py-5 text-right">
-                            <div class="flex items-center justify-end gap-2">
+                        <td class="px-4 py-2 text-right h-[50px]">
+                            <div class="flex items-center justify-end gap-1.5">
                                 <button
                                     onclick="openEditNormal({{ $w->id }}, {{ $w->jam_ke }}, '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}', '{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}', '{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}', '{{ $w->tipe_senin }}', '{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}', '{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}', '{{ $w->tipe_jumat }}')"
-                                    class="px-4 py-2 text-indigo-600 border border-indigo-200 font-bold text-xs hover:bg-indigo-50 rounded-lg transition">EDIT
+                                    class="px-3 py-1.5 text-indigo-600 border border-indigo-200 font-bold text-[10px] hover:bg-indigo-50 rounded-lg transition">EDIT
                                     WAKTU</button>
 
                                 {{-- INI HAPUS PERMANEN DARI DATABASE --}}
@@ -235,8 +235,7 @@
                                     onsubmit="return confirm('BAHAYA: Menghapus akan membuang jam ke-{{ $w->jam_ke }} di SEMUA HARI secara permanen. Lanjutkan?');">
                                     @csrf @method('DELETE')
                                     <button type="submit"
-                                        class="px-4 py-2 text-white bg-red-500 font-bold text-xs hover:bg-red-600 rounded-lg">HAPUS
-                                        PERMANEN</button>
+                                        class="px-3 py-1.5 text-white bg-red-500 font-bold text-[10px] hover:bg-red-600 rounded-lg">HAPUS</button>
                                 </form>
                             </div>
                         </td>
@@ -247,63 +246,63 @@
 
             {{-- ==================== TABEL JUMAT ==================== --}}
             <table x-show="activeTab === 'jumat'" x-cloak
-                class="w-full text-left border-separate border-spacing-0 min-w-[800px]">
+                class="w-full text-left border-separate border-spacing-0 min-w-[700px]">
                 <thead>
                     <tr>
                         <th
-                            class="sticky top-0 z-20 bg-emerald-50 px-8 py-4 text-xs font-bold text-emerald-700 uppercase text-center w-[10%] border-b-2 border-emerald-100">
+                            class="sticky top-0 z-20 bg-emerald-50 px-4 py-3 text-[11px] font-bold text-emerald-700 uppercase text-center w-[15%] border-b-2 border-emerald-100">
                             Jam Ke</th>
                         <th
-                            class="sticky top-0 z-20 bg-emerald-50 px-6 py-4 text-xs font-bold text-emerald-700 uppercase text-center w-[40%] border-b-2 border-emerald-100">
+                            class="sticky top-0 z-20 bg-emerald-50 px-4 py-3 text-[11px] font-bold text-emerald-700 uppercase text-center w-[30%] border-b-2 border-emerald-100">
                             Waktu Jumat</th>
                         <th
-                            class="sticky top-0 z-20 bg-emerald-50 px-6 py-4 text-xs font-bold text-emerald-700 uppercase text-center w-[20%] border-b-2 border-emerald-100">
+                            class="sticky top-0 z-20 bg-emerald-50 px-4 py-3 text-[11px] font-bold text-emerald-700 uppercase text-center w-[25%] border-b-2 border-emerald-100">
                             Kegiatan</th>
                         <th
-                            class="sticky top-0 z-20 bg-emerald-50 px-6 py-4 text-xs font-bold text-emerald-700 uppercase text-right w-[30%] border-b-2 border-emerald-100">
+                            class="sticky top-0 z-20 bg-emerald-50 px-4 py-3 text-[11px] font-bold text-emerald-700 uppercase text-right w-[30%] border-b-2 border-emerald-100">
                             Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @foreach($waktus as $w)
                     <tr class="hover:bg-slate-50 transition-colors duration-200">
-                        <td class="px-8 py-5 text-center"><span
-                                class="font-extrabold text-slate-700 text-lg bg-slate-100 px-4 py-2 rounded-xl">{{ $w->jam_ke }}</span>
+                        <td class="px-4 py-2 text-center h-[50px]"><span
+                                class="font-extrabold text-slate-700 text-sm bg-slate-100 px-3 py-1 rounded-lg">{{ $w->jam_ke }}</span>
                         </td>
 
-                        <td class="px-6 py-5 text-center">
+                        <td class="px-4 py-2 text-center h-[50px]">
                             @if($w->tipe_jumat == 'Tidak Ada')
                             <span
-                                class="text-xs text-red-500 font-bold bg-red-50 px-3 py-1.5 rounded-lg border border-red-200">❌
-                                TIDAK ADA JAM (PULANG)</span>
+                                class="text-[10px] text-red-500 font-bold bg-red-50 px-2 py-1 rounded border border-red-200">❌
+                                PULANG</span>
                             @elseif($w->mulai_jumat)
-                            <div class="font-bold text-slate-700 text-base">
+                            <div class="font-bold text-slate-700 text-sm font-mono">
                                 {{ \Carbon\Carbon::parse($w->mulai_jumat)->format('H:i') }} -
                                 {{ \Carbon\Carbon::parse($w->selesai_jumat)->format('H:i') }}</div>
                             @else
-                            <span class="text-xs text-slate-400 italic">Mengikuti Normal
-                                ({{ \Carbon\Carbon::parse($w->waktu_mulai)->format('H:i') }} -
-                                {{ \Carbon\Carbon::parse($w->waktu_selesai)->format('H:i') }})</span>
+                            <span
+                                class="text-[10px] text-slate-400 italic font-mono">{{ \Carbon\Carbon::parse($w->waktu_mulai)->format('H:i') }}
+                                - {{ \Carbon\Carbon::parse($w->waktu_selesai)->format('H:i') }}</span>
                             @endif
                         </td>
 
-                        <td class="px-6 py-5 text-center">
+                        <td class="px-4 py-2 text-center h-[50px]">
                             @php $tipeJ = $w->mulai_jumat ? $w->tipe_jumat : $w->tipe; @endphp
                             @if($tipeJ == 'Tidak Ada')
                             <span class="text-slate-300 font-bold">-</span>
                             @else
                             <span
-                                class="inline-block px-3 py-1.5 rounded-md {{ $tipeJ == 'Belajar' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600' }} text-xs font-bold uppercase">{{ $tipeJ }}</span>
+                                class="inline-block px-2 py-1 rounded-md {{ $tipeJ == 'Belajar' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600' }} text-[10px] font-bold uppercase tracking-wider">{{ $tipeJ }}</span>
                             @endif
                         </td>
 
-                        <td class="px-6 py-5 text-right">
-                            <div class="flex items-center justify-end gap-2">
+                        <td class="px-4 py-2 text-right h-[50px]">
+                            <div class="flex items-center justify-end gap-1.5">
                                 @if($w->tipe_jumat != 'Tidak Ada')
                                 <button
                                     onclick="openEditJumat({{ $w->id }}, {{ $w->jam_ke }}, '{{ substr($w->waktu_mulai, 0, 5) }}', '{{ substr($w->waktu_selesai, 0, 5) }}', '{{ $w->tipe }}', '{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}', '{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}', '{{ $w->tipe_senin }}', '{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}', '{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}', '{{ $w->tipe_jumat }}')"
-                                    class="px-4 py-2 text-emerald-600 border border-emerald-200 font-bold text-xs hover:bg-emerald-50 rounded-lg transition">EDIT
-                                    HARI JUMAT</button>
+                                    class="px-3 py-1.5 text-emerald-600 border border-emerald-200 font-bold text-[10px] hover:bg-emerald-50 rounded-lg transition">EDIT
+                                    JUMAT</button>
 
                                 {{-- FORM NONAKTIFKAN JUMAT --}}
                                 <form action="{{ route('master-waktu.update', $w->id) }}" method="POST" class="inline"
@@ -324,8 +323,7 @@
                                         name="selesai_jumat" value="00:00"><input type="hidden" name="tipe_jumat"
                                         value="Tidak Ada">
                                     <button type="submit"
-                                        class="px-4 py-2 text-red-500 border border-red-200 font-bold text-xs hover:bg-red-50 rounded-lg transition">NONAKTIFKAN
-                                        SLOT</button>
+                                        class="px-3 py-1.5 text-red-500 border border-red-200 font-bold text-[10px] hover:bg-red-50 rounded-lg transition">NONAKTIFKAN</button>
                                 </form>
                                 @else
                                 {{-- FORM AKTIFKAN KEMBALI JUMAT --}}
@@ -345,7 +343,7 @@
                                     <input type="hidden" name="mulai_jumat" value=""><input type="hidden"
                                         name="selesai_jumat" value=""><input type="hidden" name="tipe_jumat" value="">
                                     <button type="submit"
-                                        class="px-4 py-2 text-emerald-600 bg-emerald-50 border border-emerald-200 font-bold text-xs hover:bg-emerald-100 rounded-lg transition">AKTIFKAN
+                                        class="px-3 py-1.5 text-emerald-600 bg-emerald-50 border border-emerald-200 font-bold text-[10px] hover:bg-emerald-100 rounded-lg transition">AKTIFKAN
                                         LAGI</button>
                                 </form>
                                 @endif
@@ -437,11 +435,12 @@
             <input type="hidden" id="norm_selesai_jumat" name="selesai_jumat">
             <input type="hidden" id="norm_tipe_jumat" name="tipe_jumat">
 
+            {{-- PERUBAHAN: Input jam_ke bisa diketik/diedit sekarang --}}
             <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1">Jam Ke</label>
                 <input type="number" id="norm_jam_ke" name="jam_ke"
-                    class="w-full border border-slate-200 bg-slate-100 rounded-lg p-2 text-slate-500 font-bold outline-none"
-                    readonly>
+                    class="w-full border border-slate-300 focus:ring-2 focus:ring-indigo-500 bg-white rounded-lg p-2 text-slate-700 font-bold outline-none transition-colors"
+                    required>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -490,11 +489,12 @@
             <input type="hidden" id="senin_selesai_jumat" name="selesai_jumat">
             <input type="hidden" id="senin_tipe_jumat" name="tipe_jumat">
 
+            {{-- PERUBAHAN: Input jam_ke bisa diketik/diedit sekarang --}}
             <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1">Jam Ke</label>
                 <input type="number" id="senin_jam_ke" name="jam_ke"
-                    class="w-full border border-slate-200 bg-slate-100 rounded-lg p-2 text-slate-500 font-bold outline-none"
-                    readonly>
+                    class="w-full border border-slate-300 focus:ring-2 focus:ring-cyan-500 bg-white rounded-lg p-2 text-slate-700 font-bold outline-none transition-colors"
+                    required>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -541,11 +541,12 @@
             <input type="hidden" id="jumat_selesai_senin" name="selesai_senin">
             <input type="hidden" id="jumat_tipe_senin" name="tipe_senin">
 
+            {{-- PERUBAHAN: Input jam_ke bisa diketik/diedit sekarang --}}
             <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1">Jam Ke</label>
                 <input type="number" id="jumat_jam_ke" name="jam_ke"
-                    class="w-full border border-slate-200 bg-slate-100 rounded-lg p-2 text-slate-500 font-bold outline-none"
-                    readonly>
+                    class="w-full border border-slate-300 focus:ring-2 focus:ring-emerald-500 bg-white rounded-lg p-2 text-slate-700 font-bold outline-none transition-colors"
+                    required>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
