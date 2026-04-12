@@ -154,7 +154,6 @@
                                         type="hidden" name="selesai_jumat"
                                         value="{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}"><input
                                         type="hidden" name="tipe_jumat" value="{{ $w->tipe_jumat }}">
-                                    {{-- Timpa Senin jadi 00:00 dan Tidak Ada --}}
                                     <input type="hidden" name="mulai_senin" value="00:00"><input type="hidden"
                                         name="selesai_senin" value="00:00"><input type="hidden" name="tipe_senin"
                                         value="Tidak Ada">
@@ -175,7 +174,6 @@
                                         type="hidden" name="selesai_jumat"
                                         value="{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}"><input
                                         type="hidden" name="tipe_jumat" value="{{ $w->tipe_jumat }}">
-                                    {{-- Kembalikan Senin ke Null biar ikut normal --}}
                                     <input type="hidden" name="mulai_senin" value=""><input type="hidden"
                                         name="selesai_senin" value=""><input type="hidden" name="tipe_senin" value="">
                                     <button type="submit"
@@ -212,8 +210,8 @@
                 <tbody class="divide-y divide-slate-100">
                     @foreach($waktus as $w)
                     <tr class="hover:bg-slate-50 transition-colors duration-200">
-                        <td class="px-4 py-2 text-center h-[50px]"><span
-                                class="font-extrabold text-slate-700 text-sm bg-slate-100 px-3 py-1 rounded-lg">
+                        <td class="px-4 py-2 text-center h-[50px]">
+                            <span class="font-extrabold text-slate-700 text-sm bg-slate-100 px-3 py-1 rounded-lg">
                                 {{ $w->jam_ke ?? '-' }}
                             </span>
                         </td>
@@ -233,7 +231,6 @@
                                     class="px-3 py-1.5 text-indigo-600 border border-indigo-200 font-bold text-[10px] hover:bg-indigo-50 rounded-lg transition">EDIT
                                     WAKTU</button>
 
-                                {{-- INI HAPUS PERMANEN DARI DATABASE --}}
                                 <form action="{{ route('master-waktu.destroy', $w->id) }}" method="POST" class="inline"
                                     onsubmit="return confirm('BAHAYA: Menghapus akan membuang baris ini di SEMUA HARI secara permanen. Lanjutkan?');">
                                     @csrf @method('DELETE')
@@ -269,8 +266,8 @@
                 <tbody class="divide-y divide-slate-100">
                     @foreach($waktus as $w)
                     <tr class="hover:bg-slate-50 transition-colors duration-200">
-                        <td class="px-4 py-2 text-center h-[50px]"><span
-                                class="font-extrabold text-slate-700 text-sm bg-slate-100 px-3 py-1 rounded-lg">
+                        <td class="px-4 py-2 text-center h-[50px]">
+                            <span class="font-extrabold text-slate-700 text-sm bg-slate-100 px-3 py-1 rounded-lg">
                                 {{ $w->jam_ke ?? '-' }}
                             </span>
                         </td>
@@ -323,7 +320,6 @@
                                         type="hidden" name="selesai_senin"
                                         value="{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}"><input
                                         type="hidden" name="tipe_senin" value="{{ $w->tipe_senin }}">
-                                    {{-- Timpa Jumat jadi 00:00 dan Tidak Ada --}}
                                     <input type="hidden" name="mulai_jumat" value="00:00"><input type="hidden"
                                         name="selesai_jumat" value="00:00"><input type="hidden" name="tipe_jumat"
                                         value="Tidak Ada">
@@ -344,7 +340,6 @@
                                         type="hidden" name="selesai_senin"
                                         value="{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}"><input
                                         type="hidden" name="tipe_senin" value="{{ $w->tipe_senin }}">
-                                    {{-- Kembalikan Jumat ke Null biar ikut normal --}}
                                     <input type="hidden" name="mulai_jumat" value=""><input type="hidden"
                                         name="selesai_jumat" value=""><input type="hidden" name="tipe_jumat" value="">
                                     <button type="submit"
@@ -439,7 +434,6 @@
             <input type="hidden" id="norm_selesai_jumat" name="selesai_jumat">
             <input type="hidden" id="norm_tipe_jumat" name="tipe_jumat">
 
-            {{-- PERUBAHAN: Input jam_ke bisa diketik/diedit sekarang --}}
             <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1">Jam Ke</label>
                 <input type="number" id="norm_jam_ke" name="jam_ke"
@@ -492,7 +486,6 @@
             <input type="hidden" id="senin_selesai_jumat" name="selesai_jumat">
             <input type="hidden" id="senin_tipe_jumat" name="tipe_jumat">
 
-            {{-- PERUBAHAN: Input jam_ke bisa diketik/diedit sekarang --}}
             <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1">Jam Ke</label>
                 <input type="number" id="senin_jam_ke" name="jam_ke"
@@ -543,7 +536,6 @@
             <input type="hidden" id="jumat_selesai_senin" name="selesai_senin">
             <input type="hidden" id="jumat_tipe_senin" name="tipe_senin">
 
-            {{-- PERUBAHAN: Input jam_ke bisa diketik/diedit sekarang --}}
             <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1">Jam Ke</label>
                 <input type="number" id="jumat_jam_ke" name="jam_ke"
@@ -585,70 +577,51 @@ function closeModal(id) {
     document.getElementById(id).classList.replace('flex', 'hidden');
 }
 
-// 1. FUNGSI EDIT NORMAL
 function openEditNormal(id, jam, mN, sN, tN, mS, sS, tS, mJ, sJ, tJ) {
     document.getElementById('form-edit-normal').action = `/master-waktu/${id}`;
     document.getElementById('norm_jam_ke').value = jam !== 'null' && jam !== '' ? jam : '';
-
-    // Yg Diedit
     document.getElementById('norm_waktu_mulai').value = mN;
     document.getElementById('norm_waktu_selesai').value = sN;
     document.getElementById('norm_tipe').value = tN;
-
-    // Yg Disembunyikan (Biar data nggak hilang)
     document.getElementById('norm_mulai_senin').value = mS;
     document.getElementById('norm_selesai_senin').value = sS;
     document.getElementById('norm_tipe_senin').value = tS || 'Belajar';
     document.getElementById('norm_mulai_jumat').value = mJ;
     document.getElementById('norm_selesai_jumat').value = sJ;
     document.getElementById('norm_tipe_jumat').value = tJ || 'Belajar';
-
     openModal('modaledit_normal');
 }
 
-// 2. FUNGSI EDIT SENIN
 function openEditSenin(id, jam, mN, sN, tN, mS, sS, tS, mJ, sJ, tJ) {
     document.getElementById('form-edit-senin').action = `/master-waktu/${id}`;
     document.getElementById('senin_jam_ke').value = jam !== 'null' && jam !== '' ? jam : '';
-
-    // Yg Diedit
     document.getElementById('senin_mulai_senin').value = mS;
     document.getElementById('senin_selesai_senin').value = sS;
     document.getElementById('senin_tipe_senin').value = tS || 'Belajar';
-
-    // Yg Disembunyikan
     document.getElementById('senin_waktu_mulai').value = mN;
     document.getElementById('senin_waktu_selesai').value = sN;
     document.getElementById('senin_tipe').value = tN;
     document.getElementById('senin_mulai_jumat').value = mJ;
     document.getElementById('senin_selesai_jumat').value = sJ;
     document.getElementById('senin_tipe_jumat').value = tJ || 'Belajar';
-
     openModal('modaledit_senin');
 }
 
-// 3. FUNGSI EDIT JUMAT
 function openEditJumat(id, jam, mN, sN, tN, mS, sS, tS, mJ, sJ, tJ) {
     document.getElementById('form-edit-jumat').action = `/master-waktu/${id}`;
     document.getElementById('jumat_jam_ke').value = jam !== 'null' && jam !== '' ? jam : '';
-
-    // Yg Diedit
     document.getElementById('jumat_mulai_jumat').value = mJ;
     document.getElementById('jumat_selesai_jumat').value = sJ;
     document.getElementById('jumat_tipe_jumat').value = tJ || 'Belajar';
-
-    // Yg Disembunyikan
     document.getElementById('jumat_waktu_mulai').value = mN;
     document.getElementById('jumat_waktu_selesai').value = sN;
     document.getElementById('jumat_tipe').value = tN;
     document.getElementById('jumat_mulai_senin').value = mS;
     document.getElementById('jumat_selesai_senin').value = sS;
     document.getElementById('jumat_tipe_senin').value = tS || 'Belajar';
-
     openModal('modaledit_jumat');
 }
 
-// Tutup pop-up kalau klik area gelap
 window.onclick = function(event) {
     if (event.target.classList.contains('fixed')) {
         event.target.classList.replace('flex', 'hidden');
