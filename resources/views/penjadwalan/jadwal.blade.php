@@ -2,10 +2,7 @@
 
 @section('content')
 {{-- BACKGROUND AMBIENT --}}
-<div class="fixed inset-0 -z-10 pointer-events-none bg-[#f4f7fb]">
-    <div class="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-blue-50/50 to-transparent"></div>
-    <div class="absolute top-0 right-0 w-96 h-96 bg-indigo-300/10 rounded-full blur-3xl opacity-70"></div>
-</div>
+<div class="fixed inset-0 -z-10 pointer-events-none bg-[#f4f7fb]"></div>
 
 <div class="w-full max-w-[100vw] mx-auto px-2 sm:px-4 h-[calc(100vh-4rem)] pb-2 pt-2 flex flex-col">
 
@@ -188,7 +185,7 @@
                         @php $firstRow = false; @endphp
                         @endif
 
-                        {{-- INI YANG DIUBAH: Selalu Tampilkan Angka (1, 2, 3, 4, dst) --}}
+                        {{-- INI YANG SAYA BENARKAN: Murni memanggil data Jam Ke dari Database --}}
                         <td
                             class="w-[40px] min-w-[40px] sticky left-[50px] z-[30] p-1 bg-white border-r border-b border-slate-200 text-center font-bold text-slate-600 text-[10px]">
                             {{ $j }}
