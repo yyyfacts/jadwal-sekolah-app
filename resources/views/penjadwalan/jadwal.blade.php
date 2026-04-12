@@ -2,12 +2,14 @@
 
 @section('content')
 {{-- BACKGROUND AMBIENT --}}
-<div class="fixed inset-0 -z-10 pointer-events-none bg-[#f4f7fb]"></div>
+<div class="fixed inset-0 -z-10 pointer-events-none bg-[#f4f7fb]">
+    <div class="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-blue-50/50 to-transparent"></div>
+    <div class="absolute top-0 right-0 w-96 h-96 bg-indigo-300/10 rounded-full blur-3xl opacity-70"></div>
+</div>
 
-{{-- CONTAINER UTAMA DI-PRESS BIAR FULL LAYAR --}}
 <div class="w-full max-w-[100vw] mx-auto px-2 sm:px-4 h-[calc(100vh-4rem)] pb-2 pt-2 flex flex-col">
 
-    {{-- FLASH MESSAGES (Dikecilin) --}}
+    {{-- FLASH MESSAGES --}}
     @if(session('success'))
     <div x-data="{ show: true }" x-show="show" x-transition
         class="mb-2 flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-lg shadow-sm text-emerald-800 shrink-0">
@@ -45,7 +47,7 @@
     {{-- MAIN CARD UI --}}
     <div class="bg-white rounded-xl border border-slate-200 shadow-md flex flex-col flex-1 overflow-hidden min-h-0">
 
-        {{-- 1. HEADER SECTION (SUPER COMPACT - 1 BARIS) --}}
+        {{-- 1. HEADER SECTION --}}
         <div class="px-4 py-3 bg-white shrink-0 z-20 border-b border-slate-100">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
 
@@ -61,8 +63,6 @@
 
                 {{-- Action Buttons & Search --}}
                 <div class="flex items-center gap-2 w-full md:w-auto justify-end">
-
-                    {{-- Search Bar --}}
                     <div class="relative group w-full md:w-64">
                         <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
                             <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,7 +93,7 @@
             </div>
         </div>
 
-        {{-- 2. TABLE SECTION (FULL SCROLL AREA) --}}
+        {{-- 2. TABLE SECTION --}}
         <div class="w-full flex-1 overflow-auto custom-scrollbar relative bg-slate-50/50 z-10">
             @if($kelass->isEmpty() || empty($jadwals))
             <div class="flex flex-col items-center justify-center h-full text-center">
@@ -103,7 +103,6 @@
             @else
             <table class="w-full min-w-max border-separate border-spacing-0 text-left" id="jadwal-tabel">
                 <thead>
-                    {{-- Row 1: Header Gelap --}}
                     <tr class="text-white shadow-sm">
                         <th
                             class="h-[35px] w-[50px] min-w-[50px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-0 z-[60]">
@@ -122,7 +121,6 @@
                         @endforeach
                     </tr>
 
-                    {{-- Row 2: Sub-Header Putih --}}
                     <tr class="text-slate-500 bg-white shadow-sm">
                         <th
                             class="h-[30px] w-[50px] min-w-[50px] sticky top-[35px] left-0 z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[9px] uppercase tracking-widest text-slate-400">
@@ -190,13 +188,10 @@
                         @php $firstRow = false; @endphp
                         @endif
 
+                        {{-- INI YANG DIUBAH: Selalu Tampilkan Angka (1, 2, 3, 4, dst) --}}
                         <td
                             class="w-[40px] min-w-[40px] sticky left-[50px] z-[30] p-1 bg-white border-r border-b border-slate-200 text-center font-bold text-slate-600 text-[10px]">
-                            @if($tipeTampil == 'Istirahat')
-                            <span class="text-amber-500">IST</span>
-                            @else
                             {{ $j }}
-                            @endif
                         </td>
 
                         <td
