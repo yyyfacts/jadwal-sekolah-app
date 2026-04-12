@@ -35,7 +35,10 @@ class JadwalController extends Controller
         $dataHari = MasterHari::getActiveDays(); 
         $hariList = $dataHari->pluck('nama_hari')->toArray();
         $dataWaktu = MasterWaktu::getOrdered(); 
-        $totalSlotJam = $dataWaktu->count();
+        
+        // Cari jam terkecil (bisa 0 atau 1) dan jam terbesar
+        $minJam = $dataWaktu->min('jam_ke') ?? 0;
+        $maxJam = $dataWaktu->max('jam_ke') ?? 10;
 
         $kelass = $reqKelas ? Kelas::where('id', $reqKelas)->orderBy('nama_kelas')->get() : Kelas::orderBy('nama_kelas')->get();
 
@@ -45,9 +48,11 @@ class JadwalController extends Controller
         $rawJadwals = $query->get();
         $jadwals = [];
 
+        // BIKIN GRID KOSONG (Mulai dari $minJam, misal 0)
         foreach ($kelass as $k) {
             foreach ($hariList as $h) {
-                for ($j = 1; $j <= $totalSlotJam; $j++) {
+                // PERUBAHAN: Looping dimulai dari $minJam (0), BUKAN 1
+                for ($j = $minJam; $j <= $maxJam; $j++) {
                     $jadwals[$k->id][$h][$j] = null;
                 }
             }
@@ -160,7 +165,6 @@ class JadwalController extends Controller
                 foreach($waktuList as $w) {
                     $tipeSlot = $w->tipe;
                     if ($namaHariLower == 'senin' && $w->tipe_senin) $tipeSlot = $w->tipe_senin;
-                    // FIX TYPO: Dihapus $waktuObj->tipe_jumat menjadi $w->tipe_jumat
                     if ($namaHariLower == 'jumat' && $w->tipe_jumat) $tipeSlot = $w->tipe_jumat;
 
                     if ($tipeSlot !== 'Tidak Ada') {
@@ -173,6 +177,8 @@ class JadwalController extends Controller
                 }
                 return [
                     'nama' => $h->nama_hari,
+                    // Karena $teachingSlotCounter selalu nambah 1, kalau dia berhenti di 11 (setelah nyatet 10 jam),
+                    // berarti max_jam AI adalah 10. Ini SUDAH SANGAT BENAR.
                     'max_jam' => $teachingSlotCounter - 1 
                 ];
             });
@@ -217,6 +223,7 @@ class JadwalController extends Controller
                     foreach ($result['solution'] as $item) {
                         $hari = $item['hari'];
                         $tSlot = $item['jam']; 
+                        // Penerjemah: AI bilang jam ke-1. Diterjemahkan ke jam ke-1 fisik (karena 0 upacara). Sempurna!
                         $pSlot = $slotMapping[$hari][$tSlot] ?? $tSlot; 
 
                         DB::table('jadwals')->where('id', $item['id'])->update([ 'hari' => $hari, 'jam' => $pSlot, 'updated_at' => now() ]);

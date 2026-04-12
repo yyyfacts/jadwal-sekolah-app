@@ -4,7 +4,8 @@
 {{-- BACKGROUND AMBIENT --}}
 <div class="fixed inset-0 -z-10 pointer-events-none bg-[#f4f7fb]"></div>
 
-<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 min-h-[calc(100vh-6rem)] pb-8 pt-6 flex flex-col">
+{{-- Ubah min-h jadi otomatis biar bisa scroll ke bawah dengan bebas --}}
+<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 pb-8 pt-6 flex flex-col h-full">
 
     {{-- FLASH MESSAGES --}}
     @if(session('success'))
@@ -73,10 +74,10 @@
 
     {{-- MAIN CARD UI --}}
     <div
-        class="bg-white rounded-[2rem] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col flex-1 overflow-hidden">
+        class="bg-white rounded-[2rem] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col flex-1">
 
         {{-- 1. HEADER SECTION --}}
-        <div class="p-8 border-b border-slate-100 shrink-0 bg-white z-20 relative">
+        <div class="p-8 border-b border-slate-100 shrink-0 bg-white z-20 relative rounded-t-[2rem]">
             <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-6">
 
                 {{-- Judul --}}
@@ -136,10 +137,11 @@
             </div>
         </div>
 
-        {{-- 2. TABLE SECTION (Scroll Horizontal Aktif & Anti Gepeng) --}}
-        <div class="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar relative bg-slate-50/30 z-10 w-full">
+        {{-- 2. TABLE SECTION (Scroll Horizontal Aktif & Anti Gepeng & Full Tinggi) --}}
+        {{-- Hapus flex-1 overflow-y-auto yang bikin dia stuck setengah halaman --}}
+        <div class="w-full overflow-x-auto custom-scrollbar relative bg-slate-50/30 z-10 pb-4">
             @if($kelass->isEmpty() || empty($jadwals))
-            <div class="flex flex-col items-center justify-center h-full py-20 text-center">
+            <div class="flex flex-col items-center justify-center py-32 text-center">
                 <div class="text-6xl mb-4 opacity-30">🗂️</div>
                 <h3 class="text-lg font-bold text-slate-600">Data Tidak Ditemukan</h3>
                 <p class="text-slate-400 text-sm mt-1">Sistem belum memiliki jadwal, data kelas, atau Master Waktu.</p>
@@ -329,7 +331,7 @@
 
         {{-- 3. FOOTER SECTION --}}
         <div
-            class="bg-white border-t border-slate-100 px-8 py-4 flex justify-between items-center shrink-0 z-20 relative">
+            class="bg-white border-t border-slate-100 px-8 py-4 flex justify-between items-center shrink-0 z-20 relative rounded-b-[2rem]">
             <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Sistem Penjadwalan
                 Terintegrasi</span>
             <span class="text-[11px] font-bold text-emerald-500 flex items-center gap-1.5 uppercase tracking-wider">
@@ -366,7 +368,6 @@
 table {
     border-collapse: separate;
     border-spacing: 0;
-    /* Dihapus: table-layout: fixed; agar bisa scroll horizontal! */
 }
 
 /* Custom Scrollbar Clean & Elegan */
