@@ -4,8 +4,8 @@
 {{-- BACKGROUND AMBIENT --}}
 <div class="fixed inset-0 -z-10 pointer-events-none bg-[#f4f7fb]"></div>
 
-{{-- Ubah agar card utama mengisi penuh tinggi layar tapi tidak tembus ke bawah --}}
-<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 pb-8 pt-6 flex flex-col h-[calc(100vh-6rem)]">
+{{-- DIBUAT AUTO HEIGHT BIAR BISA SCROLL SAMPAI BAWAH TANPA TERPOTONG --}}
+<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 pb-8 pt-6 flex flex-col min-h-screen">
 
     {{-- FLASH MESSAGES --}}
     @if(session('success'))
@@ -73,8 +73,9 @@
     @endif
 
     {{-- MAIN CARD UI --}}
+    {{-- Hapus min-h-0 di sini --}}
     <div
-        class="bg-white rounded-[2rem] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col flex-1 min-h-0">
+        class="bg-white rounded-[2rem] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col flex-1">
 
         {{-- 1. HEADER SECTION --}}
         <div class="p-8 border-b border-slate-100 shrink-0 bg-white z-20 relative rounded-t-[2rem]">
@@ -137,10 +138,11 @@
             </div>
         </div>
 
-        {{-- 2. TABLE SECTION (Scroll Horizontal dan Vertikal Aktif & Full Tinggi Sisa Layar) --}}
-        <div class="w-full flex-1 overflow-auto custom-scrollbar relative bg-slate-50/30 z-10">
+        {{-- 2. TABLE SECTION --}}
+        {{-- Hapus h-full dan overflow-auto, ganti dengan w-full agar tabelnya menyesuaikan panjang isinya --}}
+        <div class="w-full overflow-x-auto custom-scrollbar relative bg-slate-50/30 z-10 pb-6">
             @if($kelass->isEmpty() || empty($jadwals))
-            <div class="flex flex-col items-center justify-center h-full py-20 text-center">
+            <div class="flex flex-col items-center justify-center py-20 text-center">
                 <div class="text-6xl mb-4 opacity-30">🗂️</div>
                 <h3 class="text-lg font-bold text-slate-600">Data Tidak Ditemukan</h3>
                 <p class="text-slate-400 text-sm mt-1">Sistem belum memiliki jadwal, data kelas, atau Master Waktu.</p>
