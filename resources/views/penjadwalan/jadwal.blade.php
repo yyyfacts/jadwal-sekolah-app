@@ -4,8 +4,8 @@
 {{-- BACKGROUND AMBIENT --}}
 <div class="fixed inset-0 -z-10 pointer-events-none bg-[#f4f7fb]"></div>
 
-{{-- Ubah min-h jadi otomatis biar bisa scroll ke bawah dengan bebas --}}
-<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 pb-8 pt-6 flex flex-col h-full">
+{{-- Ubah agar card utama mengisi penuh tinggi layar tapi tidak tembus ke bawah --}}
+<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 pb-8 pt-6 flex flex-col h-[calc(100vh-6rem)]">
 
     {{-- FLASH MESSAGES --}}
     @if(session('success'))
@@ -74,7 +74,7 @@
 
     {{-- MAIN CARD UI --}}
     <div
-        class="bg-white rounded-[2rem] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col flex-1">
+        class="bg-white rounded-[2rem] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col flex-1 min-h-0">
 
         {{-- 1. HEADER SECTION --}}
         <div class="p-8 border-b border-slate-100 shrink-0 bg-white z-20 relative rounded-t-[2rem]">
@@ -137,11 +137,10 @@
             </div>
         </div>
 
-        {{-- 2. TABLE SECTION (Scroll Horizontal Aktif & Anti Gepeng & Full Tinggi) --}}
-        {{-- Hapus flex-1 overflow-y-auto yang bikin dia stuck setengah halaman --}}
-        <div class="w-full overflow-x-auto custom-scrollbar relative bg-slate-50/30 z-10 pb-4">
+        {{-- 2. TABLE SECTION (Scroll Horizontal dan Vertikal Aktif & Full Tinggi Sisa Layar) --}}
+        <div class="w-full flex-1 overflow-auto custom-scrollbar relative bg-slate-50/30 z-10">
             @if($kelass->isEmpty() || empty($jadwals))
-            <div class="flex flex-col items-center justify-center py-32 text-center">
+            <div class="flex flex-col items-center justify-center h-full py-20 text-center">
                 <div class="text-6xl mb-4 opacity-30">🗂️</div>
                 <h3 class="text-lg font-bold text-slate-600">Data Tidak Ditemukan</h3>
                 <p class="text-slate-400 text-sm mt-1">Sistem belum memiliki jadwal, data kelas, atau Master Waktu.</p>
@@ -152,16 +151,16 @@
                     {{-- Row 1: Header Hitam Gelap --}}
                     <tr class="text-white">
                         <th
-                            class="h-[50px] w-[60px] min-w-[60px] max-w-[60px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-0 z-[70]">
+                            class="h-[50px] w-[60px] min-w-[60px] max-w-[60px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-0 z-[80]">
                         </th>
                         <th
-                            class="h-[50px] w-[50px] min-w-[50px] max-w-[50px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[60px] z-[70]">
+                            class="h-[50px] w-[50px] min-w-[50px] max-w-[50px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[60px] z-[80]">
                         </th>
                         <th
-                            class="h-[50px] w-[100px] min-w-[100px] max-w-[100px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[110px] z-[70] shadow-[4px_0_8px_-2px_rgba(0,0,0,0.15)]">
+                            class="h-[50px] w-[100px] min-w-[100px] max-w-[100px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[110px] z-[80] shadow-[4px_0_8px_-2px_rgba(0,0,0,0.15)]">
                         </th>
                         @foreach($kelass as $kelas)
-                        <th class="h-[50px] min-w-[170px] max-w-[170px] bg-[#242b3d] sticky top-0 z-[50] border-r border-b border-slate-700 text-center font-extrabold text-[14px] tracking-wider uppercase jadwal-header"
+                        <th class="h-[50px] min-w-[170px] max-w-[170px] bg-[#242b3d] sticky top-0 z-[60] border-r border-b border-slate-700 text-center font-extrabold text-[14px] tracking-wider uppercase jadwal-header"
                             data-kelas="{{ strtolower($kelas->nama_kelas) }}">
                             {{ $kelas->nama_kelas }}
                         </th>
@@ -171,17 +170,17 @@
                     {{-- Row 2: Sub-Header --}}
                     <tr class="text-slate-500">
                         <th
-                            class="h-[40px] w-[60px] min-w-[60px] max-w-[60px] sticky top-[50px] left-0 z-[70] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400">
+                            class="h-[40px] w-[60px] min-w-[60px] max-w-[60px] sticky top-[50px] left-0 z-[80] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400">
                             HARI</th>
                         <th
-                            class="h-[40px] w-[50px] min-w-[50px] max-w-[50px] sticky top-[50px] left-[60px] z-[70] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400">
+                            class="h-[40px] w-[50px] min-w-[50px] max-w-[50px] sticky top-[50px] left-[60px] z-[80] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400">
                             JP</th>
                         <th
-                            class="h-[40px] w-[100px] min-w-[100px] max-w-[100px] sticky top-[50px] left-[110px] z-[70] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.05)]">
+                            class="h-[40px] w-[100px] min-w-[100px] max-w-[100px] sticky top-[50px] left-[110px] z-[80] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.05)]">
                             WAKTU</th>
                         @foreach($kelass as $kelas)
                         <th
-                            class="h-[40px] min-w-[170px] max-w-[170px] bg-slate-50/80 sticky top-[50px] z-[60] border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400">
+                            class="h-[40px] min-w-[170px] max-w-[170px] bg-slate-50/80 sticky top-[50px] z-[70] border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400">
                             {{ $kelas->nama_kelas }}
                         </th>
                         @endforeach
