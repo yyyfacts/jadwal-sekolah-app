@@ -4,20 +4,15 @@
 {{-- BACKGROUND AMBIENT --}}
 <div class="fixed inset-0 -z-10 pointer-events-none bg-[#f4f7fb]">
     <div class="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-blue-50/50 to-transparent"></div>
-    <div class="absolute top-0 right-0 w-96 h-96 bg-indigo-300/10 rounded-full blur-3xl opacity-70"></div>
 </div>
 
-{{-- 
-    PERUBAHAN UTAMA LAYOUT: 
-    1. Buang height statis seperti h-screen atau h-[calc(...)]
-    2. Pakai min-h-screen agar kalau jadwalnya dikit tetep full, kalau banyak dia melar ke bawah.
---}}
-<div class="w-full max-w-[100vw] mx-auto px-4 sm:px-6 lg:px-8 min-h-screen pb-12 pt-6 flex flex-col">
+{{-- KUNCI TINGGI LAYAR DI SINI (Mirip halaman Guru) --}}
+<div class="w-full max-w-[100vw] mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-6rem)] pb-8 pt-6 flex flex-col">
 
     {{-- FLASH MESSAGES --}}
     @if(session('success'))
     <div x-data="{ show: true }" x-show="show" x-transition
-        class="mb-6 flex items-center justify-between p-4 bg-emerald-50 border border-emerald-100 rounded-xl shadow-sm text-emerald-800 shrink-0">
+        class="mb-4 flex items-center justify-between p-4 bg-emerald-50 border border-emerald-100 rounded-xl shadow-sm text-emerald-800 shrink-0">
         <div class="flex items-center gap-3">
             <div class="p-2 bg-emerald-100 rounded-full text-emerald-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -38,7 +33,6 @@
     </div>
     @endif
 
-    {{-- ERROR & REKOMENDASI AI --}}
     @if(session('error'))
     <div x-data="{ show: true }" x-show="show" x-transition
         class="mb-3 flex items-center justify-between p-4 bg-rose-50 border border-rose-100 rounded-xl shadow-sm text-rose-800 shrink-0">
@@ -54,10 +48,9 @@
         <button @click="show = false" class="text-rose-400 hover:text-rose-700 transition">&times;</button>
     </div>
 
-    {{-- KOTAK REKOMENDASI DSS --}}
     @if(session('rekomendasi'))
     <div x-data="{ show: true }" x-show="show" x-transition
-        class="mb-6 flex flex-col p-5 bg-amber-50 border border-amber-200 rounded-xl shadow-sm text-amber-800 shrink-0 relative">
+        class="mb-4 flex flex-col p-5 bg-amber-50 border border-amber-200 rounded-xl shadow-sm text-amber-800 shrink-0 relative">
         <div class="flex items-center gap-3 mb-2">
             <div class="p-1.5 bg-amber-200 rounded-full text-amber-700">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,43 +72,36 @@
     @endif
     @endif
 
-    {{-- MAIN CARD UI --}}
-    {{-- Card nggak dipaksa max-height, jadi dia akan memanjang terus ke bawah mengikuti isinya --}}
+    {{-- KOTAK UTAMA (Pastiin ada overflow-hidden biar anak-anaknya yang scroll) --}}
     <div
-        class="bg-white rounded-[2rem] border border-slate-100 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] flex flex-col w-full">
+        class="bg-white rounded-[2rem] border border-slate-100 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] flex flex-col flex-1 overflow-hidden min-h-0">
 
-        {{-- 1. HEADER SECTION --}}
-        <div class="px-8 pt-8 pb-6 bg-white shrink-0 z-20 rounded-t-[2rem]">
+        {{-- 1. HEADER SECTION (Statis, nggak ikut ke-scroll) --}}
+        <div class="px-8 pt-8 pb-6 bg-white shrink-0 z-20">
             <div class="flex flex-col xl:flex-row xl:items-start justify-between gap-6 mb-6">
-                {{-- Judul --}}
                 <div class="flex gap-4 items-start">
                     <div class="w-2.5 h-12 bg-indigo-600 rounded-full mt-0.5"></div>
                     <div>
-                        <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">
-                            Jadwal Pelajaran Terpadu
-                        </h1>
-                        <p class="text-slate-500 text-sm mt-1 font-medium">
-                            Tahun Ajaran {{ $judulTahun ?? date('Y').'/'.(date('Y')+1) }}
-                        </p>
+                        <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Jadwal Pelajaran Terpadu</h1>
+                        <p class="text-slate-500 text-sm mt-1 font-medium">Tahun Ajaran
+                            {{ $judulTahun ?? date('Y').'/'.(date('Y')+1) }}</p>
                     </div>
                 </div>
 
-                {{-- Action Buttons --}}
                 <div class="flex flex-wrap items-center gap-3">
                     <a href="{{ route('jadwal.export') }}"
-                        class="flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 font-bold text-xs uppercase tracking-widest rounded-xl transition-all shadow-sm">
+                        class="flex items-center gap-2 px-6 py-2.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs uppercase tracking-widest rounded-xl transition-all shadow-sm">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                         </svg>
                         EXPORT EXCEL
                     </a>
-
                     <form action="{{ route('jadwal.generate') }}" method="POST" onsubmit="showLoading()">
                         @csrf
                         <button type="button"
-                            onclick="if(confirm('Generate ulang akan menimpa jadwal lama. AI akan menyusun berdasarkan ketersediaan jam di Master Waktu. Lanjut?')) this.form.submit()"
-                            class="flex items-center justify-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:-translate-y-0.5">
+                            onclick="if(confirm('Generate ulang akan menimpa jadwal lama. Lanjut?')) this.form.submit()"
+                            class="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
@@ -123,68 +109,62 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
-                            GENERATE JADWAL
+                            GENERATE
                         </button>
                     </form>
                 </div>
             </div>
 
-            {{-- Search Bar --}}
             <div class="relative group">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" fill="none"
-                        stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                 </div>
                 <input type="text" id="search-jadwal" oninput="filterJadwalRealtime()"
-                    class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
-                    placeholder="Cari Nama Guru, Mata Pelajaran, atau Kelas... (Merespon Langsung)">
+                    class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    placeholder="Cari Nama Guru, Mata Pelajaran, atau Kelas...">
             </div>
         </div>
 
-        {{-- 2. TABLE SECTION (Ini dia kuncinya, biarkan overflow-x-auto jalan buat geser kiri-kanan) --}}
-        <div
-            class="w-full overflow-x-auto overflow-y-clip custom-scrollbar relative bg-slate-50/50 pb-8 px-2 rounded-b-[2rem]">
+        {{-- 2. TABLE SECTION (AREA INI YANG BISA DI-SCROLL ATAS-BAWAH & KANAN-KIRI) --}}
+        <div class="w-full flex-1 overflow-auto custom-scrollbar relative bg-slate-50/50 pb-8 rounded-b-[2rem]">
             @if($kelass->isEmpty() || empty($jadwals))
-            <div class="flex flex-col items-center justify-center py-32 text-center">
+            <div class="flex flex-col items-center justify-center h-full text-center">
                 <div class="text-6xl mb-4 opacity-30">🗂️</div>
                 <h3 class="text-lg font-bold text-slate-600">Data Tidak Ditemukan</h3>
-                <p class="text-slate-400 text-sm mt-1">Sistem belum memiliki jadwal, data kelas, atau Master Waktu.</p>
             </div>
             @else
             <table class="w-full min-w-max border-separate border-spacing-0 text-left" id="jadwal-tabel">
                 <thead>
-                    {{-- Row 1: Header Hitam Gelap --}}
                     <tr class="text-white shadow-sm">
                         <th
-                            class="h-[50px] w-[60px] min-w-[60px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-0 z-[60]">
+                            class="h-[50px] w-[60px] min-w-[60px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-0 z-[70]">
                         </th>
                         <th
-                            class="h-[50px] w-[50px] min-w-[50px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[60px] z-[60]">
+                            class="h-[50px] w-[50px] min-w-[50px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[60px] z-[70]">
                         </th>
                         <th
-                            class="h-[50px] w-[100px] min-w-[100px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[110px] z-[60] shadow-[4px_0_8px_-2px_rgba(0,0,0,0.15)]">
+                            class="h-[50px] w-[100px] min-w-[100px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[110px] z-[70] shadow-[4px_0_8px_-2px_rgba(0,0,0,0.15)]">
                         </th>
                         @foreach($kelass as $kelas)
-                        <th class="h-[50px] min-w-[180px] bg-[#242b3d] sticky top-0 z-[50] border-r border-b border-slate-700 text-center font-extrabold text-sm tracking-wider uppercase jadwal-header shadow-sm"
+                        <th class="h-[50px] min-w-[180px] bg-[#242b3d] sticky top-0 z-[50] border-r border-b border-slate-700 text-center font-extrabold text-sm tracking-wider uppercase jadwal-header"
                             data-kelas="{{ strtolower($kelas->nama_kelas) }}">
                             {{ $kelas->nama_kelas }}
                         </th>
                         @endforeach
                     </tr>
 
-                    {{-- Row 2: Sub-Header Putih --}}
                     <tr class="text-slate-500 bg-white shadow-sm">
                         <th
-                            class="h-[40px] w-[60px] min-w-[60px] sticky top-[50px] left-0 z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400">
+                            class="h-[40px] w-[60px] min-w-[60px] sticky top-[50px] left-0 z-[70] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400">
                             HARI</th>
                         <th
-                            class="h-[40px] w-[50px] min-w-[50px] sticky top-[50px] left-[60px] z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400">
+                            class="h-[40px] w-[50px] min-w-[50px] sticky top-[50px] left-[60px] z-[70] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400">
                             JP</th>
                         <th
-                            class="h-[40px] w-[100px] min-w-[100px] sticky top-[50px] left-[110px] z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.05)]">
+                            class="h-[40px] w-[100px] min-w-[100px] sticky top-[50px] left-[110px] z-[70] bg-white border-r border-b border-slate-200 text-center font-bold text-[10px] uppercase tracking-widest text-slate-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.05)]">
                             WAKTU</th>
                         @foreach($kelass as $kelas)
                         <th
@@ -232,8 +212,6 @@
 
                     @if($tipeTampil !== 'Tidak Ada')
                     <tr class="hover:bg-slate-50/50 transition-colors duration-150">
-
-                        {{-- Kolom HARI --}}
                         @if($firstRow)
                         <td rowspan="{{ $rowSpanTotal }}"
                             class="w-[60px] min-w-[60px] sticky left-0 z-[30] p-0 bg-white border-r border-b border-slate-200 align-middle text-center shadow-[4px_0_8px_-2px_rgba(0,0,0,0.02)]">
@@ -245,7 +223,6 @@
                         @php $firstRow = false; @endphp
                         @endif
 
-                        {{-- Kolom JP --}}
                         <td
                             class="w-[50px] min-w-[50px] sticky left-[60px] z-[30] p-2 bg-white border-r border-b border-slate-200 text-center font-bold text-slate-600 text-xs">
                             @if($tipeTampil == 'Istirahat')
@@ -255,7 +232,6 @@
                             @endif
                         </td>
 
-                        {{-- Kolom WAKTU --}}
                         <td
                             class="w-[100px] min-w-[100px] sticky left-[110px] z-[30] p-2 bg-white border-r border-b border-slate-200 text-center text-[10px] font-mono font-medium text-slate-400 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.05)]">
                             @php $w_parts = explode(' - ', $waktuTampil); @endphp
@@ -266,7 +242,6 @@
                             </div>
                         </td>
 
-                        {{-- Kolom MATA PELAJARAN --}}
                         @if($tipeTampil == 'Istirahat')
                         <td colspan="{{ $kelass->count() }}"
                             class="p-3 border-b border-slate-200 bg-amber-50/40 align-middle">
@@ -286,7 +261,6 @@
                             </div>
                         </td>
                         @else
-                        {{-- SEL BELAJAR BIASA --}}
                         @foreach($kelass as $kelas)
                         @php
                         $data = $jadwals[$kelas->id][$namaHari][$j] ?? null;
@@ -317,10 +291,8 @@
                     </tr>
                     @endif
                     @endforeach
-
-                    {{-- Pemisah Antar Hari --}}
                     <tr>
-                        <td colspan="{{ $kelass->count() + 3 }}" class="bg-slate-200/70 h-1"></td>
+                        <td colspan="{{ $kelass->count() + 3 }}" class="bg-slate-200/70 h-1 border-none"></td>
                     </tr>
                     @endif
                     @endforeach
@@ -329,18 +301,12 @@
             @endif
         </div>
     </div>
-
-    {{-- COPYRIGHT TEXT --}}
-    <div class="text-center mt-6 mb-4 text-slate-500 text-[11px] font-medium tracking-wide">
-        &copy; 2026 SMAN 1 SAMPANG. Sistem Penjadwalan Terintegrasi.
-    </div>
-
 </div>
 
 {{-- LOADING OVERLAY --}}
 <div id="loading-overlay"
     class="hidden fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300">
-    <div class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm mx-4 animate-scale-in border border-white/20">
+    <div class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm mx-4 border border-white/20">
         <div class="relative w-20 h-20 mx-auto mb-6">
             <div class="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
             <div class="absolute inset-0 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin">
@@ -348,21 +314,17 @@
             <div class="absolute inset-0 flex items-center justify-center text-3xl">⚙️</div>
         </div>
         <h3 class="text-xl font-extrabold text-slate-800">AI Sedang Bekerja...</h3>
-        <p class="text-slate-500 text-sm mt-2 font-medium">Memproses ribuan kombinasi algoritma constraint programming
-            untuk mencegah jadwal bentrok.</p>
     </div>
 </div>
 @endsection
 
 @push('styles')
 <style>
-/* Reset Table */
 table {
     border-collapse: separate;
     border-spacing: 0;
 }
 
-/* Custom Scrollbar Agar Rapi Waktu Di Scroll Kanan */
 .custom-scrollbar::-webkit-scrollbar {
     width: 10px;
     height: 12px;
@@ -396,17 +358,12 @@ function filterJadwalRealtime() {
         cells.forEach(cell => {
             cell.style.opacity = '1';
             cell.style.filter = 'none';
-            const innerBox = cell.querySelector('.sel-content');
-            if (innerBox && innerBox.classList.contains('ring-4')) {
-                innerBox.classList.remove('ring-4', 'ring-indigo-400', 'ring-offset-2', 'scale-[1.05]');
-            }
         });
         headers.forEach(header => header.style.opacity = '1');
         return;
     }
 
     let classMatched = false;
-
     cells.forEach(cell => {
         const searchData = cell.getAttribute('data-search');
         const dataKelas = cell.getAttribute('data-kelas');
@@ -415,27 +372,15 @@ function filterJadwalRealtime() {
         if (searchData && searchData.includes(input)) {
             cell.style.opacity = '1';
             cell.style.filter = 'none';
-            const innerBox = cell.querySelector('.sel-content');
-            if (innerBox && !innerBox.classList.contains('opacity-60')) {
-                innerBox.classList.add('ring-4', 'ring-indigo-400', 'ring-offset-2', 'scale-[1.05]');
-            }
         } else {
             cell.style.opacity = '0.15';
             cell.style.filter = 'grayscale(100%)';
-            const innerBox = cell.querySelector('.sel-content');
-            if (innerBox && innerBox.classList.contains('ring-4')) {
-                innerBox.classList.remove('ring-4', 'ring-indigo-400', 'ring-offset-2', 'scale-[1.05]');
-            }
         }
     });
 
     headers.forEach(header => {
         const headerKelas = header.getAttribute('data-kelas');
-        if (classMatched) {
-            header.style.opacity = (headerKelas === input) ? '1' : '0.2';
-        } else {
-            header.style.opacity = '1';
-        }
+        header.style.opacity = (classMatched && headerKelas !== input) ? '0.2' : '1';
     });
 }
 
