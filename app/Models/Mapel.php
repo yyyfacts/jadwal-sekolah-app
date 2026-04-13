@@ -14,7 +14,7 @@ class Mapel extends Model
     // Tambahkan 'mode' agar bisa disimpan
     protected $fillable = ['nama_mapel', 'kode_mapel', 'kelompok', 'mode'];
 
-    // Relasi ke jadwal (Satu Mapel punya banyak Jadwal/Distribusi)
+    // Relasi ke jadwal (Satu Mapael punya banyak Jadwal/Distribusi)
     public function jadwals()
     {
         return $this->hasMany(Jadwal::class);

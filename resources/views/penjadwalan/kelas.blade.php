@@ -805,8 +805,12 @@ async function handleFormJadwal(e, form, kelasId) {
             body: new FormData(form)
         });
         const json = await res.json();
+
         if (res.ok && json.success) {
-            location.reload(); // Re-fetch data relasi untuk update UI badge status
+            // HILANGKAN location.reload(); DAN GANTI DENGAN INI:
+            updateTableUI(kelasId, json.jadwal, form.dataset.mode === 'edit');
+            resetFormJadwal(kelasId);
+            updateTotalJam(kelasId);
         } else {
             alert(json.message || "Gagal menyimpan.");
         }
@@ -815,6 +819,71 @@ async function handleFormJadwal(e, form, kelasId) {
     } finally {
         btn.disabled = false;
         btn.innerHTML = oldText;
+    }
+}
+
+function updateTableUI(kelasId, jadwal, isEdit) {
+    const tbody = document.getElementById(`tbody-kelas-${kelasId}`);
+    const mapelName = jadwal.mapel?.nama_mapel || '-';
+    const guruName = jadwal.guru?.nama_guru || '-';
+
+    const badgeHTML = jadwal.status === 'online' ?
+        '<span class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">ONLINE</span>' :
+        '<span class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">OFFLINE</span>';
+
+    if (isEdit) {
+        const row = document.getElementById(`row-jadwal-${jadwal.id}`);
+        if (row) {
+            row.querySelector('.mapel-text').innerText = mapelName;
+            row.querySelector('.guru-text').innerText = guruName;
+
+            const jamSpan = row.querySelector('.jam-text');
+            jamSpan.innerText = jadwal.jumlah_jam + ' JP';
+            jamSpan.setAttribute('data-jam', jadwal.jumlah_jam);
+
+            row.querySelector('.tipe-text').innerText = jadwal.tipe_jam;
+
+            const oldBadge = row.querySelector('.status-badge');
+            if (oldBadge) oldBadge.outerHTML = badgeHTML;
+
+            const btnEdit = row.querySelector('button[onclick^="editJadwalInline"]');
+            btnEdit.setAttribute('onclick',
+                `editJadwalInline(${kelasId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}', '${jadwal.status}')`
+            );
+
+            row.classList.add('bg-amber-100');
+            setTimeout(() => row.classList.remove('bg-amber-100'), 1500);
+        }
+    } else {
+        const tr = document.createElement('tr');
+        tr.id = `row-jadwal-${jadwal.id}`;
+        tr.className = "hover:bg-purple-50 transition group";
+        tr.innerHTML = `
+                <td class="px-4 py-3 font-bold text-slate-700 align-middle mapel-text">${mapelName}</td>
+                <td class="px-4 py-3 text-slate-600 guru-text align-middle font-medium">${guruName}</td>
+                <td class="px-4 py-3 text-center align-middle">
+                    <div class="flex flex-col items-center">
+                        <span class="bg-white border border-purple-100 text-purple-700 py-0.5 px-2 rounded-md font-bold text-[10px] jam-text shadow-sm" data-jam="${jadwal.jumlah_jam}">${jadwal.jumlah_jam} JP</span>
+                        ${badgeHTML}
+                        <span class="text-[9px] text-slate-400 uppercase mt-0.5 font-semibold tracking-wider tipe-text">${jadwal.tipe_jam}</span>
+                    </div>
+                </td>
+                <td class="px-4 py-3 text-right align-middle">
+                    <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="editJadwalInline(${kelasId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}', '${jadwal.status}')" class="p-1.5 text-purple-600 hover:bg-purple-100 rounded-lg transition" title="Edit">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                        </button>
+                        <button onclick="hapusJadwal(${jadwal.id}, this, ${kelasId})" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition" title="Hapus">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                </td>`;
+
+        const tbody = document.getElementById(`tbody-kelas-${kelasId}`);
+        tbody.appendChild(tr);
+
+        const emptyRow = tbody.querySelector('.empty-row');
+        if (emptyRow) emptyRow.remove();
     }
 }
 

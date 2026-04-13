@@ -23,7 +23,7 @@ class KelasController extends Controller
 
     public function index()
     {
-        $kelass = Kelas::with(['jadwals.mapel', 'jadwals.guru', 'waliKelas']) // Tarik wali kelasnya juga
+        $kelass = Kelas::with(['jadwals.mapel', 'jadwals.guru', 'waliKelas'])
             ->orderBy('nama_kelas')
             ->get();
 
@@ -45,7 +45,7 @@ class KelasController extends Controller
             'max_jam'      => 'required|integer|min:1',
             'limit_harian' => 'required|integer|min:1|max:15',
             'limit_jumat'  => 'required|integer|min:0|max:10',
-            'wali_guru_id' => 'nullable|exists:gurus,id' // Validasi wali kelas
+            'wali_guru_id' => 'nullable|exists:gurus,id'
         ]);
 
         Kelas::create($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'limit_harian', 'limit_jumat', 'wali_guru_id'));
@@ -60,7 +60,7 @@ class KelasController extends Controller
             'max_jam'      => 'required|integer|min:1',
             'limit_harian' => 'required|integer|min:1|max:15',
             'limit_jumat'  => 'required|integer|min:0|max:10',
-            'wali_guru_id' => 'nullable|exists:gurus,id' // Validasi wali kelas
+            'wali_guru_id' => 'nullable|exists:gurus,id'
         ]);
 
         $kelas = Kelas::findOrFail($id);
@@ -76,7 +76,8 @@ class KelasController extends Controller
         return redirect()->route('kelas.index')->with('success', 'Kelas berhasil dihapus.');
     }
 
-    // (BAGIAN BAWAH DIBIARKAN TETAP SAMA KARENA HANYA MENGURUS JADWAL/PLOTTING)
+    // --- BAGIAN MANAJEMEN PLOTTING JADWAL (AJAX) ---
+
     public function simpanJadwal(Request $request, $id)
     {
         try {
@@ -86,11 +87,14 @@ class KelasController extends Controller
                 'guru_id'    => 'required|exists:gurus,id',
                 'jumlah_jam' => 'required|numeric|min:1',
                 'tipe_jam'   => 'required|in:single,double,triple',
+                'status'     => 'required|in:offline,online', // <--- Validasi Status Ditambahkan
             ]);
 
             $kelas = Kelas::with('jadwals')->findOrFail($id);
             $currentTotal = $kelas->jadwals->sum('jumlah_jam');
-            $maxJam = $kelas->max_jam ?? 50; 
+            
+            // Ambil limit langsung dari database (jangan hardcode)
+            $maxJam = $kelas->max_jam; 
             
             if (($currentTotal + $request->jumlah_jam) > $maxJam) {
                 return response()->json([
@@ -100,13 +104,16 @@ class KelasController extends Controller
             }
 
             $jadwal = new Jadwal();
-            $jadwal->kelas_id = $id;
-            $jadwal->mapel_id = $request->mapel_id;
-            $jadwal->guru_id = $request->guru_id;
+            $jadwal->kelas_id   = $id;
+            $jadwal->mapel_id   = $request->mapel_id;
+            $jadwal->guru_id    = $request->guru_id;
             $jadwal->jumlah_jam = $request->jumlah_jam;
-            $jadwal->tipe_jam = $request->tipe_jam;
-            $jadwal->hari = null; 
-            $jadwal->jam = null; 
+            $jadwal->tipe_jam   = $request->tipe_jam;
+            $jadwal->status     = $request->status; // <--- Simpan status (online/offline)
+            
+            // Kolom hari dan jam dikosongkan karena AI Solver yang akan isi nanti
+            $jadwal->hari       = null; 
+            $jadwal->jam        = null; 
             $jadwal->save();
 
             $jadwal->load(['mapel', 'guru']);
@@ -114,7 +121,7 @@ class KelasController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Berhasil Disimpan!',
-                'jadwal' => $jadwal
+                'jadwal'  => $jadwal
             ]);
 
         } catch (\Throwable $e) {
@@ -133,11 +140,12 @@ class KelasController extends Controller
                 'guru_id'    => 'required|exists:gurus,id',
                 'jumlah_jam' => 'required|numeric|min:1',
                 'tipe_jam'   => 'required|in:single,double,triple',
+                'status'     => 'required|in:offline,online', // <--- Validasi Status Ditambahkan
             ]);
 
             $kelas = Kelas::with('jadwals')->findOrFail($jadwal->kelas_id);
             $currentTotalOthers = $kelas->jadwals->where('id', '!=', $id)->sum('jumlah_jam');
-            $maxJam = $kelas->max_jam ?? 50;
+            $maxJam = $kelas->max_jam;
             $newTotal = $currentTotalOthers + $request->jumlah_jam;
 
             if ($newTotal > $maxJam) {
@@ -148,10 +156,11 @@ class KelasController extends Controller
                 ], 422);
             }
 
-            $jadwal->mapel_id = $request->mapel_id;
-            $jadwal->guru_id = $request->guru_id;
+            $jadwal->mapel_id   = $request->mapel_id;
+            $jadwal->guru_id    = $request->guru_id;
             $jadwal->jumlah_jam = $request->jumlah_jam;
-            $jadwal->tipe_jam = $request->tipe_jam;
+            $jadwal->tipe_jam   = $request->tipe_jam;
+            $jadwal->status     = $request->status; // <--- Update status (online/offline)
             $jadwal->save();
 
             $jadwal->load(['mapel', 'guru']);
@@ -159,7 +168,7 @@ class KelasController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Berhasil Diupdate!',
-                'jadwal' => $jadwal
+                'jadwal'  => $jadwal
             ]);
 
         } catch (\Throwable $e) {

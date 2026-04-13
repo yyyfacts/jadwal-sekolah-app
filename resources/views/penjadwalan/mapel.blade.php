@@ -353,7 +353,8 @@
                     </div>
                     <div class="flex-1 overflow-y-auto custom-scrollbar p-0 relative bg-white">
                         <table class="w-full text-xs border-collapse">
-                            <thead class="bg-slate-50 text-slate-500 font-bold uppercase sticky top-0 z-10 shadow-sm">
+                            <thead class="bg-slate-50 text-slate-500
+                            font-bold uppercase sticky top-0 z-10 shadow-sm">
                                 <tr>
                                     <th class="px-4 py-3 text-left border-b border-slate-100 w-[20%]">Kelas</th>
                                     <th class="px-4 py-3 text-left border-b border-slate-100 w-[40%]">Guru Pengampu</th>
@@ -372,10 +373,8 @@
                                     <td class="px-4 py-3 text-center align-middle">
                                         <div class="flex flex-col items-center">
                                             <span
-                                                class="bg-white text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-blue-100 shadow-sm">{{ $jadwal->jumlah_jam }}
-                                                JP</span>
-
-                                            {{-- BADGE ONLINE / OFFLINE DI TABEL KIRI --}}
+                                                class="bg-white text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-blue-100 shadow-sm"
+                                                data-jam="{{ $jadwal->jumlah_jam }}">{{ $jadwal->jumlah_jam }} JP</span>
                                             @if($jadwal->status == 'online')
                                             <span
                                                 class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">ONLINE</span>
@@ -383,6 +382,8 @@
                                             <span
                                                 class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">OFFLINE</span>
                                             @endif
+                                            <span
+                                                class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">{{ $jadwal->tipe_jam }}</span>
                                         </div>
                                     </td>
                                     <td class="px-4 py-3 text-right align-middle">
@@ -426,6 +427,7 @@
                     </div>
                 </div>
 
+                {{-- Kanan: Form Input Plotting --}}
                 <div
                     class="w-full lg:w-[380px] bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-200 flex flex-col h-[40vh] lg:h-full">
                     <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
@@ -444,6 +446,8 @@
                                 method="POST" onsubmit="handleFormJadwal(event, this, {{ $m->id }})">
                                 <div id="method-spoof-{{ $m->id }}"></div>
                                 <div class="space-y-5">
+
+                                    {{-- Kelas --}}
                                     <div class="relative custom-select-wrapper" id="wrapper-kelas-{{ $m->id }}">
                                         <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Kelas
                                             Tujuan</label>
@@ -477,6 +481,8 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    {{-- Guru --}}
                                     <div class="relative custom-select-wrapper" id="wrapper-guru-{{ $m->id }}">
                                         <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Guru
                                             Pengampu</label>
@@ -509,6 +515,8 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    {{-- Jam & Tipe --}}
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             <label
@@ -544,7 +552,7 @@
                                         </div>
                                     </div>
 
-                                    {{-- TAMBAHAN: SELECT OFFLINE / ONLINE DI DALAM FORM POPUP --}}
+                                    {{-- Status Online/Offline --}}
                                     <div>
                                         <label
                                             class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Pelaksanaan
@@ -722,7 +730,6 @@ function editJadwalInline(mapelId, jadwalId, kelasId, guruId, jam, tipe, status)
     document.getElementById(`input-jam-${mapelId}`).value = jam;
     document.getElementById(`select-tipe-${mapelId}`).value = tipe;
 
-    // Set Status (Offline/Online)
     const selectStatus = document.getElementById(`select-status-${mapelId}`);
     if (selectStatus) selectStatus.value = status;
 
@@ -792,7 +799,6 @@ function updateTableUI(mapelId, jadwal, isEdit) {
     const namaKelas = jadwal.kelas?.nama_kelas || '-';
     const namaGuru = jadwal.guru?.nama_guru || '-';
 
-    // Pembuatan HTML Badge
     const badgeHTML = jadwal.status === 'online' ?
         '<span class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">ONLINE</span>' :
         '<span class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">OFFLINE</span>';
@@ -802,10 +808,13 @@ function updateTableUI(mapelId, jadwal, isEdit) {
         if (row) {
             row.querySelector('.kelas-text').innerText = namaKelas;
             row.querySelector('.guru-text').innerText = namaGuru;
-            row.querySelector('.jam-text').innerText = jadwal.jumlah_jam + ' JP';
+
+            const jamSpan = row.querySelector('.jam-text');
+            jamSpan.innerText = jadwal.jumlah_jam + ' JP';
+            jamSpan.setAttribute('data-jam', jadwal.jumlah_jam);
+
             row.querySelector('.tipe-text').innerText = jadwal.tipe_jam;
 
-            // Update Badge
             const oldBadge = row.querySelector('.status-badge');
             if (oldBadge) oldBadge.outerHTML = badgeHTML;
 
@@ -826,8 +835,9 @@ function updateTableUI(mapelId, jadwal, isEdit) {
                 <td class="px-4 py-3 text-slate-600 align-middle guru-text">${namaGuru}</td>
                 <td class="px-4 py-3 text-center align-middle">
                     <div class="flex flex-col items-center">
-                        <span class="bg-white text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-blue-100 shadow-sm">${jadwal.jumlah_jam} JP</span>
+                        <span class="bg-white text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-blue-100 shadow-sm" data-jam="${jadwal.jumlah_jam}">${jadwal.jumlah_jam} JP</span>
                         ${badgeHTML}
+                        <span class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">${jadwal.tipe_jam}</span>
                     </div>
                 </td>
                 <td class="px-4 py-3 text-right align-middle">
@@ -872,9 +882,6 @@ async function hapusJadwal(id, btn) {
     }
 }
 
-// ===============================
-// TOGGLE MODE ONLINE / OFFLINE
-// ===============================
 async function toggleMode(id, currentMode, btn) {
     const newMode = currentMode === 'online' ? 'offline' : 'online';
     const oldText = btn.innerHTML;
