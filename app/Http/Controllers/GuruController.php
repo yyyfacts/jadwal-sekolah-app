@@ -7,7 +7,6 @@ use App\Models\Kelas;
 use App\Models\Mapel;
 use App\Models\Jadwal;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class GuruController extends Controller
 {
@@ -24,9 +23,9 @@ class GuruController extends Controller
         }
 
         $mapels = Mapel::orderBy('nama_mapel')->get();
-        $kelass = Kelas::orderBy('nama_kelas')->get();
+        $kelases = Kelas::orderBy('nama_kelas')->get();
 
-        return view('penjadwalan.guru', compact('gurus', 'mapels', 'kelass'));
+        return view('penjadwalan.guru', compact('gurus', 'mapels', 'kelases'));
     }
 
     // --- CRUD GURU ---
@@ -79,6 +78,7 @@ class GuruController extends Controller
                 'kelas_id'   => 'required|exists:kelas,id',
                 'jumlah_jam' => 'required|numeric|min:1',
                 'tipe_jam'   => 'required|in:single,double,triple',
+                'status'     => 'required|in:offline,online', // VALIDASI STATUS
             ]);
 
             $jadwal = new Jadwal();
@@ -87,6 +87,7 @@ class GuruController extends Controller
             $jadwal->kelas_id = $request->kelas_id;
             $jadwal->jumlah_jam = $request->jumlah_jam;
             $jadwal->tipe_jam = $request->tipe_jam;
+            $jadwal->status = $request->status; // SIMPAN STATUS
             $jadwal->save();
 
             $jadwal->load(['mapel', 'kelas']);
@@ -106,13 +107,15 @@ class GuruController extends Controller
                 'kelas_id'   => 'required|exists:kelas,id',
                 'jumlah_jam' => 'required|numeric|min:1',
                 'tipe_jam'   => 'required|in:single,double,triple',
+                'status'     => 'required|in:offline,online', // VALIDASI STATUS
             ]);
 
             $jadwal->update([
                 'mapel_id' => $request->mapel_id,
                 'kelas_id' => $request->kelas_id,
                 'jumlah_jam' => $request->jumlah_jam,
-                'tipe_jam' => $request->tipe_jam
+                'tipe_jam' => $request->tipe_jam,
+                'status' => $request->status, // UPDATE STATUS
             ]);
 
             $jadwal->load(['mapel', 'kelas']);
