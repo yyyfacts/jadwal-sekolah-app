@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+
+// Controllers
 use App\Http\Controllers\GuruController;
 use App\Http\Controllers\MapelController;
 use App\Http\Controllers\KelasController;
@@ -12,7 +14,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TahunPelajaranController; 
-// Tambahan Import Controller Baru
 use App\Http\Controllers\MasterHariController;
 use App\Http\Controllers\MasterWaktuController;
 
@@ -33,9 +34,8 @@ Route::get('/tembak-db', function () {
     }
 });
 
-// Perbaikan rute ini agar menggunakan USERNAME bukan EMAIL
 Route::get('/fix-zain', function () {
-    $username = 'zain'; // Ganti email jadi username
+    $username = 'zain'; 
     $password_baru = 'zain1234';
     try {
         $user = User::where('username', $username)->first();
@@ -75,6 +75,7 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+
 
 // ==================================================================
 // 3. PROTECTED ROUTES (LOGIN REQUIRED)
@@ -141,12 +142,14 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', [MapelController::class, 'store'])->name('store');
         Route::put('/{id}', [MapelController::class, 'update'])->name('update');
         Route::delete('/{id}', [MapelController::class, 'destroy'])->name('destroy');
-           Route::post('/{id}/mode', [MapelController::class, 'updateMode'])->name('updateMode');
+        
+        // Fitur Ganti Mode (Online/Offline)
+        Route::post('/{id}/mode', [MapelController::class, 'updateMode'])->name('updateMode');
+        
         // Rute Jadwal Mapel
         Route::post('/{id}/jadwal', [MapelController::class, 'simpanJadwal'])->name('simpanJadwal');
         Route::put('/jadwal/{id}', [MapelController::class, 'updateJadwal'])->name('updateJadwal');
         Route::delete('/jadwal/{id}', [MapelController::class, 'hapusJadwal'])->name('hapusJadwal');
-     
     });
 
     // --------------------------------------------------------------

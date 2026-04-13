@@ -27,7 +27,7 @@
     </div>
     @endif
 
-    {{-- UNIFIED CARD (Sesuai Gambar Referensi) --}}
+    {{-- UNIFIED CARD --}}
     <div
         class="bg-white rounded-[2rem] border border-slate-100 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] flex flex-col flex-1 overflow-hidden">
 
@@ -83,7 +83,7 @@
             </div>
         </div>
 
-        {{-- 2. TABLE SECTION (SCROLLABLE AREA) --}}
+        {{-- 2. TABLE SECTION --}}
         <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white px-2">
             <table class="w-full text-left border-collapse min-w-[800px]">
                 <thead class="bg-white sticky top-0 z-10">
@@ -107,27 +107,18 @@
                     @forelse($kelass as $index => $k)
                     @php
                     $totalJam = $k->jadwals->sum('jumlah_jam');
-                    $maxJam = $k->max_jam ?? 48; // Di gambar tertulis 48 JP
+                    $maxJam = $k->max_jam ?? 48;
                     $percentage = $maxJam > 0 ? ($totalJam / $maxJam) * 100 : 0;
-
-                    // Di gambar garis bar berwarna hijau (emerald)
-                    $barColor = 'bg-[#34d399]';
-                    if($totalJam > $maxJam) {
-                    $barColor = 'bg-rose-500';
-                    }
+                    $barColor = $totalJam > $maxJam ? 'bg-rose-500' : 'bg-[#34d399]';
                     @endphp
                     <tr class="group hover:bg-slate-50/50 transition-colors duration-200"
                         data-filter="{{ strtolower($k->nama_kelas) }} {{ strtolower($k->kode_kelas) }}">
 
-                        {{-- NOMOR --}}
-                        <td class="px-8 py-5 text-left">
-                            <span class="font-medium text-slate-500 text-sm">{{ $index + 1 }}</span>
-                        </td>
+                        <td class="px-8 py-5 text-left"><span
+                                class="font-medium text-slate-500 text-sm">{{ $index + 1 }}</span></td>
 
-                        {{-- IDENTITAS KELAS --}}
                         <td class="px-6 py-5">
                             <div class="flex items-center gap-4">
-                                {{-- Icon/Avatar Kotak Melingkar (Lilac) --}}
                                 <div
                                     class="h-12 w-12 shrink-0 rounded-2xl bg-[#f3e8ff] text-[#9333ea] flex items-center justify-center font-bold text-sm shadow-sm border border-[#e9d5ff]">
                                     {{ substr($k->nama_kelas, 0, 2) }}
@@ -135,22 +126,29 @@
                                 <div>
                                     <div
                                         class="font-bold text-slate-800 text-[15px] group-hover:text-purple-600 transition-colors">
-                                        {{ $k->nama_kelas }}
-                                    </div>
+                                        {{ $k->nama_kelas }}</div>
                                     <div
                                         class="inline-block px-2 py-0.5 mt-1 rounded bg-slate-100 border border-slate-200 text-slate-500 font-bold text-[10px] tracking-wide uppercase">
-                                        {{ $k->kode_kelas }}
+                                        {{ $k->kode_kelas }}</div>
+                                    @if($k->waliKelas)
+                                    <div class="text-[10px] font-semibold text-slate-400 mt-1 flex items-center gap-1">
+                                        <svg class="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
+                                            </path>
+                                        </svg>
+                                        Wali: <span class="text-slate-600">{{ $k->waliKelas->nama_guru }}</span>
                                     </div>
+                                    @endif
                                 </div>
                             </div>
                         </td>
 
-                        {{-- BEBAN & KAPASITAS (Angka + Garis Bawah Hijau) --}}
                         <td class="px-6 py-5 text-center align-middle">
                             <div class="flex flex-col items-center gap-1.5">
-                                <span class="text-[12px] font-bold text-emerald-600">
-                                    {{ $totalJam }} / {{ $maxJam }} JP
-                                </span>
+                                <span class="text-[12px] font-bold text-emerald-600">{{ $totalJam }} / {{ $maxJam }}
+                                    JP</span>
                                 <div class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                     <div class="h-full {{ $barColor }} rounded-full transition-all duration-500"
                                         style="width: {{ min($percentage, 100) }}%"></div>
@@ -158,20 +156,15 @@
                             </div>
                         </td>
 
-                        {{-- AKSI & PLOTTING --}}
                         <td class="px-6 py-5 text-right pr-12">
                             <div class="flex items-center justify-end gap-2.5">
-                                {{-- Tombol Plotting Gelap --}}
                                 <button onclick="openModal('modaljadwal{{ $k->id }}')"
                                     class="flex items-center gap-1.5 px-4 py-2 bg-[#1e293b] hover:bg-slate-800 text-white text-xs font-semibold rounded-lg shadow-sm transition-all hover:-translate-y-0.5">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 4v16m8-8H4"></path>
-                                    </svg>
-                                    Plotting
+                                    </svg> Plotting
                                 </button>
-
-                                {{-- Tombol Edit Lingkaran Outline --}}
                                 <button onclick="openModal('edit{{ $k->id }}')"
                                     class="h-8 w-8 flex items-center justify-center text-slate-400 bg-white border-2 border-slate-200 hover:border-slate-400 hover:text-slate-600 rounded-full transition"
                                     title="Edit">
@@ -181,8 +174,6 @@
                                         </path>
                                     </svg>
                                 </button>
-
-                                {{-- Tombol Hapus Lingkaran Outline Lilac/Pink --}}
                                 <form action="{{ route('kelas.destroy', $k->id) }}" method="POST"
                                     onsubmit="return confirm('Hapus kelas {{ $k->nama_kelas }}?')" class="inline">
                                     @csrf @method('DELETE')
@@ -215,7 +206,6 @@
                     </tr>
                     @endforelse
 
-                    {{-- Row Not Found --}}
                     <tr id="search-no-result" class="hidden">
                         <td colspan="4" class="px-6 py-12 text-center text-slate-500">
                             <div class="flex flex-col items-center">
@@ -232,22 +222,19 @@
             </table>
         </div>
 
-        {{-- 3. FOOTER SECTION CARD --}}
         <div class="bg-white border-t border-slate-100 px-8 py-4 flex justify-between items-center shrink-0">
             <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Sistem Penjadwalan</span>
-            <span class="text-[11px] font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
-                Secure Data
-            </span>
+            <span class="text-[11px] font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">Secure
+                Data</span>
         </div>
     </div>
 
-    {{-- COPYRIGHT TEXT DI LUAR CARD --}}
     <div class="text-center mt-6 text-slate-500 text-[11px] font-medium tracking-wide">
         &copy; 2026 SMAN 1 SAMPANG. Sistem Penjadwalan Terintegrasi.
     </div>
 
     {{-- ========================================================= --}}
-    {{-- MODALS AREA (Logika tetap sama persis) --}}
+    {{-- MODALS AREA --}}
     {{-- ========================================================= --}}
 
     {{-- 1. Modal Tambah Kelas --}}
@@ -256,10 +243,8 @@
         <div
             class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-scale-in border border-white/20">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-slate-800 flex items-center gap-2">
-                    <span class="w-1.5 h-5 bg-purple-600 rounded-full"></span>
-                    Tambah Kelas
-                </h3>
+                <h3 class="font-bold text-slate-800 flex items-center gap-2"><span
+                        class="w-1.5 h-5 bg-purple-600 rounded-full"></span> Tambah Kelas</h3>
                 <button onclick="closeModal('modaltambah')"
                     class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
             </div>
@@ -271,6 +256,43 @@
                         class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-purple-500 outline-none text-sm transition"
                         placeholder="Contoh: X IPA 1" required>
                 </div>
+
+                {{-- INPUT WALI KELAS (CUSTOM DROPDOWN) --}}
+                <div class="relative custom-select-wrapper" id="wrapper-walitambah">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Wali Kelas (Opsional)</label>
+                    <input type="hidden" name="wali_guru_id" id="real-input-walitambah">
+                    <button type="button" onclick="toggleCustomDropdown('walitambah', '')"
+                        class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-left text-sm flex justify-between items-center hover:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all">
+                        <span id="display-walitambah" class="text-slate-500 font-medium">Pilih Wali Kelas...</span>
+                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
+                        </svg>
+                    </button>
+                    <div id="dropdown-walitambah-"
+                        class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-xl mt-1 max-h-56 overflow-y-auto animate-scale-in">
+                        <div class="sticky top-0 bg-white p-2 border-b border-slate-100">
+                            <input type="text" placeholder="Cari guru..."
+                                onkeyup="filterCustomDropdown('walitambah', '', this)"
+                                class="w-full p-2 text-xs border border-slate-200 rounded-lg bg-slate-50 focus:border-purple-500 outline-none">
+                        </div>
+                        <div id="list-walitambah-" class="p-1">
+                            <div class="option-item p-2 hover:bg-rose-50 rounded-lg cursor-pointer text-sm text-rose-600 border-b border-slate-50 transition-colors"
+                                data-value="" data-label="Kosongkan Wali Kelas"
+                                onclick="selectCustomOption('walitambah', '', '', 'Kosongkan Wali Kelas')">
+                                <div class="font-bold">❌ Kosongkan Wali Kelas</div>
+                            </div>
+                            @foreach($gurus as $g)
+                            <div class="option-item p-2 hover:bg-purple-50 rounded-lg cursor-pointer text-sm border-b border-slate-50 transition-colors"
+                                data-value="{{ $g->id }}" data-label="{{ $g->nama_guru }}"
+                                onclick="selectCustomOption('walitambah', '', '{{ $g->id }}', '{{ $g->nama_guru }}')">
+                                <div class="font-bold text-slate-700">{{ $g->nama_guru }}</div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kode Kelas</label>
@@ -310,15 +332,13 @@
     </div>
 
     @foreach($kelass as $k)
-    {{-- 2. Modal Edit --}}
+    {{-- 2. Modal Edit Kelas --}}
     <div id="edit{{ $k->id }}"
         class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
             <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
-                <h3 class="font-bold text-amber-800 flex items-center gap-2">
-                    <span class="w-1.5 h-5 bg-amber-500 rounded-full"></span>
-                    Edit Data Kelas
-                </h3>
+                <h3 class="font-bold text-amber-800 flex items-center gap-2"><span
+                        class="w-1.5 h-5 bg-amber-500 rounded-full"></span> Edit Data Kelas</h3>
                 <button onclick="closeModal('edit{{ $k->id }}')"
                     class="text-amber-400 hover:text-amber-600 text-2xl leading-none">&times;</button>
             </div>
@@ -330,6 +350,47 @@
                         class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition"
                         required>
                 </div>
+
+                {{-- EDIT WALI KELAS (CUSTOM DROPDOWN) --}}
+                <div class="relative custom-select-wrapper" id="wrapper-waliedit-{{ $k->id }}">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Wali Kelas</label>
+                    <input type="hidden" name="wali_guru_id" id="real-input-waliedit-{{ $k->id }}"
+                        value="{{ $k->wali_guru_id }}">
+                    <button type="button" onclick="toggleCustomDropdown('waliedit', {{ $k->id }})"
+                        class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-left text-sm flex justify-between items-center hover:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all">
+                        <span id="display-waliedit-{{ $k->id }}"
+                            class="{{ $k->wali_guru_id ? 'text-slate-800' : 'text-slate-500' }} font-medium">
+                            {{ $k->wali_guru_id ? $k->waliKelas->nama_guru : 'Pilih Wali Kelas...' }}
+                        </span>
+                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
+                        </svg>
+                    </button>
+                    <div id="dropdown-waliedit-{{ $k->id }}"
+                        class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-xl mt-1 max-h-56 overflow-y-auto animate-scale-in">
+                        <div class="sticky top-0 bg-white p-2 border-b border-slate-100">
+                            <input type="text" placeholder="Cari guru..."
+                                onkeyup="filterCustomDropdown('waliedit', {{ $k->id }}, this)"
+                                class="w-full p-2 text-xs border border-slate-200 rounded-lg bg-slate-50 focus:border-amber-500 outline-none">
+                        </div>
+                        <div id="list-waliedit-{{ $k->id }}" class="p-1">
+                            <div class="option-item p-2 hover:bg-rose-50 rounded-lg cursor-pointer text-sm text-rose-600 border-b border-slate-50 transition-colors"
+                                data-value="" data-label="Kosongkan Wali Kelas"
+                                onclick="selectCustomOption('waliedit', {{ $k->id }}, '', 'Kosongkan Wali Kelas')">
+                                <div class="font-bold">❌ Kosongkan Wali Kelas</div>
+                            </div>
+                            @foreach($gurus as $g)
+                            <div class="option-item p-2 hover:bg-amber-50 rounded-lg cursor-pointer text-sm border-b border-slate-50 transition-colors"
+                                data-value="{{ $g->id }}" data-label="{{ $g->nama_guru }}"
+                                onclick="selectCustomOption('waliedit', {{ $k->id }}, '{{ $g->id }}', '{{ $g->nama_guru }}')">
+                                <div class="font-bold text-slate-700">{{ $g->nama_guru }}</div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kode</label>
@@ -373,7 +434,6 @@
         class="fixed inset-0 bg-slate-900/80 z-[99] hidden flex items-center justify-center p-2 sm:p-4 transition-opacity duration-300">
         <div
             class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-200 overflow-hidden animate-scale-in">
-            {{-- Header Modal --}}
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                 <div class="flex items-center gap-3">
                     <div class="p-2 bg-purple-600 text-white rounded-lg shadow-sm">
@@ -393,9 +453,7 @@
                     class="text-slate-400 hover:text-red-500 text-3xl leading-none transition-colors">&times;</button>
             </div>
 
-            {{-- Body Modal --}}
             <div class="flex flex-col lg:flex-row h-full overflow-hidden">
-                {{-- Kiri: Area Tabel --}}
                 <div class="flex-1 flex flex-col h-full border-r border-slate-100 bg-white relative min-w-0">
                     <div class="p-4 border-b border-slate-100 bg-white z-20 shrink-0">
                         <div class="relative group">
@@ -480,7 +538,6 @@
                     </div>
                 </div>
 
-                {{-- Kanan: Form Input --}}
                 <div
                     class="w-full lg:w-[380px] bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-200 flex flex-col h-[40vh] lg:h-full">
                     <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
@@ -616,9 +673,7 @@
 
 @push('scripts')
 <script>
-// ==========================================================
 // 1. SEARCH LOGIC
-// ==========================================================
 function searchMainTable() {
     const input = document.getElementById('search-kelas-main').value.toLowerCase();
     const rows = document.querySelectorAll('#tbody-kelas-main tr[data-filter]');
@@ -636,17 +691,12 @@ function searchMainTable() {
     });
 
     if (noResultRow) {
-        if (!hasResult && input.length > 0) {
-            noResultRow.classList.remove('hidden');
-        } else {
-            noResultRow.classList.add('hidden');
-        }
+        if (!hasResult && input.length > 0) noResultRow.classList.remove('hidden');
+        else noResultRow.classList.add('hidden');
     }
 }
 
-// ==========================================================
 // 2. MODAL & DROPDOWN UTILS
-// ==========================================================
 const csrfNode = document.querySelector('meta[name="csrf-token"]');
 const CSRF_TOKEN = csrfNode ? csrfNode.content : '';
 
@@ -663,10 +713,7 @@ function closeModal(modalID) {
     if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
-        if (modalID.includes('modaljadwal')) {
-            const id = modalID.replace('modaljadwal', '');
-            resetFormJadwal(id);
-        }
+        if (modalID.includes('modaljadwal')) resetFormJadwal(modalID.replace('modaljadwal', ''));
     }
 }
 
@@ -684,7 +731,6 @@ window.onclick = function(event) {
 function searchTable(kelasId) {
     const filter = document.getElementById('search-' + kelasId).value.toLowerCase();
     const rows = document.getElementById('tbody-kelas-' + kelasId).getElementsByTagName('tr');
-
     for (let row of rows) {
         const text = row.innerText.toLowerCase();
         row.style.display = text.includes(filter) ? "" : "none";
@@ -692,8 +738,12 @@ function searchTable(kelasId) {
 }
 
 function toggleCustomDropdown(type, kelasId) {
-    const wrapper = document.getElementById(`wrapper-${type}-${kelasId}`);
-    const dropdown = document.getElementById(`dropdown-${type}-${kelasId}`);
+    const suffix = kelasId !== '' ? `-${kelasId}` : '';
+    const wrapperId = type === 'walitambah' ? `wrapper-walitambah` : `wrapper-${type}${suffix}`;
+    const dropdownId = type === 'walitambah' ? `dropdown-walitambah-` : `dropdown-${type}${suffix}`;
+
+    const wrapper = document.getElementById(wrapperId);
+    const dropdown = document.getElementById(dropdownId);
 
     document.querySelectorAll('.custom-select-wrapper').forEach(el => {
         if (el !== wrapper) {
@@ -714,45 +764,60 @@ function toggleCustomDropdown(type, kelasId) {
 
 function filterCustomDropdown(type, kelasId, input) {
     const filter = input.value.toLowerCase();
-    const items = document.getElementById(`list-${type}-${kelasId}`).children;
+    const listId = type === 'walitambah' ? `list-walitambah-` : `list-${type}${kelasId !== '' ? '-' + kelasId : ''}`;
+    const items = document.getElementById(listId).children;
     for (let item of items) {
+        if (item.classList.contains('sticky')) continue;
         const label = item.getAttribute('data-label') || '';
         item.style.display = label.toLowerCase().includes(filter) ? "" : "none";
     }
 }
 
 function selectCustomOption(type, kelasId, value, label) {
-    document.getElementById(`real-input-${type}-${kelasId}`).value = value;
-    const display = document.getElementById(`display-${type}-${kelasId}`);
+    const suffix = kelasId !== '' ? `-${kelasId}` : '';
+    const inputId = type === 'walitambah' ? `real-input-walitambah` : `real-input-${type}${suffix}`;
+    const displayId = type === 'walitambah' ? `display-walitambah` : `display-${type}${suffix}`;
+    const dropdownId = type === 'walitambah' ? `dropdown-walitambah-` : `dropdown-${type}${suffix}`;
+    const wrapperId = type === 'walitambah' ? `wrapper-walitambah` : `wrapper-${type}${suffix}`;
+
+    document.getElementById(inputId).value = value;
+    const display = document.getElementById(displayId);
     display.innerText = label;
     display.classList.remove('text-slate-500');
     display.classList.add('text-slate-800');
 
-    document.getElementById(`dropdown-${type}-${kelasId}`).classList.add('hidden');
-    document.getElementById(`wrapper-${type}-${kelasId}`).style.zIndex = "0";
+    document.getElementById(dropdownId).classList.add('hidden');
+    document.getElementById(wrapperId).style.zIndex = "0";
 }
 
 function setCustomDropdownValue(type, kelasId, value) {
-    const list = document.getElementById(`list-${type}-${kelasId}`);
+    const listId = type === 'walitambah' ? `list-walitambah-` : `list-${type}-${kelasId}`;
+    const list = document.getElementById(listId);
     if (!list) return;
     const option = list.querySelector(`.option-item[data-value="${value}"]`);
     if (option) selectCustomOption(type, kelasId, value, option.getAttribute('data-label'));
 }
 
 function resetCustomDropdown(type, kelasId) {
-    const input = document.getElementById(`real-input-${type}-${kelasId}`);
+    const suffix = kelasId !== '' ? `-${kelasId}` : '';
+    const inputId = type === 'walitambah' ? `real-input-walitambah` : `real-input-${type}${suffix}`;
+    const displayId = type === 'walitambah' ? `display-walitambah` : `display-${type}${suffix}`;
+
+    const input = document.getElementById(inputId);
     if (input) input.value = '';
-    const display = document.getElementById(`display-${type}-${kelasId}`);
+    const display = document.getElementById(displayId);
     if (display) {
-        display.innerText = type === 'mapel' ? 'Pilih Mapel...' : 'Pilih Guru...';
+        if (type.includes('wali')) {
+            display.innerText = 'Pilih Wali Kelas...';
+        } else {
+            display.innerText = type === 'mapel' ? 'Pilih Mapel...' : 'Pilih Guru...';
+        }
         display.classList.add('text-slate-500');
         display.classList.remove('text-slate-800');
     }
 }
 
-// ==========================================================
-// 5. AJAX (EDIT & DELETE)
-// ==========================================================
+// 5. AJAX (EDIT & DELETE PLOTTING)
 function editJadwalInline(kelasId, jadwalId, mapelId, guruId, jam, tipe) {
     const container = document.getElementById(`form-container-${kelasId}`);
     const title = document.getElementById(`form-title-${kelasId}`);
@@ -840,7 +905,6 @@ async function handleFormJadwal(e, form, kelasId) {
         }
     } catch (err) {
         alert("Terjadi kesalahan sistem.");
-        console.error(err);
     } finally {
         btn.disabled = false;
         btn.innerHTML = oldText;

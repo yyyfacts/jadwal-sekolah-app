@@ -11,6 +11,7 @@ class Jadwal extends Model
 
     protected $table = 'jadwals';
 
+    // Pastikan 'status' ada di dalam fillable
     protected $fillable = [
         'guru_id',
         'mapel_id',
@@ -19,27 +20,24 @@ class Jadwal extends Model
         'tipe_jam',
         'hari',
         'jam',
+        'status', 
     ];
 
-    // Relasi ke guru
     public function guru()
     {
         return $this->belongsTo(Guru::class);
     }
 
-    // Relasi ke mapel
     public function mapel()
     {
         return $this->belongsTo(Mapel::class);
     }
 
-    // Relasi ke kelas
     public function kelas()
     {
         return $this->belongsTo(Kelas::class);
     }
 
-    // Accessor untuk tampilan
     public function getNamaGuruAttribute()
     {
         return $this->guru->nama_guru ?? '-';
@@ -53,14 +51,5 @@ class Jadwal extends Model
     public function getNamaKelasAttribute()
     {
         return $this->kelas->nama_kelas ?? '-';
-    }
-
-    public function getLamanyaAttribute()
-    {
-        if ($this->tipe_jam === 'double')
-            return 2;
-        if ($this->tipe_jam === 'triple')
-            return 3;
-        return 1;
     }
 }

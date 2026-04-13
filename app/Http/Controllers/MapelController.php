@@ -11,11 +11,9 @@ use Illuminate\Support\Facades\DB;
 
 class MapelController extends Controller
 {
-    // --- UTILITIES ---
     private function getKapasitasKelas($nama_kelas)
     {
         $nama = strtoupper(str_replace(['-', '  '], [' ', ' '], $nama_kelas));
-        // Logika kapasitas (sama seperti sebelumnya)
         if (str_contains($nama, 'XI') && !str_contains($nama, 'XII')) {
             if (str_contains($nama, 'F 4') || str_contains($nama, 'F4') || str_contains($nama, 'IV') ||
                 str_contains($nama, 'F 5') || str_contains($nama, 'F5') || str_contains($nama, ' V')) {
@@ -44,8 +42,6 @@ class MapelController extends Controller
 
         return view('penjadwalan.mapel', compact('mapels', 'kelases', 'gurus'));
     }
-
-    // --- CRUD MAPEL ---
 
     public function store(Request $request)
     {
@@ -76,8 +72,35 @@ class MapelController extends Controller
         return redirect()->route('mapel.index')->with('success', 'Mapel dihapus.');
     }
 
-    // --- DISTRIBUSI (AJAX) ---
+    // ================================
+    // UPDATE MODE (ONLINE / OFFLINE)
+    // ================================
+    public function updateMode(Request $request, $id)
+    {
+        try {
+            $mapel = Mapel::findOrFail($id);
+            $request->validate([
+                'mode' => 'required|in:offline,online'
+            ]);
 
+            $mapel->mode = $request->mode;
+            $mapel->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Mode berhasil diubah',
+                'mode' => $mapel->mode
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // --- DISTRIBUSI (AJAX) ---
     public function simpanJadwal(Request $request, $id)
     {
         try {
@@ -158,34 +181,7 @@ class MapelController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
-// ================================
-// UPDATE MODE (ONLINE / OFFLINE)
-// ================================
-public function updateMode(Request $request, $id)
-{
-    try {
-        $mapel = Mapel::findOrFail($id);
 
-        $request->validate([
-            'mode' => 'required|in:offline,online'
-        ]);
-
-        $mapel->mode = $request->mode;
-        $mapel->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Mode berhasil diubah',
-            'mode' => $mapel->mode
-        ]);
-
-    } catch (\Throwable $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage()
-        ], 500);
-    }
-}
     public function hapusJadwal($id)
     {
         try {

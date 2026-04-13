@@ -9,15 +9,15 @@ class Kelas extends Model
 {
     use HasFactory;
 
-    protected $table = 'kelas'; // Pastikan nama tabel benar (biasanya plural 'kelas' atau 'classes')
+    protected $table = 'kelas';
 
-    // TAMBAHKAN 'limit_harian' DAN 'limit_jumat' DI SINI
     protected $fillable = [
         'nama_kelas', 
         'kode_kelas', 
         'max_jam',
-        'limit_harian', // <--- Wajib ada
-        'limit_jumat'   // <--- Wajib ada
+        'limit_harian', 
+        'limit_jumat',
+        'wali_guru_id' // <--- Tambahan untuk wali kelas
     ];
 
     public function jadwals()
@@ -25,5 +25,9 @@ class Kelas extends Model
         return $this->hasMany(Jadwal::class, 'kelas_id');
     }
 
-
+    // Relasi ke Wali Kelas
+    public function waliKelas()
+    {
+        return $this->belongsTo(Guru::class, 'wali_guru_id');
+    }
 }

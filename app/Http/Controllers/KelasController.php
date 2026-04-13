@@ -12,9 +12,6 @@ use Illuminate\Database\Schema\Blueprint;
 
 class KelasController extends Controller
 {
-    // ================================================================
-    // 1. FITUR AUTO-FIX DATABASE (ANTI ERROR)
-    // ================================================================
     private function checkAndFixDatabase()
     {
         if (Schema::hasTable('jadwals') && !Schema::hasColumn('jadwals', 'tipe_jam')) {
@@ -24,13 +21,9 @@ class KelasController extends Controller
         }
     }
 
-    // ================================================================
-    // MANAJEMEN DATA KELAS (CRUD UTAMA)
-    // ================================================================
-
     public function index()
     {
-        $kelass = Kelas::with(['jadwals.mapel', 'jadwals.guru'])
+        $kelass = Kelas::with(['jadwals.mapel', 'jadwals.guru', 'waliKelas']) // Tarik wali kelasnya juga
             ->orderBy('nama_kelas')
             ->get();
 
@@ -39,7 +32,7 @@ class KelasController extends Controller
         }
 
         $mapels = Mapel::all();
-        $gurus = Guru::all();
+        $gurus = Guru::orderBy('nama_guru')->get();
 
         return view('penjadwalan.kelas', compact('kelass', 'mapels', 'gurus'));
     }
@@ -52,9 +45,10 @@ class KelasController extends Controller
             'max_jam'      => 'required|integer|min:1',
             'limit_harian' => 'required|integer|min:1|max:15',
             'limit_jumat'  => 'required|integer|min:0|max:10',
+            'wali_guru_id' => 'nullable|exists:gurus,id' // Validasi wali kelas
         ]);
 
-        Kelas::create($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'limit_harian', 'limit_jumat'));
+        Kelas::create($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'limit_harian', 'limit_jumat', 'wali_guru_id'));
         return redirect()->route('kelas.index')->with('success', 'Kelas berhasil ditambahkan.');
     }
 
@@ -66,10 +60,11 @@ class KelasController extends Controller
             'max_jam'      => 'required|integer|min:1',
             'limit_harian' => 'required|integer|min:1|max:15',
             'limit_jumat'  => 'required|integer|min:0|max:10',
+            'wali_guru_id' => 'nullable|exists:gurus,id' // Validasi wali kelas
         ]);
 
         $kelas = Kelas::findOrFail($id);
-        $kelas->update($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'limit_harian', 'limit_jumat'));
+        $kelas->update($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'limit_harian', 'limit_jumat', 'wali_guru_id'));
         return redirect()->route('kelas.index')->with('success', 'Data kelas berhasil diperbarui.');
     }
 
@@ -81,15 +76,11 @@ class KelasController extends Controller
         return redirect()->route('kelas.index')->with('success', 'Kelas berhasil dihapus.');
     }
 
-    // ================================================================
-    // MANAJEMEN BEBAN BELAJAR (JADWAL)
-    // ================================================================
-
+    // (BAGIAN BAWAH DIBIARKAN TETAP SAMA KARENA HANYA MENGURUS JADWAL/PLOTTING)
     public function simpanJadwal(Request $request, $id)
     {
         try {
             $this->checkAndFixDatabase();
-
             $request->validate([
                 'mapel_id'   => 'required|exists:mapels,id',
                 'guru_id'    => 'required|exists:gurus,id',
@@ -98,7 +89,6 @@ class KelasController extends Controller
             ]);
 
             $kelas = Kelas::with('jadwals')->findOrFail($id);
-            
             $currentTotal = $kelas->jadwals->sum('jumlah_jam');
             $maxJam = $kelas->max_jam ?? 50; 
             
@@ -128,10 +118,7 @@ class KelasController extends Controller
             ]);
 
         } catch (\Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false,'message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
 
@@ -139,7 +126,6 @@ class KelasController extends Controller
     {
         try {
             $this->checkAndFixDatabase();
-
             $jadwal = Jadwal::findOrFail($id);
 
             $request->validate([
@@ -152,7 +138,6 @@ class KelasController extends Controller
             $kelas = Kelas::with('jadwals')->findOrFail($jadwal->kelas_id);
             $currentTotalOthers = $kelas->jadwals->where('id', '!=', $id)->sum('jumlah_jam');
             $maxJam = $kelas->max_jam ?? 50;
-            
             $newTotal = $currentTotalOthers + $request->jumlah_jam;
 
             if ($newTotal > $maxJam) {
@@ -178,10 +163,7 @@ class KelasController extends Controller
             ]);
 
         } catch (\Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false,'message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
 
@@ -190,12 +172,7 @@ class KelasController extends Controller
         try {
             $jadwal = Jadwal::findOrFail($id);
             $jadwal->delete();
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Berhasil Dihapus!'
-            ]);
-
+            return response()->json(['success' => true,'message' => 'Berhasil Dihapus!']);
         } catch (\Throwable $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

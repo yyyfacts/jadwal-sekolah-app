@@ -27,23 +27,18 @@
     </div>
     @endif
 
-    {{-- UNIFIED CARD (Sesuai Gambar Referensi) --}}
+    {{-- UNIFIED CARD --}}
     <div
         class="bg-white rounded-[2rem] border border-slate-100 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] flex flex-col flex-1 overflow-hidden">
 
         {{-- 1. HEADER SECTION --}}
         <div class="px-8 pt-8 pb-6 bg-white shrink-0 z-20">
-
-            {{-- Baris 1: Judul & Tombol Tambah --}}
             <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
                 <div class="flex gap-3 items-start">
                     <div class="w-2.5 h-8 bg-blue-600 rounded-full mt-0.5"></div>
                     <div>
-                        <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">
-                            Bank Mata Pelajaran
-                        </h1>
-                        <p class="text-slate-500 text-sm mt-1 font-medium">
-                            Manajemen kurikulum dan distribusi pengajar.
+                        <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Bank Mata Pelajaran</h1>
+                        <p class="text-slate-500 text-sm mt-1 font-medium">Manajemen kurikulum dan distribusi pengajar.
                         </p>
                     </div>
                 </div>
@@ -57,7 +52,7 @@
                     </div>
 
                     <button onclick="openModal('modaltambah')"
-                        class="px-6 py-2.5 font-bold text-white transition-all duration-300 bg-blue-600 rounded-xl hover:bg-blue-700 shadow-md shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5 flex items-center gap-2">
+                        class="px-6 py-2.5 font-bold text-white transition-all duration-300 bg-blue-600 rounded-xl hover:bg-blue-700 shadow-md hover:-translate-y-0.5 flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
                             </path>
@@ -67,7 +62,6 @@
                 </div>
             </div>
 
-            {{-- Baris 2: Search Bar --}}
             <div class="relative group">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <svg class="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none"
@@ -82,7 +76,7 @@
             </div>
         </div>
 
-        {{-- 2. TABLE SECTION (SCROLLABLE AREA) --}}
+        {{-- 2. TABLE SECTION --}}
         <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white px-2">
             <table class="w-full text-left border-collapse min-w-[800px]">
                 <thead class="bg-white sticky top-0 z-10">
@@ -94,17 +88,16 @@
                             class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider w-[35%] border-b-2 border-slate-100">
                             Identitas Mapel</th>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider w-[30%] border-b-2 border-slate-100">
+                            class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider w-[25%] border-b-2 border-slate-100">
                             Status Distribusi</th>
                         <th
-                            class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right w-[25%] pr-12 border-b-2 border-slate-100">
-                            Aksi</th>
+                            class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right w-[35%] pr-12 border-b-2 border-slate-100">
+                            Aksi & Mode</th>
                     </tr>
                 </thead>
 
                 <tbody id="tbody-mapel-main" class="divide-y divide-slate-100/80">
                     @php
-                    // Tema warna dinamis agar persis seperti gambar
                     $themes = [
                     ['avatar' => 'bg-teal-100', 'text' => 'text-teal-600', 'btn' => 'bg-[#459a96] hover:bg-teal-700',
                     'chart' => 'text-[#459a96]'],
@@ -120,18 +113,14 @@
                     @forelse($mapels as $index => $m)
                     @php
                     $theme = $themes[$index % 4];
-                    // Kalkulasi visual progress (contoh visualisasi donat)
                     $percentage = $m->total_jam_terdistribusi > 0 ? min(100, 60 + ($index * 10)) : 0;
                     @endphp
                     <tr class="group hover:bg-slate-50/50 transition-colors duration-200"
                         data-filter="{{ strtolower($m->nama_mapel) }} {{ strtolower($m->kode_mapel) }}">
 
-                        {{-- NOMOR / HARI --}}
-                        <td class="px-8 py-5 text-left">
-                            <span class="font-medium text-slate-500 text-sm">{{ $index + 1 }}</span>
-                        </td>
+                        <td class="px-8 py-5 text-left"><span
+                                class="font-medium text-slate-500 text-sm">{{ $index + 1 }}</span></td>
 
-                        {{-- IDENTITAS --}}
                         <td class="px-6 py-5">
                             <div class="flex items-center gap-4">
                                 <div
@@ -141,17 +130,14 @@
                                 <div>
                                     <div
                                         class="font-bold text-slate-800 text-[15px] group-hover:text-blue-600 transition-colors">
-                                        {{ $m->nama_mapel }}
-                                    </div>
+                                        {{ $m->nama_mapel }}</div>
                                     <div
                                         class="inline-block px-2 py-0.5 mt-1 rounded-md bg-slate-100 text-slate-500 font-bold text-[10px] tracking-wide uppercase">
-                                        {{ substr($m->kode_mapel, 0, 3) }}
-                                    </div>
+                                        {{ $m->kode_mapel }}</div>
                                 </div>
                             </div>
                         </td>
 
-                        {{-- STATUS DISTRIBUSI (Donut Chart Icon) --}}
                         <td class="px-6 py-5">
                             <div class="flex items-center gap-3">
                                 <svg class="w-8 h-8 {{ $theme['chart'] }} transform -rotate-90" viewBox="0 0 36 36">
@@ -163,22 +149,20 @@
                                         d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                                     @endif
                                 </svg>
-                                <span class="font-bold text-sm text-slate-800">
-                                    {{ $m->total_jam_terdistribusi > 0 ? $m->total_jam_terdistribusi . ' JP Total' : '0 JP Total' }}
-                                </span>
+                                <span
+                                    class="font-bold text-sm text-slate-800">{{ $m->total_jam_terdistribusi > 0 ? $m->total_jam_terdistribusi . ' JP Total' : '0 JP Total' }}</span>
                             </div>
                         </td>
 
-                        {{-- AKSI --}}
                         <td class="px-6 py-5 text-right pr-12">
                             <div class="flex items-center justify-end gap-2.5">
-                                <!-- 🔥 TOGGLE ONLINE / OFFLINE (BARU) -->
-                                <button onclick="toggleMode({{ $m->id }}, '{{ $m->mode ?? 'offline' }}', this)" class="px-3 py-1 text-xs font-bold rounded-lg 
-        {{ ($m->mode ?? 'offline') == 'online' ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-600' }}">
-
-                                    {{ ($m->mode ?? 'offline') == 'online' ? 'ONLINE' : 'OFFLINE' }}
+                                {{-- TOGGLE MODE OFFLINE / ONLINE (DITEMPEL DI MAPEL) --}}
+                                <button onclick="toggleMode({{ $m->id }}, '{{ $m->mode ?? 'offline' }}', this)"
+                                    class="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider rounded-lg border-2 transition-all duration-300 {{ ($m->mode ?? 'offline') == 'online' ? 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100' : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100' }}"
+                                    title="Klik untuk ubah mode (Ikut Jadwal Besar atau Terpisah)">
+                                    {{ ($m->mode ?? 'offline') == 'online' ? '💻 ONLINE' : '🏫 OFFLINE' }}
                                 </button>
-                                {{-- Tombol Distribusi Berwarna Sesuai Tema --}}
+
                                 <button onclick="openModal('modaljadwal{{ $m->id }}')"
                                     class="flex items-center gap-2 px-4 py-2 {{ $theme['btn'] }} text-white text-xs font-bold rounded-lg shadow-sm transition-all hover:-translate-y-0.5">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -189,7 +173,6 @@
                                     Distribusi
                                 </button>
 
-                                {{-- Tombol Edit (Outline) --}}
                                 <button onclick="openModal('edit{{ $m->id }}')"
                                     class="p-2 text-slate-400 bg-white border-2 border-slate-200 hover:border-slate-400 hover:text-slate-600 rounded-lg transition"
                                     title="Edit">
@@ -200,7 +183,6 @@
                                     </svg>
                                 </button>
 
-                                {{-- Tombol Hapus (Outline) --}}
                                 <form action="{{ route('mapel.destroy', $m->id) }}" method="POST"
                                     onsubmit="return confirm('Hapus permanen mapel ini?')" class="inline">
                                     @csrf @method('DELETE')
@@ -233,7 +215,6 @@
                     </tr>
                     @endforelse
 
-                    {{-- Row Not Found --}}
                     <tr id="search-no-result" class="hidden">
                         <td colspan="4" class="px-6 py-12 text-center text-slate-500">
                             <div class="flex flex-col items-center">
@@ -250,7 +231,6 @@
             </table>
         </div>
 
-        {{-- 3. FOOTER SECTION CARD --}}
         <div class="bg-white border-t border-slate-100 px-8 py-4 flex justify-between items-center shrink-0">
             <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Sistem Penjadwalan</span>
             <span class="text-[11px] font-bold text-emerald-500 flex items-center gap-1.5 uppercase tracking-wider">
@@ -263,14 +243,11 @@
         </div>
     </div>
 
-    {{-- COPYRIGHT TEXT DI LUAR CARD --}}
     <div class="text-center mt-6 text-slate-500 text-[11px] font-medium tracking-wide">
         &copy; 2026 SMAN 1 SAMPANG. Sistem Penjadwalan Terintegrasi.
     </div>
 
-    {{-- ========================================================= --}}
-    {{-- MODALS AREA (Dibiarkan tetap sama sesuai logika Anda) --}}
-    {{-- ========================================================= --}}
+    {{-- MODALS AREA --}}
 
     {{-- 1. Modal Tambah --}}
     <div id="modaltambah"
@@ -278,10 +255,8 @@
         <div
             class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-scale-in border border-white/20">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-slate-800 flex items-center gap-2">
-                    <span class="w-1.5 h-5 bg-blue-600 rounded-full"></span>
-                    Tambah Mapel
-                </h3>
+                <h3 class="font-bold text-slate-800 flex items-center gap-2"><span
+                        class="w-1.5 h-5 bg-blue-600 rounded-full"></span> Tambah Mapel</h3>
                 <button onclick="closeModal('modaltambah')"
                     class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
             </div>
@@ -312,10 +287,8 @@
         class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
             <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
-                <h3 class="font-bold text-amber-800 flex items-center gap-2">
-                    <span class="w-1.5 h-5 bg-amber-500 rounded-full"></span>
-                    Edit Mapel
-                </h3>
+                <h3 class="font-bold text-amber-800 flex items-center gap-2"><span
+                        class="w-1.5 h-5 bg-amber-500 rounded-full"></span> Edit Mapel</h3>
                 <button onclick="closeModal('edit{{ $m->id }}')"
                     class="text-amber-400 hover:text-amber-600 text-2xl leading-none">&times;</button>
             </div>
@@ -344,7 +317,6 @@
         class="fixed inset-0 bg-slate-900/80 z-[99] hidden flex items-center justify-center p-2 sm:p-4 transition-opacity duration-300">
         <div
             class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-200 overflow-hidden animate-scale-in">
-            {{-- Header Modal --}}
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                 <div class="flex items-center gap-3">
                     <div class="p-2 bg-blue-600 text-white rounded-lg shadow-sm">
@@ -363,9 +335,7 @@
                     class="text-slate-400 hover:text-red-500 text-3xl leading-none transition-colors">&times;</button>
             </div>
 
-            {{-- Body Modal --}}
             <div class="flex flex-col lg:flex-row h-full overflow-hidden">
-                {{-- Kiri: Area Tabel --}}
                 <div class="flex-1 flex flex-col h-full border-r border-slate-100 bg-white relative min-w-0">
                     <div class="p-4 border-b border-slate-100 bg-white z-20 shrink-0">
                         <div class="relative group">
@@ -449,7 +419,6 @@
                     </div>
                 </div>
 
-                {{-- Kanan: Form Input --}}
                 <div
                     class="w-full lg:w-[380px] bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-200 flex flex-col h-[40vh] lg:h-full">
                     <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
@@ -584,9 +553,8 @@
 
 @push('scripts')
 <script>
-// ==========================================================
-// 1. SEARCH LOGIC (OPTIMIZED & FAST)
-// ==========================================================
+const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
 function searchMainTable() {
     const input = document.getElementById('search-mapel-main').value.toLowerCase();
     const rows = document.querySelectorAll('#tbody-mapel-main tr[data-filter]');
@@ -604,19 +572,10 @@ function searchMainTable() {
     });
 
     if (noResultRow) {
-        if (!hasResult && input.length > 0) {
-            noResultRow.classList.remove('hidden');
-        } else {
-            noResultRow.classList.add('hidden');
-        }
+        if (!hasResult && input.length > 0) noResultRow.classList.remove('hidden');
+        else noResultRow.classList.add('hidden');
     }
 }
-
-// ==========================================================
-// 2. MODAL & DROPDOWN UTILS
-// ==========================================================
-const csrfNode = document.querySelector('meta[name="csrf-token"]');
-const CSRF_TOKEN = csrfNode ? csrfNode.content : '';
 
 function openModal(modalID) {
     const modal = document.getElementById(modalID);
@@ -631,10 +590,7 @@ function closeModal(modalID) {
     if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
-        if (modalID.includes('modaljadwal')) {
-            const id = modalID.replace('modaljadwal', '');
-            resetFormJadwal(id);
-        }
+        if (modalID.includes('modaljadwal')) resetFormJadwal(modalID.replace('modaljadwal', ''));
     }
 }
 
@@ -649,22 +605,15 @@ window.onclick = function(event) {
     }
 }
 
-// ==========================================================
-// 3. SEARCH INTERNAL TABLE (MODAL)
-// ==========================================================
 function searchTable(mapelId) {
     const filter = document.getElementById('search-' + mapelId).value.toLowerCase();
     const rows = document.getElementById('tbody-mapel-' + mapelId).getElementsByTagName('tr');
-
     for (let row of rows) {
         const text = row.innerText.toLowerCase();
         row.style.display = text.includes(filter) ? "" : "none";
     }
 }
 
-// ==========================================================
-// 4. CUSTOM DROPDOWN LOGIC
-// ==========================================================
 function toggleCustomDropdown(type, mapelId) {
     const wrapper = document.getElementById(`wrapper-${type}-${mapelId}`);
     const dropdown = document.getElementById(`dropdown-${type}-${mapelId}`);
@@ -724,9 +673,6 @@ function resetCustomDropdown(type, mapelId) {
     }
 }
 
-// ==========================================================
-// 5. AJAX (EDIT & DELETE)
-// ==========================================================
 function editJadwalInline(mapelId, jadwalId, kelasId, guruId, jam, tipe) {
     const container = document.getElementById(`form-container-${mapelId}`);
     const title = document.getElementById(`form-title-${mapelId}`);
@@ -801,7 +747,6 @@ async function handleFormJadwal(e, form, mapelId) {
         }
     } catch (err) {
         alert("Terjadi kesalahan sistem.");
-        console.error(err);
     } finally {
         btn.disabled = false;
         btn.innerHTML = oldText;
@@ -838,7 +783,7 @@ function updateTableUI(mapelId, jadwal, isEdit) {
                 <td class="px-4 py-3 text-slate-600 align-middle guru-text">${namaGuru}</td>
                 <td class="px-4 py-3 text-center align-middle">
                     <div class="flex flex-col items-center">
-                        <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-blue-100 shadow-sm">${jadwal.jumlah_jam} JP</span>
+                        <span class="bg-white text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-blue-100 shadow-sm">${jadwal.jumlah_jam} JP</span>
                         <span class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">${jadwal.tipe_jam}</span>
                     </div>
                 </td>
@@ -889,6 +834,11 @@ async function hapusJadwal(id, btn) {
 // ===============================
 async function toggleMode(id, currentMode, btn) {
     const newMode = currentMode === 'online' ? 'offline' : 'online';
+    const oldText = btn.innerHTML;
+
+    // Tampilan loading sementara
+    btn.innerHTML = '⏳ Loading...';
+    btn.classList.add('opacity-50', 'pointer-events-none');
 
     try {
         const res = await fetch(`/mapel/${id}/mode`, {
@@ -905,27 +855,29 @@ async function toggleMode(id, currentMode, btn) {
         const json = await res.json();
 
         if (json.success) {
-            // Update tampilan tombol
-            btn.innerText = newMode.toUpperCase();
+            // Update tampilan tombol kalau berhasil
+            btn.innerHTML = newMode === 'online' ? '💻 ONLINE' : '🏫 OFFLINE';
 
             if (newMode === 'online') {
-                btn.classList.remove('bg-slate-100', 'text-slate-600');
-                btn.classList.add('bg-green-100', 'text-green-600');
+                btn.classList.remove('bg-slate-50', 'text-slate-500', 'border-slate-200', 'hover:bg-slate-100');
+                btn.classList.add('bg-amber-50', 'text-amber-600', 'border-amber-200', 'hover:bg-amber-100');
             } else {
-                btn.classList.remove('bg-green-100', 'text-green-600');
-                btn.classList.add('bg-slate-100', 'text-slate-600');
+                btn.classList.remove('bg-amber-50', 'text-amber-600', 'border-amber-200', 'hover:bg-amber-100');
+                btn.classList.add('bg-slate-50', 'text-slate-500', 'border-slate-200', 'hover:bg-slate-100');
             }
 
-            // Update state
             btn.setAttribute('onclick', `toggleMode(${id}, '${newMode}', this)`);
 
         } else {
             alert(json.message);
+            btn.innerHTML = oldText; // Kembalikan kalau gagal
         }
 
     } catch (err) {
-        alert('Gagal update mode');
-        console.error(err);
+        alert('Gagal mengupdate mode. Cek koneksi / route web.php Anda.');
+        btn.innerHTML = oldText;
+    } finally {
+        btn.classList.remove('opacity-50', 'pointer-events-none');
     }
 }
 </script>

@@ -99,6 +99,7 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @foreach($waktus as $w)
+                    @php $tipeS = $w->mulai_senin ? $w->tipe_senin : $w->tipe; @endphp
                     <tr class="hover:bg-slate-50 transition-colors duration-200">
                         <td class="px-4 py-2 text-center h-[50px]">
                             <span class="font-extrabold text-slate-700 text-sm bg-slate-100 px-3 py-1 rounded-lg">
@@ -114,34 +115,24 @@
                             @elseif($w->mulai_senin)
                             <div class="font-bold text-slate-700 text-sm font-mono">
                                 {{ \Carbon\Carbon::parse($w->mulai_senin)->format('H:i') }} -
-                                {{ \Carbon\Carbon::parse($w->selesai_senin)->format('H:i') }}</div>
+                                {{ \Carbon\Carbon::parse($w->selesai_senin)->format('H:i') }}
+                            </div>
                             @else
-                            <span
-                                class="text-[10px] text-slate-400 italic font-mono">{{ \Carbon\Carbon::parse($w->waktu_mulai)->format('H:i') }}
-                                - {{ \Carbon\Carbon::parse($w->waktu_selesai)->format('H:i') }}</span>
+                            <span class="text-[10px] text-slate-400 italic font-mono">
+                                {{ \Carbon\Carbon::parse($w->waktu_mulai)->format('H:i') }} -
+                                {{ \Carbon\Carbon::parse($w->waktu_selesai)->format('H:i') }}
+                            </span>
                             @endif
                         </td>
 
                         <td class="px-4 py-2 text-center h-[50px]">
-                            <div class="flex items-center justify-center gap-2">
-
-                                <span
-                                    class="inline-block px-2 py-1 rounded-md {{ $tipeS == 'Belajar' ? 'bg-cyan-50 text-cyan-600' : 'bg-amber-50 text-amber-600' }} text-[10px] font-bold uppercase tracking-wider">
-                                    {{ $tipeS }}
-                                </span>
-
-                                @if($w->is_fixed)
-                                <span class="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded font-bold">
-                                    FIXED
-                                </span>
-                                @endif
-
-                            </div>
                             @if($tipeS == 'Tidak Ada')
                             <span class="text-slate-300 font-bold">-</span>
                             @else
                             <span
-                                class="inline-block px-2 py-1 rounded-md {{ $tipeS == 'Belajar' ? 'bg-cyan-50 text-cyan-600' : 'bg-amber-50 text-amber-600' }} text-[10px] font-bold uppercase tracking-wider">{{ $tipeS }}</span>
+                                class="inline-block px-2 py-1 rounded-md {{ $tipeS == 'Belajar' ? 'bg-cyan-50 text-cyan-600' : 'bg-amber-50 text-amber-600' }} text-[10px] font-bold uppercase tracking-wider">
+                                {{ $tipeS }}
+                            </span>
                             @endif
                         </td>
 
@@ -153,42 +144,41 @@
                                     class="px-3 py-1.5 text-cyan-600 border border-cyan-200 font-bold text-[10px] hover:bg-cyan-50 rounded-lg transition">EDIT
                                     WAKTU</button>
 
-                                {{-- FORM NONAKTIFKAN SENIN --}}
                                 <form action="{{ route('master-waktu.update', $w->id) }}" method="POST" class="inline"
                                     onsubmit="return confirm('Nonaktifkan jam ke-{{ $w->jam_ke ?? '-' }} khusus hari Senin?');">
                                     @csrf @method('PUT')
                                     <input type="hidden" name="jam_ke" value="{{ $w->jam_ke }}">
-                                    <input type="hidden" name="waktu_mulai"
-                                        value="{{ substr($w->waktu_mulai, 0, 5) }}"><input type="hidden"
-                                        name="waktu_selesai" value="{{ substr($w->waktu_selesai, 0, 5) }}"><input
-                                        type="hidden" name="tipe" value="{{ $w->tipe }}">
+                                    <input type="hidden" name="waktu_mulai" value="{{ substr($w->waktu_mulai, 0, 5) }}">
+                                    <input type="hidden" name="waktu_selesai"
+                                        value="{{ substr($w->waktu_selesai, 0, 5) }}">
+                                    <input type="hidden" name="tipe" value="{{ $w->tipe }}">
                                     <input type="hidden" name="mulai_jumat"
-                                        value="{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}"><input
-                                        type="hidden" name="selesai_jumat"
-                                        value="{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}"><input
-                                        type="hidden" name="tipe_jumat" value="{{ $w->tipe_jumat }}">
-                                    <input type="hidden" name="mulai_senin" value="00:00"><input type="hidden"
-                                        name="selesai_senin" value="00:00"><input type="hidden" name="tipe_senin"
-                                        value="Tidak Ada">
+                                        value="{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}">
+                                    <input type="hidden" name="selesai_jumat"
+                                        value="{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}">
+                                    <input type="hidden" name="tipe_jumat" value="{{ $w->tipe_jumat }}">
+                                    <input type="hidden" name="mulai_senin" value="00:00">
+                                    <input type="hidden" name="selesai_senin" value="00:00">
+                                    <input type="hidden" name="tipe_senin" value="Tidak Ada">
                                     <button type="submit"
                                         class="px-3 py-1.5 text-red-500 border border-red-200 font-bold text-[10px] hover:bg-red-50 rounded-lg transition">NONAKTIFKAN</button>
                                 </form>
                                 @else
-                                {{-- FORM AKTIFKAN KEMBALI SENIN --}}
                                 <form action="{{ route('master-waktu.update', $w->id) }}" method="POST" class="inline">
                                     @csrf @method('PUT')
                                     <input type="hidden" name="jam_ke" value="{{ $w->jam_ke }}">
-                                    <input type="hidden" name="waktu_mulai"
-                                        value="{{ substr($w->waktu_mulai, 0, 5) }}"><input type="hidden"
-                                        name="waktu_selesai" value="{{ substr($w->waktu_selesai, 0, 5) }}"><input
-                                        type="hidden" name="tipe" value="{{ $w->tipe }}">
+                                    <input type="hidden" name="waktu_mulai" value="{{ substr($w->waktu_mulai, 0, 5) }}">
+                                    <input type="hidden" name="waktu_selesai"
+                                        value="{{ substr($w->waktu_selesai, 0, 5) }}">
+                                    <input type="hidden" name="tipe" value="{{ $w->tipe }}">
                                     <input type="hidden" name="mulai_jumat"
-                                        value="{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}"><input
-                                        type="hidden" name="selesai_jumat"
-                                        value="{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}"><input
-                                        type="hidden" name="tipe_jumat" value="{{ $w->tipe_jumat }}">
-                                    <input type="hidden" name="mulai_senin" value=""><input type="hidden"
-                                        name="selesai_senin" value=""><input type="hidden" name="tipe_senin" value="">
+                                        value="{{ $w->mulai_jumat ? substr($w->mulai_jumat, 0, 5) : '' }}">
+                                    <input type="hidden" name="selesai_jumat"
+                                        value="{{ $w->selesai_jumat ? substr($w->selesai_jumat, 0, 5) : '' }}">
+                                    <input type="hidden" name="tipe_jumat" value="{{ $w->tipe_jumat }}">
+                                    <input type="hidden" name="mulai_senin" value="">
+                                    <input type="hidden" name="selesai_senin" value="">
+                                    <input type="hidden" name="tipe_senin" value="">
                                     <button type="submit"
                                         class="px-3 py-1.5 text-emerald-600 bg-emerald-50 border border-emerald-200 font-bold text-[10px] hover:bg-emerald-100 rounded-lg transition">AKTIFKAN
                                         LAGI</button>
@@ -231,24 +221,14 @@
                         <td class="px-4 py-2 text-center h-[50px]">
                             <div class="font-bold text-slate-700 text-sm font-mono">
                                 {{ \Carbon\Carbon::parse($w->waktu_mulai)->format('H:i') }} -
-                                {{ \Carbon\Carbon::parse($w->waktu_selesai)->format('H:i') }}</div>
+                                {{ \Carbon\Carbon::parse($w->waktu_selesai)->format('H:i') }}
+                            </div>
                         </td>
                         <td class="px-4 py-2 text-center h-[50px]">
-                            <div class="flex items-center justify-center gap-2">
-
-                                <span
-                                    class="inline-block px-2 py-1 rounded-md {{ $w->tipe == 'Belajar' ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600' }} text-[10px] font-bold uppercase tracking-wider">
-                                    {{ $w->tipe }}
-                                </span>
-
-                                @if($w->is_fixed)
-                                <span
-                                    class="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded font-bold animate-pulse">
-                                    FIXED
-                                </span>
-                                @endif
-
-                            </div>
+                            <span
+                                class="inline-block px-2 py-1 rounded-md {{ $w->tipe == 'Belajar' ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600' }} text-[10px] font-bold uppercase tracking-wider">
+                                {{ $w->tipe }}
+                            </span>
                         </td>
                         <td class="px-4 py-2 text-right h-[50px]">
                             <div class="flex items-center justify-end gap-1.5">
@@ -291,6 +271,7 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @foreach($waktus as $w)
+                    @php $tipeJ = $w->mulai_jumat ? $w->tipe_jumat : $w->tipe; @endphp
                     <tr class="hover:bg-slate-50 transition-colors duration-200">
                         <td class="px-4 py-2 text-center h-[50px]">
                             <span class="font-extrabold text-slate-700 text-sm bg-slate-100 px-3 py-1 rounded-lg">
@@ -306,34 +287,24 @@
                             @elseif($w->mulai_jumat)
                             <div class="font-bold text-slate-700 text-sm font-mono">
                                 {{ \Carbon\Carbon::parse($w->mulai_jumat)->format('H:i') }} -
-                                {{ \Carbon\Carbon::parse($w->selesai_jumat)->format('H:i') }}</div>
+                                {{ \Carbon\Carbon::parse($w->selesai_jumat)->format('H:i') }}
+                            </div>
                             @else
-                            <span
-                                class="text-[10px] text-slate-400 italic font-mono">{{ \Carbon\Carbon::parse($w->waktu_mulai)->format('H:i') }}
-                                - {{ \Carbon\Carbon::parse($w->waktu_selesai)->format('H:i') }}</span>
+                            <span class="text-[10px] text-slate-400 italic font-mono">
+                                {{ \Carbon\Carbon::parse($w->waktu_mulai)->format('H:i') }} -
+                                {{ \Carbon\Carbon::parse($w->waktu_selesai)->format('H:i') }}
+                            </span>
                             @endif
                         </td>
 
                         <td class="px-4 py-2 text-center h-[50px]">
-                            <div class="flex items-center justify-center gap-2">
-
-                                <span
-                                    class="inline-block px-2 py-1 rounded-md {{ $tipeJ == 'Belajar' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600' }} text-[10px] font-bold uppercase tracking-wider">
-                                    {{ $tipeJ }}
-                                </span>
-
-                                @if($w->is_fixed)
-                                <span class="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded font-bold">
-                                    FIXED
-                                </span>
-                                @endif
-
-                            </div>
                             @if($tipeJ == 'Tidak Ada')
                             <span class="text-slate-300 font-bold">-</span>
                             @else
                             <span
-                                class="inline-block px-2 py-1 rounded-md {{ $tipeJ == 'Belajar' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600' }} text-[10px] font-bold uppercase tracking-wider">{{ $tipeJ }}</span>
+                                class="inline-block px-2 py-1 rounded-md {{ $tipeJ == 'Belajar' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600' }} text-[10px] font-bold uppercase tracking-wider">
+                                {{ $tipeJ }}
+                            </span>
                             @endif
                         </td>
 
@@ -345,42 +316,41 @@
                                     class="px-3 py-1.5 text-emerald-600 border border-emerald-200 font-bold text-[10px] hover:bg-emerald-50 rounded-lg transition">EDIT
                                     JUMAT</button>
 
-                                {{-- FORM NONAKTIFKAN JUMAT --}}
                                 <form action="{{ route('master-waktu.update', $w->id) }}" method="POST" class="inline"
                                     onsubmit="return confirm('Nonaktifkan jam ke-{{ $w->jam_ke ?? '-' }} khusus hari Jumat?');">
                                     @csrf @method('PUT')
                                     <input type="hidden" name="jam_ke" value="{{ $w->jam_ke }}">
-                                    <input type="hidden" name="waktu_mulai"
-                                        value="{{ substr($w->waktu_mulai, 0, 5) }}"><input type="hidden"
-                                        name="waktu_selesai" value="{{ substr($w->waktu_selesai, 0, 5) }}"><input
-                                        type="hidden" name="tipe" value="{{ $w->tipe }}">
+                                    <input type="hidden" name="waktu_mulai" value="{{ substr($w->waktu_mulai, 0, 5) }}">
+                                    <input type="hidden" name="waktu_selesai"
+                                        value="{{ substr($w->waktu_selesai, 0, 5) }}">
+                                    <input type="hidden" name="tipe" value="{{ $w->tipe }}">
                                     <input type="hidden" name="mulai_senin"
-                                        value="{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}"><input
-                                        type="hidden" name="selesai_senin"
-                                        value="{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}"><input
-                                        type="hidden" name="tipe_senin" value="{{ $w->tipe_senin }}">
-                                    <input type="hidden" name="mulai_jumat" value="00:00"><input type="hidden"
-                                        name="selesai_jumat" value="00:00"><input type="hidden" name="tipe_jumat"
-                                        value="Tidak Ada">
+                                        value="{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}">
+                                    <input type="hidden" name="selesai_senin"
+                                        value="{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}">
+                                    <input type="hidden" name="tipe_senin" value="{{ $w->tipe_senin }}">
+                                    <input type="hidden" name="mulai_jumat" value="00:00">
+                                    <input type="hidden" name="selesai_jumat" value="00:00">
+                                    <input type="hidden" name="tipe_jumat" value="Tidak Ada">
                                     <button type="submit"
                                         class="px-3 py-1.5 text-red-500 border border-red-200 font-bold text-[10px] hover:bg-red-50 rounded-lg transition">NONAKTIFKAN</button>
                                 </form>
                                 @else
-                                {{-- FORM AKTIFKAN KEMBALI JUMAT --}}
                                 <form action="{{ route('master-waktu.update', $w->id) }}" method="POST" class="inline">
                                     @csrf @method('PUT')
                                     <input type="hidden" name="jam_ke" value="{{ $w->jam_ke }}">
-                                    <input type="hidden" name="waktu_mulai"
-                                        value="{{ substr($w->waktu_mulai, 0, 5) }}"><input type="hidden"
-                                        name="waktu_selesai" value="{{ substr($w->waktu_selesai, 0, 5) }}"><input
-                                        type="hidden" name="tipe" value="{{ $w->tipe }}">
+                                    <input type="hidden" name="waktu_mulai" value="{{ substr($w->waktu_mulai, 0, 5) }}">
+                                    <input type="hidden" name="waktu_selesai"
+                                        value="{{ substr($w->waktu_selesai, 0, 5) }}">
+                                    <input type="hidden" name="tipe" value="{{ $w->tipe }}">
                                     <input type="hidden" name="mulai_senin"
-                                        value="{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}"><input
-                                        type="hidden" name="selesai_senin"
-                                        value="{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}"><input
-                                        type="hidden" name="tipe_senin" value="{{ $w->tipe_senin }}">
-                                    <input type="hidden" name="mulai_jumat" value=""><input type="hidden"
-                                        name="selesai_jumat" value=""><input type="hidden" name="tipe_jumat" value="">
+                                        value="{{ $w->mulai_senin ? substr($w->mulai_senin, 0, 5) : '' }}">
+                                    <input type="hidden" name="selesai_senin"
+                                        value="{{ $w->selesai_senin ? substr($w->selesai_senin, 0, 5) : '' }}">
+                                    <input type="hidden" name="tipe_senin" value="{{ $w->tipe_senin }}">
+                                    <input type="hidden" name="mulai_jumat" value="">
+                                    <input type="hidden" name="selesai_jumat" value="">
+                                    <input type="hidden" name="tipe_jumat" value="">
                                     <button type="submit"
                                         class="px-3 py-1.5 text-emerald-600 bg-emerald-50 border border-emerald-200 font-bold text-[10px] hover:bg-emerald-100 rounded-lg transition">AKTIFKAN
                                         LAGI</button>

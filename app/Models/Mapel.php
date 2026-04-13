@@ -9,15 +9,14 @@ class Mapel extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nama_mapel', 'kode_mapel', 'mode'];
+    protected $table = 'mapels';
 
+    // Tambahkan 'mode' agar bisa disimpan
+    protected $fillable = ['nama_mapel', 'kode_mapel', 'kelompok', 'mode'];
 
     // Relasi ke jadwal (Satu Mapel punya banyak Jadwal/Distribusi)
     public function jadwals()
     {
         return $this->hasMany(Jadwal::class);
     }
-
-    // Relasi ke waktu kosong (Satu Mapel punya banyak aturan jam libur)
-
 }

@@ -27,37 +27,38 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
 
     public function view(): View
     {
-        $kelass = Kelas::orderBy('nama_kelas')->get();
+        $kelass = Kelas::with('waliKelas')->orderBy('nama_kelas')->get();
         $gurus = Guru::orderBy('kode_guru')->get();
         $mapels = Mapel::orderBy('kode_mapel')->get();
 
         $dataHari = MasterHari::getActiveDays();
         $hariList = $dataHari->pluck('nama_hari')->toArray();
-        $dataWaktu = MasterWaktu::getOrdered();
+        $dataWaktu = MasterWaktu::orderBy('waktu_mulai')->get();
 
         $maxJam = $dataWaktu->max('jam_ke');
 
         $rawJadwals = Jadwal::with(['guru', 'mapel', 'kelas'])
             ->whereNotNull('hari')
             ->whereNotNull('jam')
+            ->where(function($q) {
+                $q->where('status', 'offline')->orWhereNull('status');
+            })
             ->get();
 
         $jadwals = [];
 
-        // ==========================================
         // 1. BUAT CANVAS KOSONG
-        // ==========================================
         foreach ($kelass as $k) {
             foreach ($hariList as $h) {
                 foreach ($dataWaktu as $waktu) {
-                    $jadwals[$k->id][$h][$waktu->jam_ke] = null;
+                    if ($waktu->jam_ke !== null) {
+                        $jadwals[$k->id][$h][$waktu->jam_ke] = null;
+                    }
                 }
             }
         }
 
-        // ==========================================
-        // 2. MAPPING SLOT BELAJAR (SKIP FIXED)
-        // ==========================================
+        // 2. MAPPING SLOT BELAJAR 
         $belajarSlots = [];
 
         foreach ($dataHari as $hariObj) {
@@ -65,8 +66,7 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
             $namaHariLower = strtolower($namaHari);
 
             $belajarSlots[$namaHari] = [];
-            $urutanBelajar = 1;
-
+            
             foreach ($dataWaktu as $waktuObj) {
                 $tipeSlot = $waktuObj->tipe;
 
@@ -78,17 +78,15 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
                     $tipeSlot = $waktuObj->tipe_jumat;
                 }
 
-                // 🔥 INTI: SKIP FIXED SLOT
-                if (!$waktuObj->is_fixed && $tipeSlot !== 'Tidak Ada') {
-                    $belajarSlots[$namaHari][$urutanBelajar] = $waktuObj->jam_ke;
-                    $urutanBelajar++;
+                if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']) && $tipeSlot !== 'Tidak Ada') {
+                    if ($waktuObj->jam_ke !== null) {
+                        $belajarSlots[$namaHari][] = $waktuObj->jam_ke;
+                    }
                 }
             }
         }
 
-        // ==========================================
         // 3. MASUKKAN JADWAL HASIL GENERATE
-        // ==========================================
         foreach ($rawJadwals as $row) {
             $durasi = $row->jumlah_jam;
             $hari = $row->hari;
@@ -108,9 +106,7 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
                             $jadwals[$row->kelas_id][$hari][$jamFisikSekarang] = [
                                 'kode_mapel' => $row->mapel->kode_mapel ?? '-',
                                 'kode_guru'  => $row->guru->kode_guru ?? '-',
-                                'color'      => $row->tipe_jam == 'double' || $row->tipe_jam == 'triple'
-                                    ? 'd9e1f2'
-                                    : 'ffffff'
+                                'color'      => $row->tipe_jam == 'double' || $row->tipe_jam == 'triple' ? 'd9e1f2' : 'ffffff'
                             ];
                         }
                     }
@@ -118,40 +114,6 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
             }
         }
 
-        // ==========================================
-        // 4. MASUKKAN SLOT FIXED (ISTIRAHAT DLL)
-        // ==========================================
-        foreach ($dataWaktu as $waktuObj) {
-            if ($waktuObj->is_fixed) {
-
-                foreach ($hariList as $hari) {
-                    foreach ($kelass as $k) {
-
-                        $tipeSlot = $waktuObj->tipe;
-
-                        if (strtolower($hari) == 'senin' && $waktuObj->tipe_senin) {
-                            $tipeSlot = $waktuObj->tipe_senin;
-                        }
-
-                        if (strtolower($hari) == 'jumat' && $waktuObj->tipe_jumat) {
-                            $tipeSlot = $waktuObj->tipe_jumat;
-                        }
-
-                        if ($tipeSlot !== 'Tidak Ada') {
-                            $jadwals[$k->id][$hari][$waktuObj->jam_ke] = [
-                                'kode_mapel' => strtoupper($tipeSlot),
-                                'kode_guru'  => '',
-                                'color'      => 'fef3c7' // kuning (fixed)
-                            ];
-                        }
-                    }
-                }
-            }
-        }
-
-        // ==========================================
-        // RETURN VIEW
-        // ==========================================
         return view('exports.jadwal_excel', [
             'kelass' => $kelass,
             'jadwals' => $jadwals,
