@@ -374,15 +374,22 @@
                                             <span
                                                 class="bg-white text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-blue-100 shadow-sm">{{ $jadwal->jumlah_jam }}
                                                 JP</span>
+
+                                            {{-- BADGE ONLINE / OFFLINE DI TABEL KIRI --}}
+                                            @if($jadwal->status == 'online')
                                             <span
-                                                class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">{{ $jadwal->tipe_jam }}</span>
+                                                class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">ONLINE</span>
+                                            @else
+                                            <span
+                                                class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">OFFLINE</span>
+                                            @endif
                                         </div>
                                     </td>
                                     <td class="px-4 py-3 text-right align-middle">
                                         <div
                                             class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button
-                                                onclick="editJadwalInline({{ $m->id }}, {{ $jadwal->id }}, {{ $jadwal->kelas_id }}, {{ $jadwal->guru_id }}, {{ $jadwal->jumlah_jam }}, '{{ $jadwal->tipe_jam }}')"
+                                                onclick="editJadwalInline({{ $m->id }}, {{ $jadwal->id }}, {{ $jadwal->kelas_id }}, {{ $jadwal->guru_id }}, {{ $jadwal->jumlah_jam }}, '{{ $jadwal->tipe_jam }}', '{{ $jadwal->status ?? 'offline' }}')"
                                                 class="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition"
                                                 title="Edit">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
@@ -536,6 +543,29 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    {{-- TAMBAHAN: SELECT OFFLINE / ONLINE DI DALAM FORM POPUP --}}
+                                    <div>
+                                        <label
+                                            class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Pelaksanaan
+                                            Kelas</label>
+                                        <div class="relative">
+                                            <select name="status" id="select-status-{{ $m->id }}"
+                                                class="w-full pl-3 pr-8 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none appearance-none cursor-pointer transition shadow-sm">
+                                                <option value="offline">🏫 OFFLINE (Masuk Jadwal Besar)</option>
+                                                <option value="online">💻 ONLINE (Bebas Penjadwalan)</option>
+                                            </select>
+                                            <div
+                                                class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <button type="submit" id="btn-submit-{{ $m->id }}"
                                         class="w-full py-3.5 bg-slate-900 hover:bg-blue-600 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-lg hover:shadow-blue-500/30 transform active:scale-95 transition-all duration-300 mt-2">Simpan
                                         Distribusi</button>
@@ -673,7 +703,7 @@ function resetCustomDropdown(type, mapelId) {
     }
 }
 
-function editJadwalInline(mapelId, jadwalId, kelasId, guruId, jam, tipe) {
+function editJadwalInline(mapelId, jadwalId, kelasId, guruId, jam, tipe, status) {
     const container = document.getElementById(`form-container-${mapelId}`);
     const title = document.getElementById(`form-title-${mapelId}`);
     const form = document.getElementById(`form-jadwal-${mapelId}`);
@@ -691,6 +721,10 @@ function editJadwalInline(mapelId, jadwalId, kelasId, guruId, jam, tipe) {
     setCustomDropdownValue('guru', mapelId, guruId);
     document.getElementById(`input-jam-${mapelId}`).value = jam;
     document.getElementById(`select-tipe-${mapelId}`).value = tipe;
+
+    // Set Status (Offline/Online)
+    const selectStatus = document.getElementById(`select-status-${mapelId}`);
+    if (selectStatus) selectStatus.value = status;
 
     form.action = `/mapel/jadwal/${jadwalId}`;
     form.dataset.mode = 'edit';
@@ -758,6 +792,11 @@ function updateTableUI(mapelId, jadwal, isEdit) {
     const namaKelas = jadwal.kelas?.nama_kelas || '-';
     const namaGuru = jadwal.guru?.nama_guru || '-';
 
+    // Pembuatan HTML Badge
+    const badgeHTML = jadwal.status === 'online' ?
+        '<span class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">ONLINE</span>' :
+        '<span class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">OFFLINE</span>';
+
     if (isEdit) {
         const row = document.getElementById(`row-jadwal-${jadwal.id}`);
         if (row) {
@@ -766,9 +805,13 @@ function updateTableUI(mapelId, jadwal, isEdit) {
             row.querySelector('.jam-text').innerText = jadwal.jumlah_jam + ' JP';
             row.querySelector('.tipe-text').innerText = jadwal.tipe_jam;
 
+            // Update Badge
+            const oldBadge = row.querySelector('.status-badge');
+            if (oldBadge) oldBadge.outerHTML = badgeHTML;
+
             const btnEdit = row.querySelector('button[onclick^="editJadwalInline"]');
             btnEdit.setAttribute('onclick',
-                `editJadwalInline(${mapelId}, ${jadwal.id}, ${jadwal.kelas_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}')`
+                `editJadwalInline(${mapelId}, ${jadwal.id}, ${jadwal.kelas_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}', '${jadwal.status}')`
             );
 
             row.classList.add('bg-amber-100');
@@ -777,19 +820,19 @@ function updateTableUI(mapelId, jadwal, isEdit) {
     } else {
         const tr = document.createElement('tr');
         tr.id = `row-jadwal-${jadwal.id}`;
-        tr.className = "hover:bg-blue-50 transition group";
+        tr.className = "hover:bg-blue-50/50 transition duration-150 group";
         tr.innerHTML = `
                 <td class="px-4 py-3 font-bold text-slate-700 align-middle kelas-text">${namaKelas}</td>
                 <td class="px-4 py-3 text-slate-600 align-middle guru-text">${namaGuru}</td>
                 <td class="px-4 py-3 text-center align-middle">
                     <div class="flex flex-col items-center">
                         <span class="bg-white text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-blue-100 shadow-sm">${jadwal.jumlah_jam} JP</span>
-                        <span class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">${jadwal.tipe_jam}</span>
+                        ${badgeHTML}
                     </div>
                 </td>
                 <td class="px-4 py-3 text-right align-middle">
                     <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onclick="editJadwalInline(${mapelId}, ${jadwal.id}, ${jadwal.kelas_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}')" class="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition" title="Edit">
+                        <button onclick="editJadwalInline(${mapelId}, ${jadwal.id}, ${jadwal.kelas_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}', '${jadwal.status}')" class="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition" title="Edit">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                         </button>
                         <button onclick="hapusJadwal(${jadwal.id}, this)" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition" title="Hapus">
@@ -836,7 +879,6 @@ async function toggleMode(id, currentMode, btn) {
     const newMode = currentMode === 'online' ? 'offline' : 'online';
     const oldText = btn.innerHTML;
 
-    // Tampilan loading sementara
     btn.innerHTML = '⏳ Loading...';
     btn.classList.add('opacity-50', 'pointer-events-none');
 
@@ -855,7 +897,6 @@ async function toggleMode(id, currentMode, btn) {
         const json = await res.json();
 
         if (json.success) {
-            // Update tampilan tombol kalau berhasil
             btn.innerHTML = newMode === 'online' ? '💻 ONLINE' : '🏫 OFFLINE';
 
             if (newMode === 'online') {
@@ -870,7 +911,7 @@ async function toggleMode(id, currentMode, btn) {
 
         } else {
             alert(json.message);
-            btn.innerHTML = oldText; // Kembalikan kalau gagal
+            btn.innerHTML = oldText;
         }
 
     } catch (err) {

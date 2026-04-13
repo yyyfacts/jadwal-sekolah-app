@@ -27,7 +27,7 @@
     </div>
     @endif
 
-    {{-- UNIFIED CARD (Sesuai Gambar Referensi) --}}
+    {{-- UNIFIED CARD --}}
     <div
         class="bg-white rounded-[2rem] border border-slate-100 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] flex flex-col flex-1 overflow-hidden">
 
@@ -78,7 +78,7 @@
                     </svg>
                 </div>
                 <input type="text" id="search-guru-main" oninput="searchMainTable()"
-                    class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm transition"
+                    class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl leading-5 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm transition shadow-sm"
                     placeholder="Cari Nama Guru atau NIP...">
             </div>
         </div>
@@ -105,7 +105,6 @@
 
                 <tbody id="tbody-guru-main" class="divide-y divide-slate-100/80">
                     @php
-                    // Tema warna dinamis sesuai dengan gambar referensi
                     $themes = [
                     ['avatar' => 'bg-pink-600', 'pillBg' => 'bg-pink-50', 'pillText' => 'text-pink-700', 'dot' =>
                     'bg-pink-500'],
@@ -123,13 +122,11 @@
                     <tr class="group hover:bg-slate-50/50 transition-colors duration-200"
                         data-filter="{{ strtolower($g->nama_guru) }} {{ strtolower($g->kode_guru) }}">
 
-                        {{-- NOMOR --}}
                         <td class="px-8 py-5 text-center">
                             <span
                                 class="font-medium text-slate-400 text-sm group-hover:text-slate-600 transition-colors">{{ $index + 1 }}</span>
                         </td>
 
-                        {{-- PROFIL --}}
                         <td class="px-6 py-5">
                             <div class="flex items-center gap-4">
                                 <div
@@ -149,7 +146,6 @@
                             </div>
                         </td>
 
-                        {{-- BEBAN --}}
                         <td class="px-6 py-5 text-center">
                             @if($g->total_jam_mengajar > 0)
                             <div
@@ -166,7 +162,6 @@
                             @endif
                         </td>
 
-                        {{-- AKSI --}}
                         <td class="px-6 py-5">
                             <div class="flex items-center justify-center gap-2">
                                 <button onclick="openModal('modaljadwal{{ $g->id }}')"
@@ -222,7 +217,6 @@
                     </tr>
                     @endforelse
 
-                    {{-- Row Not Found --}}
                     <tr id="search-no-result" class="hidden">
                         <td colspan="4" class="px-6 py-12 text-center text-slate-500">
                             <div class="flex flex-col items-center">
@@ -239,21 +233,17 @@
             </table>
         </div>
 
-        {{-- 3. FOOTER SECTION --}}
         <div class="bg-white border-t border-slate-100 px-8 py-4 flex justify-between items-center shrink-0">
             <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Sistem Penjadwalan</span>
             <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Secure Data</span>
         </div>
     </div>
 
-    {{-- COPYRIGHT TEXT DI LUAR CARD --}}
     <div class="text-center mt-6 text-slate-500 text-[11px] font-medium tracking-wide">
         &copy; 2026 SMAN 1 SAMPANG. Sistem Penjadwalan Terintegrasi.
     </div>
 
-    {{-- ========================================================= --}}
-    {{-- MODALS AREA (Dibiarkan tetap sama sesuai logika Anda) --}}
-    {{-- ========================================================= --}}
+    {{-- MODALS AREA --}}
 
     {{-- 1. Modal Tambah --}}
     <div id="modaltambah"
@@ -358,7 +348,7 @@
         class="fixed inset-0 bg-slate-900/80 z-[99] hidden flex items-center justify-center p-2 sm:p-4 transition-opacity duration-300">
         <div
             class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-200 overflow-hidden animate-scale-in">
-            {{-- A. Header Modal (Tetap) --}}
+            {{-- A. Header Modal --}}
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                 <div class="flex items-center gap-3">
                     <div class="p-2 bg-indigo-600 text-white rounded-lg shadow-sm">
@@ -377,7 +367,7 @@
                     class="text-slate-400 hover:text-red-500 text-3xl leading-none transition-colors">&times;</button>
             </div>
 
-            {{-- B. Body Modal (Split Layout) --}}
+            {{-- B. Body Modal --}}
             <div class="flex flex-col lg:flex-row h-full overflow-hidden">
                 {{-- KIRI: Area Tabel --}}
                 <div class="flex-1 flex flex-col h-full border-r border-slate-100 bg-white relative min-w-0">
@@ -422,6 +412,16 @@
                                             <span
                                                 class="bg-white text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-indigo-100 shadow-sm">{{ $jadwal->jumlah_jam }}
                                                 Jam</span>
+
+                                            {{-- BADGE ONLINE / OFFLINE --}}
+                                            @if($jadwal->status == 'online')
+                                            <span
+                                                class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">ONLINE</span>
+                                            @else
+                                            <span
+                                                class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">OFFLINE</span>
+                                            @endif
+
                                             <span
                                                 class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">{{ $jadwal->tipe_jam }}</span>
                                         </div>
@@ -430,7 +430,7 @@
                                         <div
                                             class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button
-                                                onclick="editJadwalInline({{ $g->id }}, {{ $jadwal->id }}, {{ $jadwal->mapel_id }}, {{ $jadwal->kelas_id }}, {{ $jadwal->jumlah_jam }}, '{{ $jadwal->tipe_jam }}')"
+                                                onclick="editJadwalInline({{ $g->id }}, {{ $jadwal->id }}, {{ $jadwal->mapel_id }}, {{ $jadwal->kelas_id }}, {{ $jadwal->jumlah_jam }}, '{{ $jadwal->tipe_jam }}', '{{ $jadwal->status ?? 'offline' }}')"
                                                 class="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded-lg transition"
                                                 title="Edit">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
@@ -543,7 +543,7 @@
                                                     class="w-full p-2 text-xs border border-slate-200 rounded-lg bg-slate-50 focus:border-indigo-500 outline-none">
                                             </div>
                                             <div id="list-kelas-{{ $g->id }}" class="p-1 grid grid-cols-2 gap-1">
-                                                @foreach($kelass as $k)
+                                                @foreach($kelases as $k)
                                                 <div class="option-item p-2 hover:bg-indigo-50 rounded-lg cursor-pointer text-xs font-bold text-slate-700 text-center border border-slate-100 transition-colors"
                                                     data-value="{{ $k->id }}" data-label="{{ $k->nama_kelas }}"
                                                     onclick="selectCustomOption('kelas', {{ $g->id }}, '{{ $k->id }}', '{{ $k->nama_kelas }}')">
@@ -587,6 +587,29 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    {{-- TAMBAHAN: SELECT OFFLINE / ONLINE DI DALAM FORM POPUP --}}
+                                    <div>
+                                        <label
+                                            class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Pelaksanaan
+                                            Kelas</label>
+                                        <div class="relative">
+                                            <select name="status" id="select-status-{{ $g->id }}"
+                                                class="w-full pl-3 pr-8 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none appearance-none cursor-pointer transition shadow-sm">
+                                                <option value="offline">🏫 OFFLINE (Masuk Jadwal Besar)</option>
+                                                <option value="online">💻 ONLINE (Bebas Penjadwalan)</option>
+                                            </select>
+                                            <div
+                                                class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <button type="submit" id="btn-submit-{{ $g->id }}"
                                         class="w-full py-3.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-lg hover:shadow-indigo-500/30 transform active:scale-95 transition-all duration-300 mt-2">Simpan
                                         Jadwal</button>
@@ -605,9 +628,8 @@
 
 @push('scripts')
 <script>
-// ==========================================================
-// 1. SEARCH LOGIC (OPTIMIZED & FAST)
-// ==========================================================
+const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
 function searchMainTable() {
     const input = document.getElementById('search-guru-main').value.toLowerCase();
     const rows = document.querySelectorAll('#tbody-guru-main tr[data-filter]');
@@ -632,12 +654,6 @@ function searchMainTable() {
         }
     }
 }
-
-// ==========================================================
-// 2. MODAL & DROPDOWN UTILS
-// ==========================================================
-const csrfNode = document.querySelector('meta[name="csrf-token"]');
-const CSRF_TOKEN = csrfNode ? csrfNode.content : '';
 
 function openModal(modalID) {
     const modal = document.getElementById(modalID);
@@ -670,9 +686,6 @@ window.onclick = function(event) {
     }
 }
 
-// ==========================================================
-// 3. SEARCH INTERNAL TABLE (MODAL)
-// ==========================================================
 function searchTable(guruId) {
     const filter = document.getElementById('search-' + guruId).value.toLowerCase();
     const rows = document.getElementById('tbody-guru-' + guruId).getElementsByTagName('tr');
@@ -683,9 +696,6 @@ function searchTable(guruId) {
     }
 }
 
-// ==========================================================
-// 4. CUSTOM DROPDOWN LOGIC
-// ==========================================================
 function toggleCustomDropdown(type, guruId) {
     const wrapper = document.getElementById(`wrapper-${type}-${guruId}`);
     const dropdown = document.getElementById(`dropdown-${type}-${guruId}`);
@@ -745,10 +755,7 @@ function resetCustomDropdown(type, guruId) {
     }
 }
 
-// ==========================================================
-// 5. AJAX (EDIT & DELETE)
-// ==========================================================
-function editJadwalInline(guruId, jadwalId, mapelId, kelasId, jam, tipe) {
+function editJadwalInline(guruId, jadwalId, mapelId, kelasId, jam, tipe, status) {
     const container = document.getElementById(`form-container-${guruId}`);
     const title = document.getElementById(`form-title-${guruId}`);
     const form = document.getElementById(`form-jadwal-${guruId}`);
@@ -766,6 +773,10 @@ function editJadwalInline(guruId, jadwalId, mapelId, kelasId, jam, tipe) {
     setCustomDropdownValue('kelas', guruId, kelasId);
     document.getElementById(`input-jam-${guruId}`).value = jam;
     document.getElementById(`select-tipe-${guruId}`).value = tipe;
+
+    // Set Status (Offline/Online)
+    const selectStatus = document.getElementById(`select-status-${guruId}`);
+    if (selectStatus) selectStatus.value = status;
 
     form.action = `/guru/jadwal/${jadwalId}`;
     form.dataset.mode = 'edit';
@@ -835,6 +846,11 @@ function updateTableUI(guruId, jadwal, isEdit) {
     const kodeMapel = jadwal.mapel?.kode_mapel || '';
     const namaKelas = jadwal.kelas?.nama_kelas || '-';
 
+    const badgeHTML = jadwal.status === 'online' ?
+        '<span class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">ONLINE</span>' :
+        '<span class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">OFFLINE</span>';
+
+
     if (isEdit) {
         const row = document.getElementById(`row-jadwal-${jadwal.id}`);
         if (row) {
@@ -844,9 +860,12 @@ function updateTableUI(guruId, jadwal, isEdit) {
             row.querySelector('.jam-text').innerText = jadwal.jumlah_jam + ' Jam';
             row.querySelector('.tipe-text').innerText = jadwal.tipe_jam;
 
+            const oldBadge = row.querySelector('.status-badge');
+            if (oldBadge) oldBadge.outerHTML = badgeHTML;
+
             const btnEdit = row.querySelector('button[onclick^="editJadwalInline"]');
             btnEdit.setAttribute('onclick',
-                `editJadwalInline(${guruId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.kelas_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}')`
+                `editJadwalInline(${guruId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.kelas_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}', '${jadwal.status}')`
             );
 
             row.classList.add('bg-amber-100');
@@ -862,12 +881,13 @@ function updateTableUI(guruId, jadwal, isEdit) {
             <td class="px-4 py-3 text-center align-middle">
                 <div class="flex flex-col items-center">
                     <span class="bg-white text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-indigo-100 shadow-sm">${jadwal.jumlah_jam} Jam</span>
+                    ${badgeHTML}
                     <span class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">${jadwal.tipe_jam}</span>
                 </div>
             </td>
             <td class="px-4 py-3 text-right align-middle">
                 <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onclick="editJadwalInline(${guruId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.kelas_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}')" class="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded-lg transition" title="Edit">
+                    <button onclick="editJadwalInline(${guruId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.kelas_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}', '${jadwal.status}')" class="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded-lg transition" title="Edit">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                     </button>
                     <button onclick="hapusJadwal(${jadwal.id}, this)" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition" title="Hapus">
@@ -877,14 +897,13 @@ function updateTableUI(guruId, jadwal, isEdit) {
             </td>`;
         tbody.appendChild(tr);
 
-        // Hapus row kosong jika ada
         const emptyRow = tbody.querySelector('.empty-row');
         if (emptyRow) emptyRow.remove();
     }
 }
 
 async function hapusJadwal(id, btn) {
-    if (!confirm("Hapus jadwal ini?")) return;
+    if (!confirm("Hapus distribusi ini?")) return;
     try {
         const res = await fetch(`/guru/jadwal/${id}`, {
             method: 'DELETE',
