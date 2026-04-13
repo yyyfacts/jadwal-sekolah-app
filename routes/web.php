@@ -141,11 +141,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', [MapelController::class, 'store'])->name('store');
         Route::put('/{id}', [MapelController::class, 'update'])->name('update');
         Route::delete('/{id}', [MapelController::class, 'destroy'])->name('destroy');
-        
+           Route::post('/{id}/mode', [MapelController::class, 'updateMode'])->name('updateMode');
         // Rute Jadwal Mapel
         Route::post('/{id}/jadwal', [MapelController::class, 'simpanJadwal'])->name('simpanJadwal');
         Route::put('/jadwal/{id}', [MapelController::class, 'updateJadwal'])->name('updateJadwal');
         Route::delete('/jadwal/{id}', [MapelController::class, 'hapusJadwal'])->name('hapusJadwal');
+     
     });
 
     // --------------------------------------------------------------

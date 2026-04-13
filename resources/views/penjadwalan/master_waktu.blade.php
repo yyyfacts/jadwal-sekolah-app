@@ -123,7 +123,20 @@
                         </td>
 
                         <td class="px-4 py-2 text-center h-[50px]">
-                            @php $tipeS = $w->mulai_senin ? $w->tipe_senin : $w->tipe; @endphp
+                            <div class="flex items-center justify-center gap-2">
+
+                                <span
+                                    class="inline-block px-2 py-1 rounded-md {{ $tipeS == 'Belajar' ? 'bg-cyan-50 text-cyan-600' : 'bg-amber-50 text-amber-600' }} text-[10px] font-bold uppercase tracking-wider">
+                                    {{ $tipeS }}
+                                </span>
+
+                                @if($w->is_fixed)
+                                <span class="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded font-bold">
+                                    FIXED
+                                </span>
+                                @endif
+
+                            </div>
                             @if($tipeS == 'Tidak Ada')
                             <span class="text-slate-300 font-bold">-</span>
                             @else
@@ -221,8 +234,21 @@
                                 {{ \Carbon\Carbon::parse($w->waktu_selesai)->format('H:i') }}</div>
                         </td>
                         <td class="px-4 py-2 text-center h-[50px]">
-                            <span
-                                class="inline-block px-2 py-1 rounded-md {{ $w->tipe == 'Belajar' ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600' }} text-[10px] font-bold uppercase tracking-wider">{{ $w->tipe }}</span>
+                            <div class="flex items-center justify-center gap-2">
+
+                                <span
+                                    class="inline-block px-2 py-1 rounded-md {{ $w->tipe == 'Belajar' ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600' }} text-[10px] font-bold uppercase tracking-wider">
+                                    {{ $w->tipe }}
+                                </span>
+
+                                @if($w->is_fixed)
+                                <span
+                                    class="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded font-bold animate-pulse">
+                                    FIXED
+                                </span>
+                                @endif
+
+                            </div>
                         </td>
                         <td class="px-4 py-2 text-right h-[50px]">
                             <div class="flex items-center justify-end gap-1.5">
@@ -289,7 +315,20 @@
                         </td>
 
                         <td class="px-4 py-2 text-center h-[50px]">
-                            @php $tipeJ = $w->mulai_jumat ? $w->tipe_jumat : $w->tipe; @endphp
+                            <div class="flex items-center justify-center gap-2">
+
+                                <span
+                                    class="inline-block px-2 py-1 rounded-md {{ $tipeJ == 'Belajar' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600' }} text-[10px] font-bold uppercase tracking-wider">
+                                    {{ $tipeJ }}
+                                </span>
+
+                                @if($w->is_fixed)
+                                <span class="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded font-bold">
+                                    FIXED
+                                </span>
+                                @endif
+
+                            </div>
                             @if($tipeJ == 'Tidak Ada')
                             <span class="text-slate-300 font-bold">-</span>
                             @else

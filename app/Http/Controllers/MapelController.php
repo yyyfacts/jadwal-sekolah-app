@@ -158,7 +158,34 @@ class MapelController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
+// ================================
+// UPDATE MODE (ONLINE / OFFLINE)
+// ================================
+public function updateMode(Request $request, $id)
+{
+    try {
+        $mapel = Mapel::findOrFail($id);
 
+        $request->validate([
+            'mode' => 'required|in:offline,online'
+        ]);
+
+        $mapel->mode = $request->mode;
+        $mapel->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Mode berhasil diubah',
+            'mode' => $mapel->mode
+        ]);
+
+    } catch (\Throwable $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
     public function hapusJadwal($id)
     {
         try {

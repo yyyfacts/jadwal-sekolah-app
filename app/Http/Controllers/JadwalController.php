@@ -18,11 +18,8 @@ use App\Exports\JadwalExport;
 
 class JadwalController extends Controller
 {
-    /**
-     * Menampilkan Grid Jadwal di Website (Dinamis berdasarkan Master Hari & Waktu)
-     */
     // =======================================================
-    // 1. FUNGSI INDEX (MENAMPILKAN GRID)
+    // 1. INDEX (TAMPILAN JADWAL)
     // =======================================================
     public function index(Request $request)
     {
@@ -32,227 +29,252 @@ class JadwalController extends Controller
         $gurusList = Guru::orderBy('nama_guru')->get();
         $kelassList = Kelas::orderBy('nama_kelas')->get();
 
-        $dataHari = MasterHari::getActiveDays(); 
+        $dataHari = MasterHari::getActiveDays();
         $hariList = $dataHari->pluck('nama_hari')->toArray();
-        $dataWaktu = MasterWaktu::getOrdered(); 
-        
-        // Cari jam terkecil (bisa 0 atau 1) dan jam terbesar
+        $dataWaktu = MasterWaktu::getOrdered();
+
         $minJam = $dataWaktu->min('jam_ke') ?? 0;
         $maxJam = $dataWaktu->max('jam_ke') ?? 10;
 
-        $kelass = $reqKelas ? Kelas::where('id', $reqKelas)->orderBy('nama_kelas')->get() : Kelas::orderBy('nama_kelas')->get();
+        $kelass = $reqKelas 
+            ? Kelas::where('id', $reqKelas)->get() 
+            : Kelas::orderBy('nama_kelas')->get();
 
-        $query = Jadwal::with(['guru', 'mapel', 'kelas'])->whereNotNull('hari')->whereNotNull('jam');
+        $query = Jadwal::with(['guru','mapel','kelas'])
+            ->whereNotNull('hari')
+            ->whereNotNull('jam');
+
         if ($reqGuru) $query->where('guru_id', $reqGuru);
         if ($reqKelas) $query->where('kelas_id', $reqKelas);
+
         $rawJadwals = $query->get();
         $jadwals = [];
 
-        // BIKIN GRID KOSONG (Mulai dari $minJam, misal 0)
+        // =========================
+        // GRID KOSONG
+        // =========================
         foreach ($kelass as $k) {
             foreach ($hariList as $h) {
-                // PERUBAHAN: Looping dimulai dari $minJam (0), BUKAN 1
                 for ($j = $minJam; $j <= $maxJam; $j++) {
                     $jadwals[$k->id][$h][$j] = null;
                 }
             }
         }
 
-        // --- BIKIN ARRAY LOMPATAN (AMBIL JAM YANG HANYA "BELAJAR" SAJA) ---
+        // =========================
+        // SLOT BELAJAR (SKIP FIXED)
+        // =========================
         $belajarSlots = [];
+
         foreach ($dataHari as $hariObj) {
             $namaHari = $hariObj->nama_hari;
             $namaHariLower = strtolower($namaHari);
+
             $belajarSlots[$namaHari] = [];
+
             foreach ($dataWaktu as $waktuObj) {
                 $tipeSlot = $waktuObj->tipe;
-                if ($namaHariLower == 'senin' && $waktuObj->tipe_senin) $tipeSlot = $waktuObj->tipe_senin;
-                if ($namaHariLower == 'jumat' && $waktuObj->tipe_jumat) $tipeSlot = $waktuObj->tipe_jumat;
 
-                if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']) && $tipeSlot !== 'Tidak Ada') {
+                if ($namaHariLower == 'senin' && $waktuObj->tipe_senin) {
+                    $tipeSlot = $waktuObj->tipe_senin;
+                }
+
+                if ($namaHariLower == 'jumat' && $waktuObj->tipe_jumat) {
+                    $tipeSlot = $waktuObj->tipe_jumat;
+                }
+
+                if (!$waktuObj->is_fixed && $tipeSlot !== 'Tidak Ada') {
                     $belajarSlots[$namaHari][] = $waktuObj->jam_ke;
                 }
             }
         }
 
-        // --- MAPPING DATA DARI DB KE GRID (DENGAN LOMPATAN) ---
+        // =========================
+        // MAPPING HASIL DB
+        // =========================
         foreach ($rawJadwals as $row) {
             $durasi = $row->jumlah_jam;
             $hari = $row->hari;
-            $jamMulaiFisik = $row->jam; 
-            
-            $slotsTersedia = $belajarSlots[$hari] ?? [];
-            $startIndex = array_search($jamMulaiFisik, $slotsTersedia); 
-            
+            $jamMulai = $row->jam;
+
+            $slots = $belajarSlots[$hari] ?? [];
+            $startIndex = array_search($jamMulai, $slots);
+
             $color = match ($row->tipe_jam) {
-                'double' => 'bg-blue-100 text-blue-800 border-blue-200',
-                'triple' => 'bg-purple-100 text-purple-800 border-purple-200',
-                default => 'bg-white text-slate-700 border-slate-200'
+                'double' => 'bg-blue-100 text-blue-800',
+                'triple' => 'bg-purple-100 text-purple-800',
+                default => 'bg-white'
             };
 
             if ($startIndex !== false) {
                 for ($i = 0; $i < $durasi; $i++) {
-                    if (isset($slotsTersedia[$startIndex + $i])) {
-                        $jamSekarang = $slotsTersedia[$startIndex + $i]; 
-                        
-                        if (!isset($jadwals[$row->kelas_id])) continue;
-                        $jadwals[$row->kelas_id][$hari][$jamSekarang] = [
-                            'id' => $row->id,
-                            'mapel' => $row->mapel->nama_mapel ?? '-',
-                            'guru' => $row->guru->nama_guru ?? '-',
-                            'kode_mapel' => $row->mapel->kode_mapel ?? '?',
-                            'kode_guru' => $row->guru->kode_guru ?? '?',
-                            'color' => $color,
-                            'tipe' => $row->tipe_jam
+                    if (isset($slots[$startIndex + $i])) {
+                        $jam = $slots[$startIndex + $i];
+
+                        $jadwals[$row->kelas_id][$hari][$jam] = [
+                            'mapel' => $row->mapel->nama_mapel,
+                            'guru' => $row->guru->nama_guru,
+                            'kode_guru' => $row->guru->kode_guru,
+                            'color' => $color
                         ];
                     }
                 }
             }
         }
 
-        // --- RENDER VISUAL JAM ISTIRAHAT/KOSONG ---
+        // =========================
+        // RENDER FIXED SLOT
+        // =========================
         foreach ($kelass as $k) {
             foreach ($dataHari as $hariObj) {
-                $namaHari = $hariObj->nama_hari;
-                $namaHariLower = strtolower($namaHari);
+                $hari = $hariObj->nama_hari;
 
-                foreach ($dataWaktu as $waktuObj) {
-                    $j = $waktuObj->jam_ke;
-                    $tipeSlot = $waktuObj->tipe;
-                    if ($namaHariLower == 'senin' && $waktuObj->tipe_senin) $tipeSlot = $waktuObj->tipe_senin;
-                    if ($namaHariLower == 'jumat' && $waktuObj->tipe_jumat) $tipeSlot = $waktuObj->tipe_jumat;
+                foreach ($dataWaktu as $w) {
+
+                    $tipeSlot = $w->tipe;
+
+                    if (strtolower($hari) == 'senin' && $w->tipe_senin) {
+                        $tipeSlot = $w->tipe_senin;
+                    }
+
+                    if (strtolower($hari) == 'jumat' && $w->tipe_jumat) {
+                        $tipeSlot = $w->tipe_jumat;
+                    }
 
                     if ($tipeSlot === 'Tidak Ada') {
-                        unset($jadwals[$k->id][$namaHari][$j]); 
+                        unset($jadwals[$k->id][$hari][$w->jam_ke]);
                         continue;
                     }
 
-                    if ($tipeSlot === 'Istirahat') {
-                        $jadwals[$k->id][$namaHari][$j] = [ 'id' => null, 'mapel' => 'ISTIRAHAT', 'guru' => '', 'color' => 'bg-amber-50 text-amber-600 font-bold italic text-[10px]', 'tipe' => 'break' ];
-                    } elseif (in_array($tipeSlot, ['Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
-                        $jadwals[$k->id][$namaHari][$j] = [ 'id' => null, 'mapel' => strtoupper($tipeSlot), 'guru' => '', 'color' => 'bg-cyan-50 text-cyan-600 font-bold italic text-[10px]', 'tipe' => 'kegiatan' ];
+                    if ($w->is_fixed) {
+                        $jadwals[$k->id][$hari][$w->jam_ke] = [
+                            'mapel' => strtoupper($tipeSlot),
+                            'guru' => '',
+                            'color' => 'bg-amber-50 text-amber-600 font-bold'
+                        ];
                     }
 
-                    if (!isset($jadwals[$k->id][$namaHari][$j]['id']) && !isset($jadwals[$k->id][$namaHari][$j]['tipe'])) {
-                        $jadwals[$k->id][$namaHari][$j] = [ 'id' => null, 'mapel' => '', 'guru' => '', 'kode_mapel' => '', 'kode_guru' => '', 'color' => 'bg-slate-50', 'tipe' => 'empty' ];
+                    if (!isset($jadwals[$k->id][$hari][$w->jam_ke])) {
+                        $jadwals[$k->id][$hari][$w->jam_ke] = null;
                     }
                 }
             }
         }
 
         $tahunAktif = TahunPelajaran::getActive();
-        $judulTahun = $tahunAktif ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}" : date('Y') . '/' . (date('Y') + 1);
+        $judulTahun = $tahunAktif
+            ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}"
+            : date('Y');
 
-        return view('penjadwalan.jadwal', compact('kelass', 'jadwals', 'judulTahun', 'gurusList', 'kelassList', 'reqGuru', 'reqKelas', 'dataHari', 'dataWaktu'));
+        return view('penjadwalan.jadwal', compact(
+            'kelass','jadwals','judulTahun',
+            'gurusList','kelassList','reqGuru','reqKelas',
+            'dataHari','dataWaktu'
+        ));
     }
 
     // =======================================================
-    // 2. FUNGSI GENERATE (TRANSLATE JAM AI KE JAM FISIK)
+    // 2. GENERATE (CSP / PYTHON)
     // =======================================================
     public function generate(Request $request)
     {
         set_time_limit(600);
+
         try {
             $waktuList = MasterWaktu::orderBy('jam_ke')->get();
 
-            $slotMapping = []; 
-            $pToT = []; 
+            $slotMapping = [];
 
-            $hariAktif = MasterHari::getActiveDays()->map(function($h) use ($waktuList, &$slotMapping, &$pToT) {
-                $namaHariLower = strtolower($h->nama_hari);
-                $teachingSlotCounter = 1;
+            $hariAktif = MasterHari::getActiveDays()->map(function ($h) use ($waktuList, &$slotMapping) {
 
-                foreach($waktuList as $w) {
+                $counter = 1;
+
+                foreach ($waktuList as $w) {
+
                     $tipeSlot = $w->tipe;
-                    if ($namaHariLower == 'senin' && $w->tipe_senin) $tipeSlot = $w->tipe_senin;
-                    if ($namaHariLower == 'jumat' && $w->tipe_jumat) $tipeSlot = $w->tipe_jumat;
 
-                    if ($tipeSlot !== 'Tidak Ada') {
-                        if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
-                            $slotMapping[$h->nama_hari][$teachingSlotCounter] = $w->jam_ke;
-                            $pToT[$h->nama_hari][$w->jam_ke] = $teachingSlotCounter;
-                            $teachingSlotCounter++;
-                        }
+                    if (strtolower($h->nama_hari) == 'senin' && $w->tipe_senin) {
+                        $tipeSlot = $w->tipe_senin;
+                    }
+
+                    if (strtolower($h->nama_hari) == 'jumat' && $w->tipe_jumat) {
+                        $tipeSlot = $w->tipe_jumat;
+                    }
+
+                    if (!$w->is_fixed && $tipeSlot !== 'Tidak Ada') {
+                        $slotMapping[$h->nama_hari][$counter] = $w->jam_ke;
+                        $counter++;
                     }
                 }
+
                 return [
                     'nama' => $h->nama_hari,
-                    // Karena $teachingSlotCounter selalu nambah 1, kalau dia berhenti di 11 (setelah nyatet 10 jam),
-                    // berarti max_jam AI adalah 10. Ini SUDAH SANGAT BENAR.
-                    'max_jam' => $teachingSlotCounter - 1 
+                    'max_jam' => $counter - 1
                 ];
-            });
-
-            $gurus = Guru::all()->map(function ($guru) {
-                return [
-                    'id' => $guru->id,
-                    'nama' => $guru->nama_guru,
-                    'hari_mengajar' => $guru->hari_mengajar ? json_decode($guru->hari_mengajar, true) : [],
-                ];
-            });
-
-            $assignments = Jadwal::all()->map(function ($j) {
-                return [ 'id' => $j->id, 'guru_id' => $j->guru_id, 'kelas_id' => $j->kelas_id, 'mapel_id' => $j->mapel_id, 'jumlah_jam' => $j->jumlah_jam ];
-            });
-
-            $kelassData = Kelas::all()->map(function ($k) {
-                return [ 'id' => $k->id, 'nama_kelas' => $k->nama_kelas, 'limit_harian' => $k->limit_harian ?? 10, 'limit_jumat' => $k->limit_jumat ?? 7, 'max_jam_total' => $k->max_jam ?? 48 ];
             });
 
             $dataInput = [
                 'hari_aktif' => $hariAktif,
-                'gurus' => $gurus,
-                'kelass' => $kelassData,
-                'assignments' => $assignments,
+                'gurus' => Guru::all(),
+                'kelass' => Kelas::all(),
+                'assignments' => Jadwal::all()
             ];
 
-            $jsonPath = storage_path('app/input_solver.json');
-            file_put_contents($jsonPath, json_encode($dataInput));
+            file_put_contents(
+                storage_path('app/input_solver.json'),
+                json_encode($dataInput)
+            );
 
-            $scriptPath = base_path('python/scheduler.py');
-            $process = new Process(['python', $scriptPath, $jsonPath]);
-            $process->setTimeout(600);
+            $process = new Process([
+                'python',
+                base_path('python/scheduler.py'),
+                storage_path('app/input_solver.json')
+            ]);
+
             $process->run();
 
-            if (!$process->isSuccessful()) throw new ProcessFailedException($process);
-            $result = json_decode($process->getOutput(), true);
-
-            if (isset($result['status']) && ($result['status'] === 'OPTIMAL' || $result['status'] === 'FEASIBLE')) {
-                DB::beginTransaction();
-                try {
-                    foreach ($result['solution'] as $item) {
-                        $hari = $item['hari'];
-                        $tSlot = $item['jam']; 
-                        // Penerjemah: AI bilang jam ke-1. Diterjemahkan ke jam ke-1 fisik (karena 0 upacara). Sempurna!
-                        $pSlot = $slotMapping[$hari][$tSlot] ?? $tSlot; 
-
-                        DB::table('jadwals')->where('id', $item['id'])->update([ 'hari' => $hari, 'jam' => $pSlot, 'updated_at' => now() ]);
-                    }
-                    DB::commit();
-                    return redirect()->route('jadwal.index')->with('success', $result['message'])->with('waktu_komputasi', $result['waktu_komputasi_detik'] ?? null);
-                } catch (\Exception $e) {
-                    DB::rollBack();
-                    throw $e;
-                }
-            } else {
-                return redirect()->route('jadwal.index')->with('error', 'Gagal: ' . ($result['message'] ?? 'Solusi tidak ditemukan.'));
+            if (!$process->isSuccessful()) {
+                throw new ProcessFailedException($process);
             }
 
+            $result = json_decode($process->getOutput(), true);
+
+            DB::beginTransaction();
+
+            foreach ($result['solution'] as $item) {
+                $pSlot = $slotMapping[$item['hari']][$item['jam']] ?? $item['jam'];
+
+                DB::table('jadwals')
+                    ->where('id', $item['id'])
+                    ->update([
+                        'hari' => $item['hari'],
+                        'jam' => $pSlot
+                    ]);
+            }
+
+            DB::commit();
+
+            return redirect()->route('jadwal.index')->with('success', 'Generate berhasil');
+
         } catch (\Exception $e) {
-            return redirect()->route('jadwal.index')->with('error', 'Error: ' . $e->getMessage());
+            return back()->with('error', $e->getMessage());
         }
     }
 
-    /**
-     * Export Excel
-     */
+    // =======================================================
+    // 3. EXPORT
+    // =======================================================
     public function export()
     {
         $tahunAktif = TahunPelajaran::getActive();
-        $judulTahun = $tahunAktif ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}" : date('Y');
 
-        $fileName = 'Jadwal_Pelajaran_' . str_replace(['/', '\\'], '-', $judulTahun) . '.xlsx';
+        $judulTahun = $tahunAktif
+            ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}"
+            : date('Y');
 
-        return Excel::download(new JadwalExport($judulTahun), $fileName);
+        return Excel::download(
+            new JadwalExport($judulTahun),
+            'jadwal.xlsx'
+        );
     }
 }

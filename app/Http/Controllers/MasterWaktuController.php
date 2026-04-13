@@ -29,12 +29,13 @@ class MasterWaktuController extends Controller
         ]);
 
         $data = $request->all();
+       
         
         // HANYA cek kalau inputan beneran dikosongin admin, baru jadikan null
         if (!isset($data['jam_ke']) || $data['jam_ke'] === '') {
             $data['jam_ke'] = null;
         }
-
+ $data['is_fixed'] = $request->tipe != 'Belajar' ? 1 : 0;
         MasterWaktu::create($data);
         return redirect()->route('master-waktu.index')->with('success', "Waktu kegiatan berhasil ditambahkan.");
     }
@@ -58,12 +59,13 @@ class MasterWaktuController extends Controller
         if (!$waktu) return redirect()->back()->with('error', 'Data tidak ditemukan.');
         
         $data = $request->all();
+       
         
         // HANYA cek kalau inputan beneran dikosongin admin, baru jadikan null
         if (!isset($data['jam_ke']) || $data['jam_ke'] === '') {
             $data['jam_ke'] = null;
         }
-
+ $data['is_fixed'] = $request->tipe != 'Belajar' ? 1 : 0;
         $waktu->update($data);
         return redirect()->route('master-waktu.index')->with('success', "Data jam pelajaran diperbarui.");
     }

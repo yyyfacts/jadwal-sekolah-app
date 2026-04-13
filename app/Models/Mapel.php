@@ -9,7 +9,8 @@ class Mapel extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nama_mapel', 'kode_mapel'];
+    protected $fillable = ['nama_mapel', 'kode_mapel', 'mode'];
+
 
     // Relasi ke jadwal (Satu Mapel punya banyak Jadwal/Distribusi)
     public function jadwals()

@@ -172,6 +172,12 @@
                         {{-- AKSI --}}
                         <td class="px-6 py-5 text-right pr-12">
                             <div class="flex items-center justify-end gap-2.5">
+                                <!-- 🔥 TOGGLE ONLINE / OFFLINE (BARU) -->
+                                <button onclick="toggleMode({{ $m->id }}, '{{ $m->mode ?? 'offline' }}', this)" class="px-3 py-1 text-xs font-bold rounded-lg 
+        {{ ($m->mode ?? 'offline') == 'online' ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-600' }}">
+
+                                    {{ ($m->mode ?? 'offline') == 'online' ? 'ONLINE' : 'OFFLINE' }}
+                                </button>
                                 {{-- Tombol Distribusi Berwarna Sesuai Tema --}}
                                 <button onclick="openModal('modaljadwal{{ $m->id }}')"
                                     class="flex items-center gap-2 px-4 py-2 {{ $theme['btn'] }} text-white text-xs font-bold rounded-lg shadow-sm transition-all hover:-translate-y-0.5">
@@ -875,6 +881,51 @@ async function hapusJadwal(id, btn) {
         }
     } catch (e) {
         alert("Error koneksi.");
+    }
+}
+
+// ===============================
+// TOGGLE MODE ONLINE / OFFLINE
+// ===============================
+async function toggleMode(id, currentMode, btn) {
+    const newMode = currentMode === 'online' ? 'offline' : 'online';
+
+    try {
+        const res = await fetch(`/mapel/${id}/mode`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': CSRF_TOKEN,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                mode: newMode
+            })
+        });
+
+        const json = await res.json();
+
+        if (json.success) {
+            // Update tampilan tombol
+            btn.innerText = newMode.toUpperCase();
+
+            if (newMode === 'online') {
+                btn.classList.remove('bg-slate-100', 'text-slate-600');
+                btn.classList.add('bg-green-100', 'text-green-600');
+            } else {
+                btn.classList.remove('bg-green-100', 'text-green-600');
+                btn.classList.add('bg-slate-100', 'text-slate-600');
+            }
+
+            // Update state
+            btn.setAttribute('onclick', `toggleMode(${id}, '${newMode}', this)`);
+
+        } else {
+            alert(json.message);
+        }
+
+    } catch (err) {
+        alert('Gagal update mode');
+        console.error(err);
     }
 }
 </script>
