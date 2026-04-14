@@ -56,6 +56,26 @@ def main():
         if not allowed_days:
             allowed_days = hari_list
         guru_hari_map[g['id']] = allowed_days
+        # --- TAMBAHAN KODE DETEKSI DINI BENTROK LOGIKA ---
+    for g in gurus:
+        g_id = g['id']
+        nama_guru = g['nama']
+        total_sks_guru = sum(int(t['jumlah_jam']) for t in raw_assignments if t['guru_id'] == g_id)
+        
+        # Hitung kapasitas maksimal slot guru ini berdasarkan hari yang dia pilih
+        kapasitas_maksimal = 0
+        for h in guru_hari_map[g_id]:
+            # Ngambil batas jam dari kelas nggak mungkin di sini, jadi kita asumsikan rata-rata:
+            # Jumat 7 jam, hari biasa 10 jam.
+            kapasitas_maksimal += 7 if h == 'Jumat' else 10
+            
+        if total_sks_guru > kapasitas_maksimal:
+            print(json.dumps({
+                "status": "INFEASIBLE", 
+                "message": f"STOP! Guru '{nama_guru}' punya beban {total_sks_guru} JP, tapi harinya dibatasi terlalu dikit. Kapasitas harinya cuma muat {kapasitas_maksimal} jam."
+            }))
+            return
+    # -------------------------------------------------
 
     # ==========================================
     # 2. MEMBANGUN MODEL
