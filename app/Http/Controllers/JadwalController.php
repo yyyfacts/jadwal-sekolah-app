@@ -137,7 +137,7 @@ class JadwalController extends Controller
                 foreach($hariObj->waktuHaris as $w) {
                     $tipeSlot = $w->tipe;
 
-                    if ($tipeSlot !== 'Tidak Ada' && !in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
+                    if ($tipeSlot !== 'Tidak Ada' && !in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat'])) {
                         $slotMapping[$hariObj->nama_hari][$teachingSlotCounter] = $w->jam_ke;
                         $teachingSlotCounter++;
                     }
