@@ -122,7 +122,14 @@ def main():
             interval_var = model.NewOptionalIntervalVar(
                 start_var, durasi, end_var, is_present, f'interval_{t_id}_{h}'
             )
-
+# --- ATURAN MUTLAK PJOK MAKSIMAL SELESAI JAM KE-6 ---
+            nama_mapel_clean = t.get('nama_mapel', '').upper().replace(' ', '')
+            if 'PJOK' in nama_mapel_clean or 'P JOK' in nama_mapel_clean:
+                # end_var itu (jam mulai + durasi). 
+                # Kalau kita set <= 7, artinya paling lambat mulai jam ke-4 (selesai jam 6).
+                # Nggak mungkin nyentuh jam ke-7!
+                model.Add(end_var <= 7).OnlyEnforceIf(is_present)
+            # ----------------------------------------------------
             starts[(t_id, h)] = start_var
             presences[(t_id, h)] = is_present
             possible_days.append(is_present)
