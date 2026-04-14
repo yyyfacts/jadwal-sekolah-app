@@ -28,9 +28,8 @@
     </div>
     @endif
 
-    {{-- MAIN CARD UI DENGAN ALPINE JS UNTUK TABS --}}
-    <div x-data="{ activeTab: localStorage.getItem('tabJadwal') || 'senin', setTab(tab) { this.activeTab = tab; localStorage.setItem('tabJadwal', tab); } }"
-        class="bg-white rounded-xl border border-slate-200 shadow-md flex flex-col flex-1 overflow-hidden min-h-0">
+    {{-- MAIN CARD UI (TANPA TABS) --}}
+    <div class="bg-white rounded-xl border border-slate-200 shadow-md flex flex-col flex-1 overflow-hidden min-h-0">
 
         {{-- HEADER SECTION (TOMBOL GENERATE & EXPORT) --}}
         <div class="px-6 py-4 bg-white shrink-0 z-20 border-b border-slate-100">
@@ -92,34 +91,7 @@
             </div>
         </div>
 
-        {{-- TAB MENU --}}
-        <div class="flex gap-6 px-8 pt-4 bg-white border-b border-slate-200 shrink-0 z-20">
-            <button @click="setTab('senin')"
-                :class="activeTab === 'senin' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-400 hover:text-slate-600'"
-                class="pb-3 border-b-4 font-extrabold text-xs uppercase tracking-wider transition-colors">
-                Khusus Senin
-            </button>
-            <button @click="setTab('normal')"
-                :class="activeTab === 'normal' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-400 hover:text-slate-600'"
-                class="pb-3 border-b-4 font-extrabold text-xs uppercase tracking-wider transition-colors">
-                Normal (Selasa - Kamis)
-            </button>
-            <button @click="setTab('jumat')"
-                :class="activeTab === 'jumat' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-400 hover:text-slate-600'"
-                class="pb-3 border-b-4 font-extrabold text-xs uppercase tracking-wider transition-colors">
-                Khusus Jumat
-            </button>
-        </div>
-
-        @php
-        $groupedDays = [
-        'senin' => $dataHari->filter(fn($h) => strtolower($h->nama_hari) == 'senin'),
-        'normal' => $dataHari->filter(fn($h) => in_array(strtolower($h->nama_hari), ['selasa', 'rabu', 'kamis'])),
-        'jumat' => $dataHari->filter(fn($h) => strtolower($h->nama_hari) == 'jumat'),
-        ];
-        @endphp
-
-        {{-- TABLE SECTION --}}
+        {{-- TABLE SECTION (SATU TABEL UNTUK SEMUA HARI) --}}
         <div class="w-full flex-1 overflow-auto custom-scrollbar relative bg-slate-50/50 z-10 flex flex-col">
             @if($kelass->isEmpty() || empty($jadwals))
             <div class="flex flex-col items-center justify-center py-20 text-center">
@@ -127,52 +99,30 @@
                 <h3 class="text-sm font-bold text-slate-600">Data Jadwal Fisik Belum Dibuat / Kosong</h3>
             </div>
             @else
+            <div class="flex-1">
+                <table class="w-full min-w-max border-separate border-spacing-0 text-left" id="jadwal-tabel-main">
 
-            @foreach($groupedDays as $tabKey => $daysInTab)
-            <div x-show="activeTab === '{{ $tabKey }}'" x-cloak class="flex-1">
-                <table class="w-full min-w-max border-separate border-spacing-0 text-left"
-                    id="jadwal-tabel-{{ $tabKey }}">
-
-                    @if($daysInTab->isEmpty())
+                    @if($dataHari->isEmpty())
                     <tbody>
                         <tr>
-                            <td class="text-center py-20 text-slate-400 font-bold">Tidak ada hari aktif di kategori ini.
-                            </td>
+                            <td class="text-center py-20 text-slate-400 font-bold">Tidak ada data hari aktif.</td>
                         </tr>
                     </tbody>
                     @else
                     <thead>
-                        <tr class="text-white shadow-sm">
+                        <tr class="text-slate-600 bg-white shadow-sm">
                             <th
-                                class="h-[35px] w-[40px] min-w-[40px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-0 z-[60]">
-                            </th>
-                            <th
-                                class="h-[35px] w-[35px] min-w-[35px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[40px] z-[60]">
-                            </th>
-                            <th
-                                class="h-[35px] w-[90px] min-w-[90px] border-r border-b border-slate-700 bg-[#242b3d] sticky top-0 left-[75px] z-[60] shadow-[2px_0_5px_-1px_rgba(0,0,0,0.15)]">
-                            </th>
-                            @foreach($kelass as $kelas)
-                            <th class="h-[35px] min-w-[140px] max-w-[140px] bg-[#242b3d] sticky top-0 z-[50] border-r border-b border-slate-700 text-center font-bold text-[11px] uppercase jadwal-header"
-                                data-kelas="{{ strtolower($kelas->nama_kelas) }}">
-                                {{ $kelas->nama_kelas }}
-                            </th>
-                            @endforeach
-                        </tr>
-
-                        <tr class="text-slate-500 bg-white shadow-sm">
-                            <th
-                                class="h-[30px] w-[40px] min-w-[40px] sticky top-[35px] left-0 z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[9px] uppercase tracking-widest text-slate-400">
+                                class="h-[40px] w-[40px] min-w-[40px] sticky top-0 left-0 z-[60] bg-white border-r border-b border-slate-200 text-center font-extrabold text-[10px] uppercase tracking-widest">
                                 HARI</th>
                             <th
-                                class="h-[30px] w-[35px] min-w-[35px] sticky top-[35px] left-[40px] z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[9px] uppercase tracking-widest text-slate-400">
+                                class="h-[40px] w-[35px] min-w-[35px] sticky top-0 left-[40px] z-[60] bg-white border-r border-b border-slate-200 text-center font-extrabold text-[10px] uppercase tracking-widest">
                                 JP</th>
                             <th
-                                class="h-[30px] w-[90px] min-w-[90px] sticky top-[35px] left-[75px] z-[60] bg-white border-r border-b border-slate-200 text-center font-bold text-[9px] uppercase tracking-widest text-slate-400 shadow-[2px_0_5px_-1px_rgba(0,0,0,0.05)]">
+                                class="h-[40px] w-[90px] min-w-[90px] sticky top-0 left-[75px] z-[60] bg-white border-r border-b border-slate-200 text-center font-extrabold text-[10px] uppercase tracking-widest shadow-[2px_0_5px_-1px_rgba(0,0,0,0.05)]">
                                 WAKTU</th>
                             @foreach($kelass as $kelas)
-                            <th
-                                class="h-[30px] min-w-[140px] max-w-[140px] bg-slate-50 sticky top-[35px] z-[40] border-r border-b border-slate-200 text-center font-bold text-[9px] uppercase tracking-widest text-slate-400">
+                            <th class="h-[40px] min-w-[140px] max-w-[140px] bg-slate-100 sticky top-0 z-[50] border-r border-b border-slate-200 text-center font-extrabold text-[11px] uppercase tracking-widest text-slate-700 jadwal-header"
+                                data-kelas="{{ strtolower($kelas->nama_kelas) }}">
                                 {{ $kelas->nama_kelas }}
                             </th>
                             @endforeach
@@ -180,7 +130,7 @@
                     </thead>
 
                     <tbody class="bg-white">
-                        @foreach($daysInTab as $hariItem)
+                        @foreach($dataHari as $hariItem)
                         @php
                         $namaHari = $hariItem->nama_hari;
 
@@ -230,10 +180,10 @@
                             @if(in_array($tipeTampil, ['Istirahat', 'Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih',
                             'Pramuka']))
                             <td colspan="{{ $kelass->count() }}"
-                                class="h-[45px] p-1 border-b border-slate-200 bg-white align-middle">
+                                class="h-[45px] p-1 border-b border-slate-200 bg-slate-50 align-middle">
                                 <div class="w-full h-full rounded flex items-center justify-center">
                                     <span
-                                        class="font-bold text-slate-800 text-[11px] tracking-[0.2em] uppercase italic">
+                                        class="font-bold text-slate-500 text-[11px] tracking-[0.2em] uppercase italic">
                                         {{ $tipeTampil == 'Sholat Dhuha' ? 'SHOLAT DHUHA / LITERASI' : $tipeTampil }}
                                     </span>
                                 </div>
@@ -250,7 +200,7 @@
 
                                 @if($data)
                                 <div
-                                    class="w-full h-full flex flex-col justify-center items-center px-1 {{ $data['color'] }} group sel-content rounded-md">
+                                    class="w-full h-full flex flex-col justify-center items-center px-1 {{ $data['color'] }} group sel-content rounded-md border border-slate-100">
                                     <span
                                         class="font-bold text-[11px] leading-tight text-slate-800 break-words line-clamp-1">{{ $data['mapel'] }}</span>
                                     <span
@@ -299,7 +249,6 @@
                     @endif
                 </table>
             </div>
-            @endforeach
             @endif
 
             {{-- 3. TABEL KHUSUS KELAS DARING / ONLINE --}}
