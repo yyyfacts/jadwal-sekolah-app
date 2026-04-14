@@ -2,182 +2,212 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Jadwal;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Mapel;
-use App\Models\Jadwal;
+use App\Models\TahunPelajaran;
+use App\Models\MasterHari;
+use App\Models\WaktuHari;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Symfony\Component\Process\Process;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\JadwalExport;
 
-class KelasController extends Controller
+class JadwalController extends Controller
 {
-    private function checkAndFixDatabase()
+    public function index(Request $request)
     {
-        if (Schema::hasTable('jadwals') && !Schema::hasColumn('jadwals', 'tipe_jam')) {
-            Schema::table('jadwals', function (Blueprint $table) {
-                $table->string('tipe_jam')->default('single')->after('jumlah_jam');
-            });
-        }
-    }
+        $reqGuru = $request->input('guru_id');
+        $reqKelas = $request->input('kelas_id');
 
-    public function index()
-    {
-        $kelass = Kelas::with(['jadwals.mapel', 'jadwals.guru', 'waliKelas'])
-            ->orderBy('nama_kelas')
-            ->get();
+        $gurusList = Guru::orderBy('nama_guru')->get();
+        $kelassList = Kelas::orderBy('nama_kelas')->get();
+
+        $dataHari = MasterHari::with(['waktuHaris' => function($q) {
+            $q->orderBy('waktu_mulai');
+        }])->where('is_active', true)->get(); 
+        
+        $hariList = $dataHari->pluck('nama_hari')->toArray();
+        $dataWaktu = WaktuHari::select('jam_ke')->distinct()->orderBy('jam_ke')->get(); 
+        
+        $minJam = WaktuHari::min('jam_ke') ?? 0;
+        $maxJam = WaktuHari::max('jam_ke') ?? 15;
+
+        $kelass = $reqKelas ? Kelas::with('waliKelas')->where('id', $reqKelas)->orderBy('nama_kelas')->get() : Kelas::with('waliKelas')->orderBy('nama_kelas')->get();
+
+        $query = Jadwal::with(['guru', 'mapel', 'kelas'])
+            ->whereNotNull('hari')->whereNotNull('jam')
+            ->where(function($q) {
+                $q->where('status', 'offline')->orWhereNull('status');
+            });
+            
+        if ($reqGuru) $query->where('guru_id', $reqGuru);
+        if ($reqKelas) $query->where('kelas_id', $reqKelas);
+        $rawJadwals = $query->get();
+        $jadwals = [];
 
         foreach ($kelass as $k) {
-            $k->total_jam = $k->jadwals->sum('jumlah_jam');
+            foreach ($dataHari as $hariObj) {
+                $namaHari = $hariObj->nama_hari;
+                foreach ($hariObj->waktuHaris as $waktu) {
+                    if ($waktu->jam_ke !== null) {
+                        $jadwals[$k->id][$namaHari][$waktu->jam_ke] = null;
+                    }
+                }
+            }
         }
 
-        $mapels = Mapel::all();
-        $gurus = Guru::orderBy('nama_guru')->get();
+        $belajarSlots = [];
+        foreach ($dataHari as $hariObj) {
+            $namaHari = $hariObj->nama_hari;
+            $belajarSlots[$namaHari] = [];
+            
+            foreach ($hariObj->waktuHaris as $waktuObj) {
+                $tipeSlot = $waktuObj->tipe;
+                if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']) && $tipeSlot !== 'Tidak Ada') {
+                    if ($waktuObj->jam_ke !== null) {
+                        $belajarSlots[$namaHari][] = $waktuObj->jam_ke;
+                    }
+                }
+            }
+        }
 
-        return view('penjadwalan.kelas', compact('kelass', 'mapels', 'gurus'));
+        foreach ($rawJadwals as $row) {
+            $durasi = $row->jumlah_jam;
+            $hari = $row->hari;
+            $jamMulaiFisik = $row->jam; 
+            
+            $slotsTersedia = $belajarSlots[$hari] ?? [];
+            $startIndex = array_search($jamMulaiFisik, $slotsTersedia); 
+            
+            $color = match ($row->tipe_jam) {
+                'double' => 'bg-blue-100 text-blue-800 border-blue-200',
+                'triple' => 'bg-purple-100 text-purple-800 border-purple-200',
+                default => 'bg-white text-slate-700 border-slate-200'
+            };
+
+            if ($startIndex !== false) {
+                for ($i = 0; $i < $durasi; $i++) {
+                    if (isset($slotsTersedia[$startIndex + $i])) {
+                        $jamSekarang = $slotsTersedia[$startIndex + $i]; 
+                        
+                        if (!isset($jadwals[$row->kelas_id])) continue;
+                        $jadwals[$row->kelas_id][$hari][$jamSekarang] = [
+                            'id' => $row->id,
+                            'mapel' => $row->mapel->nama_mapel ?? '-',
+                            'guru' => $row->guru->nama_guru ?? '-',
+                            'kode_guru' => $row->guru->kode_guru ?? '?',
+                            'color' => $color,
+                            'tipe' => $row->tipe_jam
+                        ];
+                    }
+                }
+            }
+        }
+
+        $queryOnline = Jadwal::with(['guru', 'mapel', 'kelas'])->where('status', 'online');
+        if ($reqGuru) $queryOnline->where('guru_id', $reqGuru);
+        if ($reqKelas) $queryOnline->where('kelas_id', $reqKelas);
+        $onlineJadwals = $queryOnline->orderBy('kelas_id')->get();
+
+        $tahunAktif = TahunPelajaran::getActive();
+        $judulTahun = $tahunAktif ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}" : date('Y') . '/' . (date('Y') + 1);
+
+        return view('penjadwalan.jadwal', compact('kelass', 'jadwals', 'onlineJadwals', 'judulTahun', 'gurusList', 'kelassList', 'reqGuru', 'reqKelas', 'dataHari', 'dataWaktu'));
     }
 
-    public function store(Request $request)
+    public function generate(Request $request)
     {
-        $request->validate([
-            'nama_kelas'   => 'required|string',
-            'kode_kelas'   => 'required|string|unique:kelas',
-            'max_jam'      => 'required|integer|min:1',
-            'wali_guru_id' => 'nullable|exists:gurus,id'
-        ]);
-
-        Kelas::create($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'wali_guru_id'));
-        return redirect()->route('kelas.index')->with('success', 'Kelas berhasil ditambahkan.');
-    }
-
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'nama_kelas'   => 'required|string',
-            'kode_kelas'   => 'required|string|unique:kelas,kode_kelas,' . $id,
-            'max_jam'      => 'required|integer|min:1',
-            'wali_guru_id' => 'nullable|exists:gurus,id'
-        ]);
-
-        $kelas = Kelas::findOrFail($id);
-        $kelas->update($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'wali_guru_id'));
-        return redirect()->route('kelas.index')->with('success', 'Data kelas berhasil diperbarui.');
-    }
-
-    public function destroy($id)
-    {
-        $kelas = Kelas::findOrFail($id);
-        $kelas->jadwals()->delete();
-        $kelas->delete();
-        return redirect()->route('kelas.index')->with('success', 'Kelas berhasil dihapus.');
-    }
-
-    // --- BAGIAN MANAJEMEN PLOTTING JADWAL (AJAX) ---
-
-    public function simpanJadwal(Request $request, $id)
-    {
+        set_time_limit(600);
         try {
-            $this->checkAndFixDatabase();
-            $request->validate([
-                'mapel_id'   => 'required|exists:mapels,id',
-                'guru_id'    => 'required|exists:gurus,id',
-                'jumlah_jam' => 'required|numeric|min:1',
-                'tipe_jam'   => 'required|in:single,double,triple',
-                'status'     => 'required|in:offline,online', 
-            ]);
+            $dataHari = MasterHari::with(['waktuHaris' => function($q) {
+                $q->orderBy('waktu_mulai');
+            }])->where('is_active', true)->get();
 
-            $kelas = Kelas::with('jadwals')->findOrFail($id);
-            $currentTotal = $kelas->jadwals->sum('jumlah_jam');
-            
-            $maxJam = $kelas->max_jam; 
-            
-            if (($currentTotal + $request->jumlah_jam) > $maxJam) {
-                return response()->json([
-                    'success' => false, 
-                    'message' => "Gagal! Kapasitas penuh. Maks $maxJam jam."
-                ], 422);
+            $slotMapping = []; 
+
+            // Hitung Max JP Murni Belajar per Hari (Biar Python Gak Salah Paham)
+            $hariAktif = $dataHari->map(function($hariObj) use (&$slotMapping) {
+                $teachingSlotCounter = 1;
+                foreach($hariObj->waktuHaris as $w) {
+                    $tipeSlot = $w->tipe;
+                    if ($tipeSlot !== 'Tidak Ada' && !in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
+                        $slotMapping[$hariObj->nama_hari][$teachingSlotCounter] = $w->jam_ke;
+                        $teachingSlotCounter++;
+                    }
+                }
+                return [
+                    'nama' => $hariObj->nama_hari,
+                    'max_jam' => $teachingSlotCounter - 1 
+                ];
+            });
+
+            $gurus = Guru::all()->map(function ($guru) {
+                return [
+                    'id' => $guru->id,
+                    'nama' => $guru->nama_guru,
+                    'hari_mengajar' => $guru->hari_mengajar ? json_decode($guru->hari_mengajar, true) : [],
+                ];
+            });
+
+            $assignments = Jadwal::where(function($q) {
+                    $q->where('status', 'offline')->orWhereNull('status');
+                })->get()->map(function ($j) {
+                    return [ 'id' => $j->id, 'guru_id' => $j->guru_id, 'kelas_id' => $j->kelas_id, 'mapel_id' => $j->mapel_id, 'jumlah_jam' => $j->jumlah_jam ];
+                });
+
+            // LIMIT DIHILANGKAN DARI KELAS, MURNI MENGANDALKAN MASTER HARI
+            $kelassData = Kelas::all()->map(function ($k) {
+                return [ 'id' => $k->id, 'nama_kelas' => $k->nama_kelas, 'max_jam_total' => $k->max_jam ?? 48 ];
+            });
+
+            $dataInput = [
+                'hari_aktif' => $hariAktif, 'gurus' => $gurus, 'kelass' => $kelassData, 'assignments' => $assignments,
+            ];
+
+            $jsonPath = storage_path('app/input_solver.json');
+            file_put_contents($jsonPath, json_encode($dataInput));
+
+            $scriptPath = base_path('python/scheduler.py');
+            $process = new Process(['python', $scriptPath, $jsonPath]);
+            $process->setTimeout(600);
+            $process->run();
+
+            if (!$process->isSuccessful()) throw new ProcessFailedException($process);
+            $result = json_decode($process->getOutput(), true);
+
+            if (isset($result['status']) && ($result['status'] === 'OPTIMAL' || $result['status'] === 'FEASIBLE')) {
+                DB::beginTransaction();
+                try {
+                    foreach ($result['solution'] as $item) {
+                        $hari = $item['hari'];
+                        $tSlot = $item['jam']; 
+                        $pSlot = $slotMapping[$hari][$tSlot] ?? $tSlot; 
+
+                        DB::table('jadwals')->where('id', $item['id'])->update([ 'hari' => $hari, 'jam' => $pSlot, 'updated_at' => now() ]);
+                    }
+                    DB::commit();
+                    return redirect()->route('jadwal.index')->with('success', $result['message'])->with('waktu_komputasi', $result['waktu_komputasi_detik'] ?? null);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    throw $e;
+                }
+            } else {
+                return redirect()->route('jadwal.index')->with('error', 'Gagal: ' . ($result['message'] ?? 'Solusi tidak ditemukan.'));
             }
 
-            $jadwal = new Jadwal();
-            $jadwal->kelas_id   = $id;
-            $jadwal->mapel_id   = $request->mapel_id;
-            $jadwal->guru_id    = $request->guru_id;
-            $jadwal->jumlah_jam = $request->jumlah_jam;
-            $jadwal->tipe_jam   = $request->tipe_jam;
-            $jadwal->status     = $request->status; 
-            
-            $jadwal->hari       = null; 
-            $jadwal->jam        = null; 
-            $jadwal->save();
-
-            $jadwal->load(['mapel', 'guru']);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Berhasil Disimpan!',
-                'jadwal'  => $jadwal
-            ]);
-
-        } catch (\Throwable $e) {
-            return response()->json(['success' => false,'message' => 'Error: ' . $e->getMessage()], 500);
+        } catch (\Exception $e) {
+            return redirect()->route('jadwal.index')->with('error', 'Error: ' . $e->getMessage());
         }
     }
 
-    public function updateJadwal(Request $request, $id)
+    public function export()
     {
-        try {
-            $this->checkAndFixDatabase();
-            $jadwal = Jadwal::findOrFail($id);
-
-            $request->validate([
-                'mapel_id'   => 'required|exists:mapels,id',
-                'guru_id'    => 'required|exists:gurus,id',
-                'jumlah_jam' => 'required|numeric|min:1',
-                'tipe_jam'   => 'required|in:single,double,triple',
-                'status'     => 'required|in:offline,online', 
-            ]);
-
-            $kelas = Kelas::with('jadwals')->findOrFail($jadwal->kelas_id);
-            $currentTotalOthers = $kelas->jadwals->where('id', '!=', $id)->sum('jumlah_jam');
-            $maxJam = $kelas->max_jam;
-            $newTotal = $currentTotalOthers + $request->jumlah_jam;
-
-            if ($newTotal > $maxJam) {
-                $sisa = $maxJam - $currentTotalOthers;
-                return response()->json([
-                    'success' => false,
-                    'message' => "Gagal! Total jam ($newTotal) melebihi batas ($maxJam). Sisa slot: $sisa jam."
-                ], 422);
-            }
-
-            $jadwal->mapel_id   = $request->mapel_id;
-            $jadwal->guru_id    = $request->guru_id;
-            $jadwal->jumlah_jam = $request->jumlah_jam;
-            $jadwal->tipe_jam   = $request->tipe_jam;
-            $jadwal->status     = $request->status; 
-            $jadwal->save();
-
-            $jadwal->load(['mapel', 'guru']);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Berhasil Diupdate!',
-                'jadwal'  => $jadwal
-            ]);
-
-        } catch (\Throwable $e) {
-            return response()->json(['success' => false,'message' => 'Error: ' . $e->getMessage()], 500);
-        }
-    }
-
-    public function hapusJadwal($id)
-    {
-        try {
-            $jadwal = Jadwal::findOrFail($id);
-            $jadwal->delete();
-            return response()->json(['success' => true,'message' => 'Berhasil Dihapus!']);
-        } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
+        $tahunAktif = TahunPelajaran::getActive();
+        $judulTahun = $tahunAktif ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}" : date('Y');
+        return Excel::download(new JadwalExport($judulTahun), 'Jadwal_Pelajaran.xlsx');
     }
 }

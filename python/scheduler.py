@@ -20,15 +20,14 @@ def main():
 
     hari_info = data.get('hari_aktif', [])
     hari_list = [h['nama'] for h in hari_info]
+    # max_jam_map adalah total kotak "Belajar" per harinya
     max_jam_map = {h['nama']: int(h['max_jam']) for h in hari_info}
-    
-    kelas_limits = {k['id']: {'normal': int(k.get('limit_harian', 10)), 'jumat': int(k.get('limit_jumat', 7))} for k in kelass}
 
     # =================================================================
     # PRE-CHECK ERROR SEBELUM SOLVING
     # =================================================================
     
-    # 1. KELAS OVERLOAD
+    # 1. KELAS OVERLOAD (DIHITUNG DARI MASTER HARI)
     beban_kelas_total = {}
     for t in raw_assignments:
         k_id = t['kelas_id']
@@ -37,18 +36,19 @@ def main():
     for k in kelass:
         k_id = k['id']
         nama_kelas = k['nama_kelas']
-        kapasitas_seminggu = sum([kelas_limits[k_id]['jumat'] if str(h).lower() == 'jumat' else kelas_limits[k_id]['normal'] for h in hari_list])
+        # Menghitung total slot Belajar per minggu berdasar Master Hari
+        kapasitas_seminggu = sum([max_jam_map.get(h, 0) for h in hari_list])
         beban = beban_kelas_total.get(k_id, 0)
         
         if beban > kapasitas_seminggu:
             print(json.dumps({
                 "status": "INFEASIBLE", "waktu_komputasi_detik": 0,
                 "error_code": "CLASS_OVERLOAD", "target_error": nama_kelas,
-                "message": f"Kapasitas Kelas {nama_kelas} Kepenuhan (Beban: {beban} JP, Maks: {kapasitas_seminggu} JP)."
+                "message": f"Kapasitas Kelas {nama_kelas} Kepenuhan (Beban: {beban} JP, Maks Slot Sekolah: {kapasitas_seminggu} JP)."
             }))
             return
 
-    # 2. GURU OVERLOAD (Tanpa waktu kosong)
+    # 2. GURU OVERLOAD 
     beban_guru_total = {}
     for t in raw_assignments:
         g_id = t['guru_id']
@@ -120,16 +120,16 @@ def main():
             print(json.dumps({"status": "INFEASIBLE", "error_code": "MAPEL_UNPLACEABLE", "target_error": f"ID {t_id}", "message": "Ada mapel yg durasinya melebihi jam masuk sekolah harian."}))
             return
 
-    # Batasan Anti Bentrok Kelas + Limit Beban Harian Kelas
+    # Batasan Anti Bentrok Kelas + Limit Beban Harian Kelas (Murni Max Jam Master Hari)
     for k_id in intervals_per_kelas:
         for h in hari_list:
             if intervals_per_kelas[k_id][h]: model.AddNoOverlap(intervals_per_kelas[k_id][h])
             
-            limit_aktif = kelas_limits[k_id]['jumat'] if str(h).lower() == 'jumat' else kelas_limits[k_id]['normal']
+            limit_aktif = max_jam_map.get(h, 10)
             beban_kelas = [is_p * dur for is_p, dur in presences_per_kelas[k_id][h]]
             if beban_kelas: model.Add(sum(beban_kelas) <= limit_aktif)
 
-    # Batasan Anti Bentrok Guru (Tanpa waktu kosong)
+    # Batasan Anti Bentrok Guru 
     for g in gurus:
         g_id = g['id']
         for h in hari_list:
