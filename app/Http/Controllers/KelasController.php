@@ -19,10 +19,20 @@ class KelasController extends Controller
                 $table->string('tipe_jam')->default('single')->after('jumlah_jam');
             });
         }
+        
+        // Pengecekan otomatis untuk kolom limit_harian dan limit_jumat di tabel kelas
+        if (Schema::hasTable('kelas') && !Schema::hasColumn('kelas', 'limit_harian')) {
+            Schema::table('kelas', function (Blueprint $table) {
+                $table->integer('limit_harian')->default(10)->after('max_jam');
+                $table->integer('limit_jumat')->default(7)->after('limit_harian');
+            });
+        }
     }
 
     public function index()
     {
+        $this->checkAndFixDatabase(); // Pastikan DB aman saat memuat halaman
+
         $kelass = Kelas::with(['jadwals.mapel', 'jadwals.guru', 'waliKelas'])
             ->orderBy('nama_kelas')
             ->get();
@@ -43,10 +53,12 @@ class KelasController extends Controller
             'nama_kelas'   => 'required|string',
             'kode_kelas'   => 'required|string|unique:kelas',
             'max_jam'      => 'required|integer|min:1',
-            'wali_guru_id' => 'nullable|exists:gurus,id'
+            'wali_guru_id' => 'nullable|exists:gurus,id',
+            'limit_harian' => 'required|integer|min:1',
+            'limit_jumat'  => 'required|integer|min:1',
         ]);
 
-        Kelas::create($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'wali_guru_id'));
+        Kelas::create($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'wali_guru_id', 'limit_harian', 'limit_jumat'));
         return redirect()->route('kelas.index')->with('success', 'Kelas berhasil ditambahkan.');
     }
 
@@ -56,11 +68,13 @@ class KelasController extends Controller
             'nama_kelas'   => 'required|string',
             'kode_kelas'   => 'required|string|unique:kelas,kode_kelas,' . $id,
             'max_jam'      => 'required|integer|min:1',
-            'wali_guru_id' => 'nullable|exists:gurus,id'
+            'wali_guru_id' => 'nullable|exists:gurus,id',
+            'limit_harian' => 'required|integer|min:1',
+            'limit_jumat'  => 'required|integer|min:1',
         ]);
 
         $kelas = Kelas::findOrFail($id);
-        $kelas->update($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'wali_guru_id'));
+        $kelas->update($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'wali_guru_id', 'limit_harian', 'limit_jumat'));
         return redirect()->route('kelas.index')->with('success', 'Data kelas berhasil diperbarui.');
     }
 

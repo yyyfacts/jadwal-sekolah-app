@@ -266,6 +266,21 @@
                     </div>
                 </div>
 
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Limit Harian (JP)</label>
+                        <input type="number" name="limit_harian" value="10"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-purple-500 outline-none text-center font-bold text-sm"
+                            required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Limit Jumat (JP)</label>
+                        <input type="number" name="limit_jumat" value="7"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-purple-500 outline-none text-center font-bold text-sm"
+                            required>
+                    </div>
+                </div>
+
                 <button type="submit"
                     class="w-full bg-slate-900 hover:bg-purple-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs mt-2">Simpan
                     Data Kelas</button>
@@ -346,6 +361,22 @@
                             required>
                     </div>
                 </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Limit Harian (JP)</label>
+                        <input type="number" name="limit_harian" value="{{ $k->limit_harian ?? 10 }}"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-center font-bold text-sm"
+                            required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Limit Jumat (JP)</label>
+                        <input type="number" name="limit_jumat" value="{{ $k->limit_jumat ?? 7 }}"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-center font-bold text-sm"
+                            required>
+                    </div>
+                </div>
+
                 <button type="submit"
                     class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs mt-2">Update
                     Data Kelas</button>
