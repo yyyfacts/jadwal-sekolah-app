@@ -233,8 +233,9 @@
     class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-scale-in">
         <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-            <h3 class="font-bold text-slate-800 flex items-center gap-2"><span
-                    class="w-1.5 h-5 bg-indigo-600 rounded-full"></span> Tambah Guru</h3>
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                <span class="w-1.5 h-5 bg-indigo-600 rounded-full"></span> Tambah Guru
+            </h3>
             <button type="button" onclick="closeModal('modaltambah')"
                 class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
         </div>
@@ -402,7 +403,7 @@
                                     <div
                                         class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button type="button"
-                                            onclick="editJadwalInline({{ $g->id }}, {{ $jadwal->id }}, {{ $jadwal->mapel_id }}, {{ $jadwal->kelas_id }}, {{ $jadwal->jumlah_jam }}, '{{ $jadwal->tipe_jam }}', '{{ $jadwal->status ?? 'offline' }}')"
+                                            onclick="editJadwalInline('{{ $g->id }}', '{{ $jadwal->id }}', '{{ $jadwal->mapel_id }}', '{{ $jadwal->kelas_id }}', '{{ $jadwal->jumlah_jam }}', '{{ $jadwal->tipe_jam }}', '{{ $jadwal->status ?? 'offline' }}')"
                                             class="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded-lg transition"
                                             title="Edit">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -411,7 +412,7 @@
                                                 </path>
                                             </svg>
                                         </button>
-                                        <button type="button" onclick="hapusJadwal({{ $jadwal->id }}, this)"
+                                        <button type="button" onclick="hapusJadwal('{{ $jadwal->id }}', this)"
                                             class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"
                                             title="Hapus">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -446,11 +447,11 @@
                                 class="font-extrabold text-slate-700 text-xs uppercase tracking-widest flex items-center gap-2">
                                 <span class="w-2 h-2 rounded-full bg-indigo-500"></span> Input Jadwal
                             </h4>
-                            <button id="btn-batal-{{ $g->id }}" type="button" onclick="resetFormJadwal({{ $g->id }})"
+                            <button id="btn-batal-{{ $g->id }}" type="button" onclick="resetFormJadwal('{{ $g->id }}')"
                                 class="hidden text-[10px] font-bold text-red-500 hover:bg-red-50 px-2 py-1 rounded transition uppercase">Batal</button>
                         </div>
                         <form id="form-jadwal-{{ $g->id }}" action="{{ route('guru.simpanJadwal', $g->id) }}"
-                            method="POST" onsubmit="handleFormJadwal(event, this, {{ $g->id }})">
+                            method="POST" onsubmit="handleFormJadwal(event, this, '{{ $g->id }}')">
                             <div id="method-spoof-{{ $g->id }}"></div>
                             <div class="space-y-5">
                                 {{-- Mapel --}}
@@ -458,7 +459,7 @@
                                     <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Mata
                                         Pelajaran</label>
                                     <input type="hidden" name="mapel_id" id="real-input-mapel-{{ $g->id }}" required>
-                                    <button type="button" onclick="toggleCustomDropdown('mapel', {{ $g->id }})"
+                                    <button type="button" onclick="toggleCustomDropdown('mapel', '{{ $g->id }}')"
                                         class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-left text-sm flex justify-between items-center hover:bg-white hover:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all">
                                         <span id="display-mapel-{{ $g->id }}" class="text-slate-500 font-medium">Pilih
                                             Mapel...</span>
@@ -472,14 +473,14 @@
                                         class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-xl mt-1 max-h-56 overflow-y-auto animate-scale-in">
                                         <div class="sticky top-0 bg-white p-2 border-b border-slate-100">
                                             <input type="text" placeholder="Cari..."
-                                                onkeyup="filterCustomDropdown('mapel', {{ $g->id }}, this)"
+                                                onkeyup="filterCustomDropdown('mapel', '{{ $g->id }}', this)"
                                                 class="w-full p-2 text-xs border border-slate-200 rounded-lg bg-slate-50 focus:border-indigo-500 outline-none">
                                         </div>
                                         <div id="list-mapel-{{ $g->id }}" class="p-1">
                                             @foreach($mapels as $m)
                                             <div class="option-item p-2.5 hover:bg-indigo-50 rounded-lg cursor-pointer text-sm border-b border-slate-50 last:border-0 transition-colors"
                                                 data-value="{{ $m->id }}" data-label="{{ $m->nama_mapel }}"
-                                                onclick="selectCustomOption('mapel', {{ $g->id }}, '{{ $m->id }}', '{{ $m->nama_mapel }}')">
+                                                onclick="selectCustomOption('mapel', '{{ $g->id }}', '{{ $m->id }}', '{{ $m->nama_mapel }}')">
                                                 <div class="font-bold text-slate-700">{{ $m->nama_mapel }}</div>
                                                 <div class="text-[10px] text-slate-400">{{ $m->kode_mapel }}</div>
                                             </div>
@@ -493,7 +494,7 @@
                                     <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Kelas
                                         Tujuan</label>
                                     <input type="hidden" name="kelas_id" id="real-input-kelas-{{ $g->id }}" required>
-                                    <button type="button" onclick="toggleCustomDropdown('kelas', {{ $g->id }})"
+                                    <button type="button" onclick="toggleCustomDropdown('kelas', '{{ $g->id }}')"
                                         class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-left text-sm flex justify-between items-center hover:bg-white hover:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all">
                                         <span id="display-kelas-{{ $g->id }}" class="text-slate-500 font-medium">Pilih
                                             Kelas...</span>
@@ -507,14 +508,14 @@
                                         class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-xl mt-1 max-h-56 overflow-y-auto animate-scale-in">
                                         <div class="sticky top-0 bg-white p-2 border-b border-slate-100">
                                             <input type="text" placeholder="Cari..."
-                                                onkeyup="filterCustomDropdown('kelas', {{ $g->id }}, this)"
+                                                onkeyup="filterCustomDropdown('kelas', '{{ $g->id }}', this)"
                                                 class="w-full p-2 text-xs border border-slate-200 rounded-lg bg-slate-50 focus:border-indigo-500 outline-none">
                                         </div>
                                         <div id="list-kelas-{{ $g->id }}" class="p-1 grid grid-cols-2 gap-1">
                                             @foreach($kelases as $k)
                                             <div class="option-item p-2 hover:bg-indigo-50 rounded-lg cursor-pointer text-xs font-bold text-slate-700 text-center border border-slate-100 transition-colors"
                                                 data-value="{{ $k->id }}" data-label="{{ $k->nama_kelas }}"
-                                                onclick="selectCustomOption('kelas', {{ $g->id }}, '{{ $k->id }}', '{{ $k->nama_kelas }}')">
+                                                onclick="selectCustomOption('kelas', '{{ $g->id }}', '{{ $k->id }}', '{{ $k->nama_kelas }}')">
                                                 {{ $k->nama_kelas }}
                                             </div>
                                             @endforeach
@@ -581,12 +582,10 @@
 </div>
 @endforeach
 
-</div>
 @endsection
 
 @push('scripts')
 <script>
-// Penulisan aman untuk ambil CSRF Token biar tidak error
 const csrfMeta = document.querySelector('meta[name="csrf-token"]');
 const CSRF_TOKEN = csrfMeta ? csrfMeta.content : '';
 
@@ -612,7 +611,6 @@ function searchMainTable() {
     }
 }
 
-// UPDATE LOGIKA BUKA MODAL
 function openModal(modalID) {
     const modal = document.getElementById(modalID);
     if (modal) {
@@ -630,14 +628,11 @@ function closeModal(modalID) {
     }
 }
 
-// LOGIKA KLIK LATAR BELAKANG LEBIH AMAN
 document.addEventListener('click', function(event) {
-    // Tutup Modal jika klik backdrop
     if (event.target.classList.contains('fixed') && event.target.id) {
         closeModal(event.target.id);
     }
 
-    // Tutup Dropdown Select Custom
     if (!event.target.closest('.custom-select-wrapper')) {
         document.querySelectorAll('[id^="dropdown-"]').forEach(el => el.classList.add('hidden'));
         document.querySelectorAll('.custom-select-wrapper').forEach(el => el.style.zIndex = "0");
@@ -797,8 +792,9 @@ function updateTableUI(guruId, jadwal, isEdit) {
     const namaMapel = jadwal.mapel?.nama_mapel || '-';
     const kodeMapel = jadwal.mapel?.kode_mapel || '';
     const namaKelas = jadwal.kelas?.nama_kelas || '-';
+    const jadwalStatus = jadwal.status || 'offline';
 
-    const badgeHTML = jadwal.status === 'online' ?
+    const badgeHTML = jadwalStatus === 'online' ?
         '<span class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">ONLINE</span>' :
         '<span class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">OFFLINE</span>';
 
@@ -820,7 +816,7 @@ function updateTableUI(guruId, jadwal, isEdit) {
 
             const btnEdit = row.querySelector('button[onclick^="editJadwalInline"]');
             btnEdit.setAttribute('onclick',
-                `editJadwalInline(${guruId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.kelas_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}', '${jadwal.status}')`
+                `editJadwalInline('${guruId}', '${jadwal.id}', '${jadwal.mapel_id}', '${jadwal.kelas_id}', '${jadwal.jumlah_jam}', '${jadwal.tipe_jam}', '${jadwalStatus}')`
             );
 
             row.classList.add('bg-amber-100');
@@ -842,10 +838,10 @@ function updateTableUI(guruId, jadwal, isEdit) {
             </td>
             <td class="px-4 py-3 text-right align-middle">
                 <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button type="button" onclick="editJadwalInline(${guruId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.kelas_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}', '${jadwal.status}')" class="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded-lg transition" title="Edit">
+                    <button type="button" onclick="editJadwalInline('${guruId}', '${jadwal.id}', '${jadwal.mapel_id}', '${jadwal.kelas_id}', '${jadwal.jumlah_jam}', '${jadwal.tipe_jam}', '${jadwalStatus}')" class="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded-lg transition" title="Edit">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                     </button>
-                    <button type="button" onclick="hapusJadwal(${jadwal.id}, this)" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition" title="Hapus">
+                    <button type="button" onclick="hapusJadwal('${jadwal.id}', this)" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition" title="Hapus">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
                 </div>
