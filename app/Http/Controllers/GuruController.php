@@ -68,79 +68,102 @@ class GuruController extends Controller
     public function simpanJadwal(Request $request, $id)
     {
         try {
+            $this->checkAndFixDatabase();
             $request->validate([
                 'mapel_id'   => 'required|exists:mapels,id',
-                'kelas_id'   => 'required|exists:kelas,id',
+                'guru_id'    => 'required|exists:gurus,id',
                 'jumlah_jam' => 'required|numeric|min:1',
                 'tipe_jam'   => 'required|in:single,double,triple',
-                'status'     => 'required|in:offline,online',
+                'status'     => 'required|in:offline,online', 
             ]);
 
-            $targetKelas = Kelas::with('jadwals')->findOrFail($request->kelas_id);
-            $currentTotal = $targetKelas->jadwals->sum('jumlah_jam');
+            $kelas = Kelas::with('jadwals')->findOrFail($id);
             
-            // MENGAMBIL LIMIT LANGSUNG DARI DATABASE KELAS
-            $maxJam = $targetKelas->max_jam; 
+            // HANYA HITUNG YANG OFFLINE
+            $currentTotalOffline = $kelas->jadwals->where('status', 'offline')->sum('jumlah_jam');
+            $maxJam = $kelas->max_jam; 
+            
+            // Jika jadwal ini OFFLINE, tambahkan ke perhitungan beban fisik
+            $tambahanBeban = ($request->status == 'offline') ? $request->jumlah_jam : 0;
 
-            if (($currentTotal + $request->jumlah_jam) > $maxJam) {
+            if (($currentTotalOffline + $tambahanBeban) > $maxJam) {
                 return response()->json([
-                    'success' => false,
-                    'message' => "Gagal! Kelas {$targetKelas->nama_kelas} penuh. Terisi: $currentTotal, Maks: $maxJam JP."
+                    'success' => false, 
+                    'message' => "Gagal! Slot Fisik (Offline) penuh. Terisi: $currentTotalOffline JP, Maks: $maxJam JP."
                 ], 422);
             }
 
             $jadwal = new Jadwal();
-            $jadwal->guru_id = $id; 
-            $jadwal->mapel_id = $request->mapel_id;
-            $jadwal->kelas_id = $request->kelas_id;
+            $jadwal->kelas_id   = $id;
+            $jadwal->mapel_id   = $request->mapel_id;
+            $jadwal->guru_id    = $request->guru_id;
             $jadwal->jumlah_jam = $request->jumlah_jam;
-            $jadwal->tipe_jam = $request->tipe_jam;
-            $jadwal->status = $request->status;
+            $jadwal->tipe_jam   = $request->tipe_jam;
+            $jadwal->status     = $request->status; 
+            $jadwal->hari       = null; 
+            $jadwal->jam        = null; 
             $jadwal->save();
 
-            $jadwal->load(['mapel', 'kelas']);
-            return response()->json(['success' => true, 'message' => 'Jadwal Disimpan!', 'jadwal' => $jadwal]);
+            $jadwal->load(['mapel', 'guru']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Berhasil Disimpan!',
+                'jadwal'  => $jadwal
+            ]);
+
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false,'message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
 
     public function updateJadwal(Request $request, $id)
     {
         try {
+            $this->checkAndFixDatabase();
             $jadwal = Jadwal::findOrFail($id);
+
             $request->validate([
                 'mapel_id'   => 'required|exists:mapels,id',
-                'kelas_id'   => 'required|exists:kelas,id',
+                'guru_id'    => 'required|exists:gurus,id',
                 'jumlah_jam' => 'required|numeric|min:1',
                 'tipe_jam'   => 'required|in:single,double,triple',
-                'status'     => 'required|in:offline,online',
+                'status'     => 'required|in:offline,online', 
             ]);
 
-            $targetKelas = Kelas::with('jadwals')->findOrFail($request->kelas_id);
-            $currentTotalOthers = $targetKelas->jadwals->where('id', '!=', $id)->sum('jumlah_jam');
-            $maxJam = $targetKelas->max_jam;
-            $newTotal = $currentTotalOthers + $request->jumlah_jam;
+            $kelas = Kelas::with('jadwals')->findOrFail($jadwal->kelas_id);
+            
+            // HANYA HITUNG YANG OFFLINE SELAIN JADWAL INI
+            $currentTotalOthersOffline = $kelas->jadwals->where('id', '!=', $id)->where('status', 'offline')->sum('jumlah_jam');
+            $maxJam = $kelas->max_jam;
+            
+            $tambahanBeban = ($request->status == 'offline') ? $request->jumlah_jam : 0;
+            $newTotal = $currentTotalOthersOffline + $tambahanBeban;
 
             if ($newTotal > $maxJam) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Gagal! Overload di kelas {$targetKelas->nama_kelas} ($newTotal/$maxJam)."
+                    'message' => "Gagal! Total Fisik ($newTotal JP) melebihi batas ($maxJam JP)."
                 ], 422);
             }
 
-            $jadwal->update([
-                'mapel_id' => $request->mapel_id,
-                'kelas_id' => $request->kelas_id,
-                'jumlah_jam' => $request->jumlah_jam,
-                'tipe_jam' => $request->tipe_jam,
-                'status' => $request->status,
+            $jadwal->mapel_id   = $request->mapel_id;
+            $jadwal->guru_id    = $request->guru_id;
+            $jadwal->jumlah_jam = $request->jumlah_jam;
+            $jadwal->tipe_jam   = $request->tipe_jam;
+            $jadwal->status     = $request->status; 
+            $jadwal->save();
+
+            $jadwal->load(['mapel', 'guru']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Berhasil Diupdate!',
+                'jadwal'  => $jadwal
             ]);
 
-            $jadwal->load(['mapel', 'kelas']);
-            return response()->json(['success' => true, 'message' => 'Jadwal Updated!', 'jadwal' => $jadwal]);
         } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false,'message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
 

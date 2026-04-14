@@ -12,21 +12,86 @@ def main():
     with open(json_path, 'r') as f:
         data = json.load(f)
 
+    # Note: Laravel sudah men-filter sehingga ini HANYA berisi jadwal OFFLINE
     raw_assignments = data.get('assignments', [])
     kelass = data.get('kelass', [])
     gurus = data.get('gurus', [])
     
-    # Sortir: Prioritaskan blok besar (3 JP / 4 JP) agar dipasang duluan
     raw_assignments.sort(key=lambda x: int(x['jumlah_jam']), reverse=True)
 
     hari_info = data.get('hari_aktif', [])
     hari_list = [h['nama'] for h in hari_info]
+    
+    # MAX JAM MAP ini adalah bentuk dari "Wadah Fisik" Master Hari per harinya
     max_jam_map = {h['nama']: int(h['max_jam']) for h in hari_info}
+    
+    # Ambil Max JP (Maksimal Beban Kurikulum) dari settingan Kelas
+    kelas_max_jp = {k['id']: int(k.get('max_jam_total', 48)) for k in kelass}
 
-    # PRE-CHECK DIHILANGKAN UNTUK MENGHEMAT SPACE (Sama seperti sebelumnya)
+    # =================================================================
+    # PRE-CHECK ERROR SEBELUM SOLVING
+    # =================================================================
+    
+    # 1. KELAS OVERLOAD CHECK
+    beban_kelas_offline = {}
+    for t in raw_assignments:
+        k_id = t['kelas_id']
+        beban_kelas_offline[k_id] = beban_kelas_offline.get(k_id, 0) + int(t['jumlah_jam'])
 
+    # Hitung total kotak fisik seminggu yang tersedia dari Master Hari
+    kapasitas_wadah_seminggu = sum(max_jam_map.values())
+
+    for k in kelass:
+        k_id = k['id']
+        nama_kelas = k['nama_kelas']
+        beban = beban_kelas_offline.get(k_id, 0)
+        max_jp_kurikulum = kelas_max_jp[k_id]
+        
+        # A. Cek apakah beban offline melebihi settingan Max JP kelas
+        if beban > max_jp_kurikulum:
+            print(json.dumps({
+                "status": "INFEASIBLE", "waktu_komputasi_detik": 0,
+                "error_code": "CLASS_OVERLOAD", "target_error": nama_kelas,
+                "message": f"Beban Fisik (Offline) Kelas {nama_kelas} penuh. (Beban: {beban} JP, Maks: {max_jp_kurikulum} JP)."
+            }))
+            return
+            
+        # B. Cek apakah beban melebihi wadah fisik dari Master Hari
+        if beban > kapasitas_wadah_seminggu:
+            print(json.dumps({
+                "status": "INFEASIBLE", "waktu_komputasi_detik": 0,
+                "error_code": "BOX_OVERLOAD", "target_error": nama_kelas,
+                "message": f"Beban Kelas {nama_kelas} ({beban} JP) melebihi kapasitas total Master Hari ({kapasitas_wadah_seminggu} Kotak)."
+            }))
+            return
+
+    # 2. GURU OVERLOAD
+    beban_guru_offline = {}
+    for t in raw_assignments:
+        g_id = t['guru_id']
+        beban_guru_offline[g_id] = beban_guru_offline.get(g_id, 0) + int(t['jumlah_jam'])
+
+    for g in gurus:
+        g_id = g['id']
+        nama_guru = g['nama']
+        hari_mengajar = g.get('hari_mengajar', []) or hari_list
+        kapasitas_guru = sum([max_jam_map.get(h, 10) for h in hari_mengajar if h in hari_list])
+        
+        beban = beban_guru_offline.get(g_id, 0)
+        if beban > kapasitas_guru:
+            print(json.dumps({
+                "status": "INFEASIBLE", "waktu_komputasi_detik": 0,
+                "error_code": "TEACHER_OVERLOAD", "target_error": nama_guru,
+                "message": f"Beban Mengajar {nama_guru} Terlalu Banyak (Beban: {beban} JP, Maks: {kapasitas_guru} JP).",
+                "rekomendasi": "Tambah 'Hari Mengajar' guru tersebut."
+            }))
+            return
+
+    # =================================================================
+    # CP-SAT MODELING
+    # =================================================================
     model = cp_model.CpModel()
-    starts, ends, presences, all_start_vars = {}, {}, {}, []
+    starts, presences, all_start_vars = {}, {}, []
     intervals_per_kelas = {k['id']: {h: [] for h in hari_list} for k in kelass}
     intervals_per_guru = {g['id']: {h: [] for h in hari_list} for g in gurus}
     presences_per_kelas = {k['id']: {h: [] for h in hari_list} for k in kelass}
@@ -37,7 +102,6 @@ def main():
         if durasi <= 0: continue
         
         t_id, g_id, k_id, m_id = t['id'], t['guru_id'], t['kelas_id'], t.get('mapel_id')
-        nama_mapel = t.get('nama_mapel', '').lower()
         tasks_metadata.append({'id': t_id})
 
         group_key = (k_id, m_id if m_id else f"guru_{g_id}")
@@ -47,6 +111,7 @@ def main():
         possible_days = [] 
 
         for h in hari_list:
+            # Gunakan WADAH FISIK per hari dari Master Hari
             batas_jam = max_jam_map.get(h, 10) 
             if durasi > batas_jam: continue
 
@@ -58,66 +123,45 @@ def main():
             
             interval_var = model.NewOptionalIntervalVar(start_var, durasi, end_var, is_present, f'interval_{t_id}_{h}')
 
-            # =============================================================
-            # ATURAN KHUSUS PJOK: MAX JAM KE 6
-            # end_var <= 7 berarti batas akhir pelajaran adalah kotak ke-6
-            # =============================================================
-            if 'pjok' in nama_mapel or 'olahraga' in nama_mapel or 'penjas' in nama_mapel:
-                model.Add(end_var <= 7).OnlyEnforceIf(is_present)
-
             starts[(t_id, h)] = start_var
-            ends[(t_id, h)] = end_var
             presences[(t_id, h)] = is_present
             possible_days.append(is_present)
             all_start_vars.append(start_var)
 
             intervals_per_kelas[k_id][h].append(interval_var)
             intervals_per_guru[g_id][h].append(interval_var)
-            
-            # Simpan end_var untuk fitur VAKUM nanti
-            presences_per_kelas[k_id][h].append((is_present, durasi, end_var))
+            presences_per_kelas[k_id][h].append((is_present, durasi))
 
         if possible_days:
             model.Add(sum(possible_days) == 1)
+        else:
+            print(json.dumps({"status": "INFEASIBLE", "error_code": "MAPEL_UNPLACEABLE", "target_error": f"ID {t_id}", "message": "Ada mapel yg durasinya melebihi batas belajar di Master Hari."}))
+            return
 
-    # Batasan Kelas
+    # Batasan Anti Bentrok Kelas
     for k_id in intervals_per_kelas:
         for h in hari_list:
-            # 1. Anti Bentrok
-            if intervals_per_kelas[k_id][h]: 
-                model.AddNoOverlap(intervals_per_kelas[k_id][h])
+            if intervals_per_kelas[k_id][h]: model.AddNoOverlap(intervals_per_kelas[k_id][h])
             
+            # WADAH FISIK HARIAN SEBAGAI LIMIT KELAS
             limit_aktif = max_jam_map.get(h, 10)
-            beban_kelas = [is_p * dur for is_p, dur, e_var in presences_per_kelas[k_id][h]]
-            
-            if beban_kelas: 
-                # Total JP per hari tidak boleh melewati batas
-                total_dur = model.NewIntVar(0, limit_aktif, f'total_dur_{k_id}_{h}')
-                model.Add(total_dur == sum(beban_kelas))
-                
-                # =============================================================
-                # ATURAN VAKUM (ANTI BOLONG)
-                # Memaksa semua jadwal tidak ada yang melewati total durasi
-                # Artinya semua jadwal akan dipadatkan ke kiri tanpa rongga/bolong
-                # =============================================================
-                for is_p, dur, e_var in presences_per_kelas[k_id][h]:
-                    model.Add(e_var <= 1 + total_dur).OnlyEnforceIf(is_p)
+            beban_kelas = [is_p * dur for is_p, dur in presences_per_kelas[k_id][h]]
+            if beban_kelas: model.Add(sum(beban_kelas) <= limit_aktif)
 
-    # Batasan Anti Bentrok Guru 
+    # Batasan Anti Bentrok Guru
     for g in gurus:
         g_id = g['id']
         for h in hari_list:
             intervals = intervals_per_guru[g_id][h]
             if intervals: model.AddNoOverlap(intervals)
 
-    # Batasan Mapel Kembar Sehari (Maks 2 sesi per hari agar variatif)
+    # Batasan Mapel Kembar Sehari (Maks 2 sesi per hari)
     for key, task_ids in tasks_per_mapel_group.items():
         if len(task_ids) > 1:
             for h in hari_list:
                 daily_presence = [presences[(tid, h)] for tid in task_ids if (tid, h) in presences]
                 if daily_presence: model.Add(sum(daily_presence) <= 2)
 
-    # Strategi: Letakkan jadwal sedini mungkin di pagi hari
     if all_start_vars: model.AddDecisionStrategy(all_start_vars, cp_model.CHOOSE_FIRST, cp_model.SELECT_MIN_VALUE)
 
     start_time = time.time()  
@@ -140,14 +184,13 @@ def main():
             "status": "OPTIMAL", 
             "solution": final_solution, 
             "waktu_komputasi_detik": round(waktu_komputasi, 2), 
-            "message": f"Sukses! Jadwal berhasil disusun tanpa bolong dalam {waktu_komputasi:.2f} detik."
+            "message": f"Sukses! Jadwal berhasil disusun dalam {waktu_komputasi:.2f} detik."
         }))
     else:
         print(json.dumps({
             "status": "INFEASIBLE", "waktu_komputasi_detik": round(waktu_komputasi, 2), 
             "error_code": "CSP_DEADLOCK", "target_error": "Sistem Puzzle AI",
-            "message": "AI gagal menyusun jadwal tanpa bolong. Kemungkinan jadwal guru terlalu padat/bentrok.",
-            "rekomendasi": "1. Gabungkan mapel yg pecah-pecah.\n2. Cek guru yg 'Hari Mengajar' nya sedikit."
+            "message": "AI gagal menyusun jadwal. Bentrok terdeteksi. Silakan gabungkan jam pelajaran yang pecah-pecah."
         }))
 
 if __name__ == '__main__': main()

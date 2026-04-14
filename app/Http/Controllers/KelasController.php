@@ -74,7 +74,7 @@ class KelasController extends Controller
 
     // --- BAGIAN MANAJEMEN PLOTTING JADWAL (AJAX) ---
 
-    public function simpanJadwal(Request $request, $id)
+   public function simpanJadwal(Request $request, $id)
     {
         try {
             $this->checkAndFixDatabase();
@@ -87,14 +87,18 @@ class KelasController extends Controller
             ]);
 
             $kelas = Kelas::with('jadwals')->findOrFail($id);
-            $currentTotal = $kelas->jadwals->sum('jumlah_jam');
             
+            // HANYA HITUNG YANG OFFLINE
+            $currentTotalOffline = $kelas->jadwals->where('status', 'offline')->sum('jumlah_jam');
             $maxJam = $kelas->max_jam; 
             
-            if (($currentTotal + $request->jumlah_jam) > $maxJam) {
+            // Jika jadwal ini OFFLINE, tambahkan ke perhitungan beban fisik
+            $tambahanBeban = ($request->status == 'offline') ? $request->jumlah_jam : 0;
+
+            if (($currentTotalOffline + $tambahanBeban) > $maxJam) {
                 return response()->json([
                     'success' => false, 
-                    'message' => "Gagal! Kapasitas penuh. Maks $maxJam jam."
+                    'message' => "Gagal! Slot Fisik (Offline) penuh. Terisi: $currentTotalOffline JP, Maks: $maxJam JP."
                 ], 422);
             }
 
@@ -105,7 +109,6 @@ class KelasController extends Controller
             $jadwal->jumlah_jam = $request->jumlah_jam;
             $jadwal->tipe_jam   = $request->tipe_jam;
             $jadwal->status     = $request->status; 
-            
             $jadwal->hari       = null; 
             $jadwal->jam        = null; 
             $jadwal->save();
@@ -138,15 +141,18 @@ class KelasController extends Controller
             ]);
 
             $kelas = Kelas::with('jadwals')->findOrFail($jadwal->kelas_id);
-            $currentTotalOthers = $kelas->jadwals->where('id', '!=', $id)->sum('jumlah_jam');
+            
+            // HANYA HITUNG YANG OFFLINE SELAIN JADWAL INI
+            $currentTotalOthersOffline = $kelas->jadwals->where('id', '!=', $id)->where('status', 'offline')->sum('jumlah_jam');
             $maxJam = $kelas->max_jam;
-            $newTotal = $currentTotalOthers + $request->jumlah_jam;
+            
+            $tambahanBeban = ($request->status == 'offline') ? $request->jumlah_jam : 0;
+            $newTotal = $currentTotalOthersOffline + $tambahanBeban;
 
             if ($newTotal > $maxJam) {
-                $sisa = $maxJam - $currentTotalOthers;
                 return response()->json([
                     'success' => false,
-                    'message' => "Gagal! Total jam ($newTotal) melebihi batas ($maxJam). Sisa slot: $sisa jam."
+                    'message' => "Gagal! Total Fisik ($newTotal JP) melebihi batas ($maxJam JP)."
                 ], 422);
             }
 
