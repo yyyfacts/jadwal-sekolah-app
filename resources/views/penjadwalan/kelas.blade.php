@@ -265,26 +265,9 @@
                             required>
                     </div>
                 </div>
-                <div class="p-3 bg-purple-50 rounded-lg border border-purple-100">
-                    <p class="text-[10px] font-bold text-purple-700 uppercase mb-2 text-center">Limit Jam Harian Belajar
-                    </p>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-[10px] font-semibold text-slate-500 mb-1">Senin - Kamis</label>
-                            <input type="number" name="limit_harian" value="10" min="1" max="15"
-                                class="w-full border border-purple-200 rounded-lg px-2 py-1.5 text-center text-sm focus:ring-purple-500 outline-none"
-                                required>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-semibold text-slate-500 mb-1">Jumat</label>
-                            <input type="number" name="limit_jumat" value="7" min="0" max="10"
-                                class="w-full border border-purple-200 rounded-lg px-2 py-1.5 text-center text-sm focus:ring-purple-500 outline-none"
-                                required>
-                        </div>
-                    </div>
-                </div>
+
                 <button type="submit"
-                    class="w-full bg-slate-900 hover:bg-purple-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">Simpan
+                    class="w-full bg-slate-900 hover:bg-purple-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs mt-2">Simpan
                     Data Kelas</button>
             </form>
         </div>
@@ -364,7 +347,7 @@
                     </div>
                 </div>
                 <button type="submit"
-                    class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">Update
+                    class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs mt-2">Update
                     Data Kelas</button>
             </form>
         </div>
@@ -807,7 +790,6 @@ async function handleFormJadwal(e, form, kelasId) {
         const json = await res.json();
 
         if (res.ok && json.success) {
-            // HILANGKAN location.reload(); DAN GANTI DENGAN INI:
             updateTableUI(kelasId, json.jadwal, form.dataset.mode === 'edit');
             resetFormJadwal(kelasId);
             updateTotalJam(kelasId);
