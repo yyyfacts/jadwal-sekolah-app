@@ -97,19 +97,18 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // --------------------------------------------------------------
-    // GROUP: DATA MASTER (HARI AKTIF)
+    // GROUP: DATA MASTER (HARI AKTIF & WAKTU)
     // --------------------------------------------------------------
     Route::prefix('master-hari')->name('master-hari.')->group(function () {
         Route::get('/', [MasterHariController::class, 'index'])->name('index');
         Route::post('/', [MasterHariController::class, 'store'])->name('store');
         Route::put('/{id}', [MasterHariController::class, 'update'])->name('update');
         Route::delete('/{id}', [MasterHariController::class, 'destroy'])->name('destroy');
+        
+        // Rute khusus pop-up waktu (sudah diperbaiki prefix-nya)
+        Route::get('/{id}/waktu', [MasterHariController::class, 'getWaktu']);
+        Route::post('/{id}/waktu', [MasterHariController::class, 'simpanWaktu'])->name('waktu');
     });
-
-    // --------------------------------------------------------------
-    // GROUP: DATA MASTER (WAKTU / JAM PELAJARAN)
-    // --------------------------------------------------------------
-   
 
     // --------------------------------------------------------------
     // GROUP: DATA MASTER (GURU)

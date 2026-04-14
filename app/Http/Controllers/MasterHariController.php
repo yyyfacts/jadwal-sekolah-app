@@ -11,7 +11,9 @@ class MasterHariController extends Controller
     public function index()
     {
         // Tarik data hari beserta relasi waktu-nya
-        $haris = MasterHari::with('waktuHaris')->get();
+       $haris = MasterHari::with(['waktuHaris' => function($query) {
+    $query->orderBy('waktu_mulai', 'asc');
+}])->get();
         return view('penjadwalan.master_hari', compact('haris'));
     }
 
@@ -47,7 +49,7 @@ class MasterHariController extends Controller
     
     public function getWaktu($id)
     {
-        $waktu = WaktuHari::where('master_hari_id', $id)->orderBy('jam_ke')->get();
+        $waktu = WaktuHari::where('master_hari_id', $id)->orderBy('waktu_mulai', 'asc')->get();
         return response()->json($waktu);
     }
 
