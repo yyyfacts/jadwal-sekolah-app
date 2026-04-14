@@ -61,8 +61,6 @@
     </style>
 </head>
 
-{{-- FIX: Hapus overflow dari body agar scroll hanya di dalam card --}}
-
 <body class="bg-slate-50 font-sans text-slate-800 antialiased h-screen flex flex-col overflow-hidden">
 
     {{-- ========================================================= --}}
@@ -85,8 +83,7 @@
                     <div class="leading-tight">
                         <h1 class="font-extrabold text-[15px] tracking-wide">SMAN 1 SAMPANG</h1>
                         <p class="text-[10px] font-bold text-slate-400 tracking-[0.15em] uppercase hidden sm:block">
-                            Sistem Penjadwalan
-                        </p>
+                            Sistem Penjadwalan</p>
                     </div>
                 </div>
 
@@ -117,16 +114,10 @@
                         Tahun Ajaran
                     </a>
 
-                    {{-- TAMBAHAN: 4A. HARI AKTIF --}}
+                    {{-- 4A. HARI AKTIF (DIKEMBALIKAN) --}}
                     <a href="{{ route('master-hari.index') }}"
                         class="px-3 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs('master-hari.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
                         Hari Aktif
-                    </a>
-
-                    {{-- TAMBAHAN: 4B. JAM BELAJAR --}}
-                    <a href="{{ route('master-waktu.index') }}"
-                        class="px-3 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs('master-waktu.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
-                        Jam Belajar
                     </a>
 
                     {{-- 5. JADWAL --}}
@@ -238,16 +229,10 @@
                     <span class="text-xl">🗓️</span> Tahun Pelajaran
                 </a>
 
-                {{-- TAMBAHAN Mobile: Master Hari --}}
+                {{-- TAMBAHAN Mobile: Hari Aktif (DIKEMBALIKAN) --}}
                 <a href="{{ route('master-hari.index') }}"
                     class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('master-hari.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                     <span class="text-xl">🌞</span> Hari Aktif
-                </a>
-
-                {{-- TAMBAHAN Mobile: Master Waktu --}}
-                <a href="{{ route('master-waktu.index') }}"
-                    class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('master-waktu.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
-                    <span class="text-xl">⏰</span> Jam Belajar
                 </a>
 
                 {{-- Mobile: Jadwal --}}
@@ -293,7 +278,6 @@
     {{-- ========================================================= --}}
     {{-- 2. CONTENT AREA --}}
     {{-- ========================================================= --}}
-    {{-- FIX: Hapus container redundan karena container sudah ada di dalam file blade masing-masing halaman --}}
     <main class="flex-grow w-full overflow-hidden flex flex-col relative z-0">
         @yield('content')
     </main>

@@ -3,24 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\MasterHari;
+use App\Models\WaktuHari;
 use Illuminate\Http\Request;
 
 class MasterHariController extends Controller
 {
     public function index()
     {
-        $haris = MasterHari::all();
+        // Tarik data hari beserta relasi waktu-nya
+        $haris = MasterHari::with('waktuHaris')->get();
         return view('penjadwalan.master_hari', compact('haris'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'nama_hari' => 'required|string|max:20',
-        ]);
-
+        $request->validate(['nama_hari' => 'required|string|max:20']);
         $data = $request->only('nama_hari');
-        $data['is_active'] = true; // Default aktif saat ditambah
+        $data['is_active'] = true;
 
         MasterHari::create($data);
         return redirect()->route('master-hari.index')->with('success', 'Data Hari berhasil ditambahkan.');
@@ -40,8 +39,36 @@ class MasterHariController extends Controller
     public function destroy($id)
     {
         $hari = MasterHari::find($id);
-        if ($hari) $hari->delete(); // Cek pakai IF biar anti-error kalau kepencet 2x
-
+        if ($hari) $hari->delete();
         return redirect()->route('master-hari.index')->with('success', 'Data Hari berhasil dihapus.');
+    }
+
+    // --- FUNGSI BARU UNTUK POP-UP WAKTU JAM KE- ---
+    
+    public function getWaktu($id)
+    {
+        $waktu = WaktuHari::where('master_hari_id', $id)->orderBy('jam_ke')->get();
+        return response()->json($waktu);
+    }
+
+    public function simpanWaktu(Request $request, $id)
+    {
+        // 1. Hapus semua jadwal lama di hari ini
+        WaktuHari::where('master_hari_id', $id)->delete();
+
+        // 2. Insert jadwal baru dari input pop-up
+        if ($request->jam_ke && is_array($request->jam_ke)) {
+            foreach ($request->jam_ke as $index => $jam) {
+                WaktuHari::create([
+                    'master_hari_id' => $id,
+                    'jam_ke'         => $jam,
+                    'waktu_mulai'    => $request->waktu_mulai[$index],
+                    'waktu_selesai'  => $request->waktu_selesai[$index],
+                    'tipe'           => $request->tipe[$index],
+                ]);
+            }
+        }
+
+        return redirect()->route('master-hari.index')->with('success', 'Aturan Jam Ke- berhasil disimpan!');
     }
 }
