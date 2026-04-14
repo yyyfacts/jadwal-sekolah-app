@@ -122,14 +122,15 @@ def main():
             interval_var = model.NewOptionalIntervalVar(
                 start_var, durasi, end_var, is_present, f'interval_{t_id}_{h}'
             )
-# --- ATURAN MUTLAK PJOK MAKSIMAL SELESAI JAM KE-6 ---
-            nama_mapel_clean = t.get('nama_mapel', '').upper().replace(' ', '')
-            if 'PJOK' in nama_mapel_clean or 'P JOK' in nama_mapel_clean:
-                # end_var itu (jam mulai + durasi). 
-                # Kalau kita set <= 7, artinya paling lambat mulai jam ke-4 (selesai jam 6).
-                # Nggak mungkin nyentuh jam ke-7!
-                model.Add(end_var <= 7).OnlyEnforceIf(is_present)
-            # ----------------------------------------------------
+
+            # --- ATURAN DINAMIS DARI DATABASE (Pengganti Hardcode PJOK) ---
+            batas_jam_dari_db = t.get('batas_maksimal_jam')
+            if batas_jam_dari_db is not None:
+                # end_var = jam mulai + durasi. 
+                # Jika di database diset maksimal jam 6, maka end_var harus <= 7.
+                model.Add(end_var <= (int(batas_jam_dari_db) + 1)).OnlyEnforceIf(is_present)
+            # --------------------------------------------------------------
+
             starts[(t_id, h)] = start_var
             presences[(t_id, h)] = is_present
             possible_days.append(is_present)
@@ -182,7 +183,6 @@ def main():
     # ---> PELONGGARAN 1: Distribusi Mapel Fleksibel <---
     for key, task_ids in tasks_per_mapel_group.items():
         if len(task_ids) > 1:
-            # Cari guru_id nya
             g_id_current = None
             for t in raw_assignments:
                 if t['id'] == task_ids[0]:
@@ -190,8 +190,6 @@ def main():
                     break
             
             hari_aktif_guru = len(guru_hari_map[g_id_current]) if g_id_current else 5
-            
-            # Hitung maksimal numpuk. Kalau pecahan ada 3 tapi cuma masuk 1 hari, max = 3
             max_per_hari = 1
             if len(task_ids) > hari_aktif_guru:
                 max_per_hari = math.ceil(len(task_ids) / hari_aktif_guru)
@@ -210,7 +208,6 @@ def main():
         if hari_aktif_guru == 0:
             hari_aktif_guru = 5 
             
-        # Diberi kelonggaran lebih besar (+ 5) agar jadwal padat tetap bisa masuk, limit dinaikkan
         batas_dinamis_harian = int(total_sks_guru / hari_aktif_guru) + 5
         if batas_dinamis_harian > 10:
             batas_dinamis_harian = 10

@@ -250,6 +250,7 @@
     {{-- MODALS AREA --}}
 
     {{-- 1. Modal Tambah --}}
+    {{-- 1. Modal Tambah --}}
     <div id="modaltambah"
         class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden flex items-center justify-center p-4">
         <div
@@ -273,6 +274,15 @@
                     <input type="text" name="kode_mapel"
                         class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none font-mono uppercase text-sm transition"
                         placeholder="MTK" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Batas Maksimal Jam <span
+                            class="text-slate-400 lowercase font-normal">(Opsional)</span></label>
+                    <input type="number" name="batas_maksimal_jam" min="1" max="15"
+                        class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none text-sm transition"
+                        placeholder="Contoh: 6 (Kosongkan jika bebas)">
+                    <p class="text-[10px] text-slate-400 mt-1">Isi dengan angka (misal: 6). Jika diisi, mapel tidak akan
+                        dijadwalkan melewati jam tersebut.</p>
                 </div>
                 <button type="submit"
                     class="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">SIMPAN
@@ -306,12 +316,18 @@
                         class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none font-mono uppercase text-sm transition"
                         required>
                 </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Batas Maksimal Jam <span
+                            class="text-slate-400 lowercase font-normal">(Opsional)</span></label>
+                    <input type="number" name="batas_maksimal_jam" value="{{ $m->batas_maksimal_jam }}" min="1" max="15"
+                        class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition"
+                        placeholder="Contoh: 6 (Kosongkan jika bebas)">
+                </div>
                 <button type="submit"
                     class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">UPDATE</button>
             </form>
         </div>
     </div>
-
     {{-- 3. Modal Distribusi --}}
     <div id="modaljadwal{{ $m->id }}"
         class="fixed inset-0 bg-slate-900/80 z-[99] hidden flex items-center justify-center p-2 sm:p-4 transition-opacity duration-300">

@@ -26,6 +26,13 @@ class MapelController extends Controller
                 $table->integer('limit_jumat')->default(7)->after('limit_harian');
             });
         }
+
+        // TAMBAHAN: Otomatis bikin kolom batas_maksimal_jam kalau belum ada
+        if (Schema::hasTable('mapels') && !Schema::hasColumn('mapels', 'batas_maksimal_jam')) {
+            Schema::table('mapels', function (Blueprint $table) {
+                $table->integer('batas_maksimal_jam')->nullable()->after('status');
+            });
+        }
     }
 
     public function index()
@@ -49,21 +56,27 @@ class MapelController extends Controller
 
     public function store(Request $request)
     {
+        // TAMBAHAN: Validasi batas_maksimal_jam
         $request->validate([
             'nama_mapel' => 'required|string',
             'kode_mapel' => 'required|string|unique:mapels',
             'kelompok' => 'nullable|string',
+            'batas_maksimal_jam' => 'nullable|integer|min:1|max:15',
         ]);
+        
         Mapel::create($request->all());
         return redirect()->route('mapel.index')->with('success', 'Mata Pelajaran berhasil ditambahkan.');
     }
 
     public function update(Request $request, $id)
     {
+        // TAMBAHAN: Validasi batas_maksimal_jam
         $request->validate([
             'nama_mapel' => 'required|string',
             'kode_mapel' => 'required|string|unique:mapels,kode_mapel,' . $id,
+            'batas_maksimal_jam' => 'nullable|integer|min:1|max:15',
         ]);
+        
         Mapel::findOrFail($id)->update($request->all());
         return redirect()->route('mapel.index')->with('success', 'Data Mapel diperbarui.');
     }
