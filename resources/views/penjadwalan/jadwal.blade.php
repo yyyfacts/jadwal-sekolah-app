@@ -183,38 +183,25 @@
                         @foreach($daysInTab as $hariItem)
                         @php
                         $namaHari = $hariItem->nama_hari;
-                        $namaHariLower = strtolower($namaHari);
 
-                        $rowSpanTotal = 0;
-                        foreach($dataWaktu as $w) {
-                        $tipeCheck = $w->tipe;
-                        if ($namaHariLower == 'senin' && $w->tipe_senin) $tipeCheck = $w->tipe_senin;
-                        if ($namaHariLower == 'jumat' && $w->tipe_jumat) $tipeCheck = $w->tipe_jumat;
-                        if ($tipeCheck !== 'Tidak Ada') $rowSpanTotal++;
-                        }
+                        // Filter hanya slot jam yang terisi (Abaikan tipe "Tidak Ada")
+                        $waktuAktif = $hariItem->waktuHaris->filter(function($w) {
+                        return $w->tipe !== 'Tidak Ada';
+                        });
+
+                        $rowSpanTotal = $waktuAktif->count();
                         $firstRow = true;
                         @endphp
 
                         @if($rowSpanTotal > 0)
-                        @foreach($dataWaktu as $waktuItem)
+                        @foreach($waktuAktif as $waktuItem)
                         @php
                         $j = $waktuItem->jam_ke;
                         $waktuTampil = \Carbon\Carbon::parse($waktuItem->waktu_mulai)->format('H.i') . ' - ' .
                         \Carbon\Carbon::parse($waktuItem->waktu_selesai)->format('H.i');
                         $tipeTampil = $waktuItem->tipe;
-
-                        if ($namaHariLower == 'senin' && $waktuItem->mulai_senin) {
-                        $waktuTampil = \Carbon\Carbon::parse($waktuItem->mulai_senin)->format('H.i') . ' - ' .
-                        \Carbon\Carbon::parse($waktuItem->selesai_senin)->format('H.i');
-                        $tipeTampil = $waktuItem->tipe_senin;
-                        } elseif ($namaHariLower == 'jumat' && $waktuItem->mulai_jumat) {
-                        $waktuTampil = \Carbon\Carbon::parse($waktuItem->mulai_jumat)->format('H.i') . ' - ' .
-                        \Carbon\Carbon::parse($waktuItem->selesai_jumat)->format('H.i');
-                        $tipeTampil = $waktuItem->tipe_jumat;
-                        }
                         @endphp
 
-                        @if($tipeTampil !== 'Tidak Ada')
                         <tr class="hover:bg-slate-50/80 transition-colors">
                             @if($firstRow)
                             <td rowspan="{{ $rowSpanTotal }}"
@@ -279,7 +266,6 @@
                             @endforeach
                             @endif
                         </tr>
-                        @endif
                         @endforeach
 
                         {{-- BARIS WALI KELAS DI BAWAH JADWAL FISIK (PER HARI) --}}
@@ -349,7 +335,7 @@
                                 <th class="px-6 py-4 text-center">Total Jam</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100">
+                        <tfoot class="divide-y divide-slate-100">
                             @foreach($onlineJadwals as $idx => $oj)
                             <tr class="hover:bg-amber-50/30 transition">
                                 <td class="px-6 py-3 text-center font-bold text-slate-400 border-r border-slate-50">
@@ -367,7 +353,7 @@
                                 </td>
                             </tr>
                             @endforeach
-                        </tbody>
+                        </tfoot>
                     </table>
                 </div>
             </div>

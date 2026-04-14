@@ -44,12 +44,11 @@ def main():
             print(json.dumps({
                 "status": "INFEASIBLE", "waktu_komputasi_detik": 0,
                 "error_code": "CLASS_OVERLOAD", "target_error": nama_kelas,
-                "message": f"Kapasitas Kelas {nama_kelas} Kepenuhan (Beban: {beban} JP, Maks: {kapasitas_seminggu} JP).",
-                "rekomendasi": f"Naikkan Limit Harian/Jumat {nama_kelas} atau kurangi beban mapel Offline."
+                "message": f"Kapasitas Kelas {nama_kelas} Kepenuhan (Beban: {beban} JP, Maks: {kapasitas_seminggu} JP)."
             }))
             return
 
-    # 2. GURU OVERLOAD
+    # 2. GURU OVERLOAD (Tanpa waktu kosong)
     beban_guru_total = {}
     for t in raw_assignments:
         g_id = t['guru_id']
@@ -60,8 +59,6 @@ def main():
         nama_guru = g['nama']
         hari_mengajar = g.get('hari_mengajar', []) or hari_list
         kapasitas_guru = sum([max_jam_map.get(h, 10) for h in hari_mengajar if h in hari_list])
-        waktu_kosong = len([wk for wk in g.get('waktu_kosong', []) if wk['hari'] in hari_list])
-        kapasitas_guru -= waktu_kosong
         
         beban = beban_guru_total.get(g_id, 0)
         if beban > kapasitas_guru:
@@ -69,7 +66,7 @@ def main():
                 "status": "INFEASIBLE", "waktu_komputasi_detik": 0,
                 "error_code": "TEACHER_OVERLOAD", "target_error": nama_guru,
                 "message": f"Beban Mengajar {nama_guru} Terlalu Banyak (Beban: {beban} JP, Maks: {kapasitas_guru} JP).",
-                "rekomendasi": "Tambah 'Hari Mengajar' atau hapus 'Waktu Kosong' (Jam Blokir) guru tersebut."
+                "rekomendasi": "Tambah 'Hari Mengajar' guru tersebut."
             }))
             return
 
@@ -97,7 +94,6 @@ def main():
         possible_days = [] 
 
         for h in hari_list:
-            # Gunakan limit max_jam dari Controller (slot belajar murni)
             batas_jam = max_jam_map.get(h, 10) 
             if durasi > batas_jam: continue
 
@@ -133,15 +129,11 @@ def main():
             beban_kelas = [is_p * dur for is_p, dur in presences_per_kelas[k_id][h]]
             if beban_kelas: model.Add(sum(beban_kelas) <= limit_aktif)
 
-    # Batasan Anti Bentrok Guru + Jam Kosong Guru
+    # Batasan Anti Bentrok Guru (Tanpa waktu kosong)
     for g in gurus:
-        g_id, waktu_kosong = g['id'], g.get('waktu_kosong', [])
+        g_id = g['id']
         for h in hari_list:
             intervals = intervals_per_guru[g_id][h]
-            for wk in waktu_kosong:
-                if wk['hari'] == h:
-                    jam_libur = int(wk['jam'])
-                    intervals.append(model.NewIntervalVar(jam_libur, 1, jam_libur+1, 'libur_guru'))
             if intervals: model.AddNoOverlap(intervals)
 
     # Batasan Mapel Kembar Sehari (Maks 2 sesi per hari agar variatif)

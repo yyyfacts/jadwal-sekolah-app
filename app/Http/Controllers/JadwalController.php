@@ -165,7 +165,6 @@ class JadwalController extends Controller
                     'id' => $guru->id,
                     'nama' => $guru->nama_guru,
                     'hari_mengajar' => $guru->hari_mengajar ? json_decode($guru->hari_mengajar, true) : [],
-                    'waktu_kosong' => $guru->waktu_kosong ? json_decode($guru->waktu_kosong, true) : [],
                 ];
             });
 
