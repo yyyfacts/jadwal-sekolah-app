@@ -7,11 +7,31 @@ use App\Models\Kelas;
 use App\Models\Guru;
 use App\Models\Jadwal;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 
 class MapelController extends Controller
 {
+    private function checkAndFixDatabase()
+    {
+        if (Schema::hasTable('jadwals') && !Schema::hasColumn('jadwals', 'tipe_jam')) {
+            Schema::table('jadwals', function (Blueprint $table) {
+                $table->string('tipe_jam')->default('single')->after('jumlah_jam');
+            });
+        }
+        
+        if (Schema::hasTable('kelas') && !Schema::hasColumn('kelas', 'limit_harian')) {
+            Schema::table('kelas', function (Blueprint $table) {
+                $table->integer('limit_harian')->default(10)->after('max_jam');
+                $table->integer('limit_jumat')->default(7)->after('limit_harian');
+            });
+        }
+    }
+
     public function index()
     {
+        $this->checkAndFixDatabase(); // Cek DB saat memuat halaman
+
         $mapels = Mapel::with(['jadwals.kelas', 'jadwals.guru'])
             ->orderBy('nama_mapel')
             ->get();
@@ -74,42 +94,39 @@ class MapelController extends Controller
     {
         try {
             $this->checkAndFixDatabase();
+            // Pada halaman Mapel, form harus mengirimkan kelas_id dan guru_id
             $request->validate([
-                'mapel_id'   => 'required|exists:mapels,id',
+                'kelas_id'   => 'required|exists:kelas,id',
                 'guru_id'    => 'required|exists:gurus,id',
                 'jumlah_jam' => 'required|numeric|min:1',
                 'tipe_jam'   => 'required|in:single,double,triple',
                 'status'     => 'required|in:offline,online', 
             ]);
 
-            $kelas = Kelas::with('jadwals')->findOrFail($id);
+            $kelas = Kelas::with('jadwals')->findOrFail($request->kelas_id);
             
-            // HANYA HITUNG YANG OFFLINE
             $currentTotalOffline = $kelas->jadwals->where('status', 'offline')->sum('jumlah_jam');
             $maxJam = $kelas->max_jam; 
             
-            // Jika jadwal ini OFFLINE, tambahkan ke perhitungan beban fisik
             $tambahanBeban = ($request->status == 'offline') ? $request->jumlah_jam : 0;
 
             if (($currentTotalOffline + $tambahanBeban) > $maxJam) {
                 return response()->json([
                     'success' => false, 
-                    'message' => "Gagal! Slot Fisik (Offline) penuh. Terisi: $currentTotalOffline JP, Maks: $maxJam JP."
+                    'message' => "Gagal! Slot Fisik (Offline) Kelas {$kelas->nama_kelas} penuh. Terisi: $currentTotalOffline JP, Maks: $maxJam JP."
                 ], 422);
             }
 
             $jadwal = new Jadwal();
-            $jadwal->kelas_id   = $id;
-            $jadwal->mapel_id   = $request->mapel_id;
+            $jadwal->kelas_id   = $request->kelas_id;
+            $jadwal->mapel_id   = $id; // Menggunakan ID mapel dari URL
             $jadwal->guru_id    = $request->guru_id;
             $jadwal->jumlah_jam = $request->jumlah_jam;
             $jadwal->tipe_jam   = $request->tipe_jam;
             $jadwal->status     = $request->status; 
-            $jadwal->hari       = null; 
-            $jadwal->jam        = null; 
             $jadwal->save();
 
-            $jadwal->load(['mapel', 'guru']);
+            $jadwal->load(['guru', 'kelas']);
 
             return response()->json([
                 'success' => true,
@@ -129,16 +146,15 @@ class MapelController extends Controller
             $jadwal = Jadwal::findOrFail($id);
 
             $request->validate([
-                'mapel_id'   => 'required|exists:mapels,id',
+                'kelas_id'   => 'required|exists:kelas,id',
                 'guru_id'    => 'required|exists:gurus,id',
                 'jumlah_jam' => 'required|numeric|min:1',
                 'tipe_jam'   => 'required|in:single,double,triple',
                 'status'     => 'required|in:offline,online', 
             ]);
 
-            $kelas = Kelas::with('jadwals')->findOrFail($jadwal->kelas_id);
+            $kelas = Kelas::with('jadwals')->findOrFail($request->kelas_id);
             
-            // HANYA HITUNG YANG OFFLINE SELAIN JADWAL INI
             $currentTotalOthersOffline = $kelas->jadwals->where('id', '!=', $id)->where('status', 'offline')->sum('jumlah_jam');
             $maxJam = $kelas->max_jam;
             
@@ -148,18 +164,18 @@ class MapelController extends Controller
             if ($newTotal > $maxJam) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Gagal! Total Fisik ($newTotal JP) melebihi batas ($maxJam JP)."
+                    'message' => "Gagal! Total Fisik Kelas {$kelas->nama_kelas} ($newTotal JP) melebihi batas ($maxJam JP)."
                 ], 422);
             }
 
-            $jadwal->mapel_id   = $request->mapel_id;
+            $jadwal->kelas_id   = $request->kelas_id;
             $jadwal->guru_id    = $request->guru_id;
             $jadwal->jumlah_jam = $request->jumlah_jam;
             $jadwal->tipe_jam   = $request->tipe_jam;
             $jadwal->status     = $request->status; 
             $jadwal->save();
 
-            $jadwal->load(['mapel', 'guru']);
+            $jadwal->load(['guru', 'kelas']);
 
             return response()->json([
                 'success' => true,
