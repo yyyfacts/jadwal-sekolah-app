@@ -129,7 +129,6 @@ class JadwalController extends Controller
 
             $slotMapping = []; 
 
-            // Hitung Max JP Murni Belajar per Hari (Biar Python Gak Salah Paham)
             $hariAktif = $dataHari->map(function($hariObj) use (&$slotMapping) {
                 $teachingSlotCounter = 1;
                 foreach($hariObj->waktuHaris as $w) {
@@ -153,13 +152,20 @@ class JadwalController extends Controller
                 ];
             });
 
-            $assignments = Jadwal::where(function($q) {
+            // PENAMBAHAN 'nama_mapel' DISINI
+            $assignments = Jadwal::with('mapel')->where(function($q) {
                     $q->where('status', 'offline')->orWhereNull('status');
                 })->get()->map(function ($j) {
-                    return [ 'id' => $j->id, 'guru_id' => $j->guru_id, 'kelas_id' => $j->kelas_id, 'mapel_id' => $j->mapel_id, 'jumlah_jam' => $j->jumlah_jam ];
+                    return [ 
+                        'id' => $j->id, 
+                        'guru_id' => $j->guru_id, 
+                        'kelas_id' => $j->kelas_id, 
+                        'mapel_id' => $j->mapel_id, 
+                        'jumlah_jam' => $j->jumlah_jam,
+                        'nama_mapel' => $j->mapel->nama_mapel ?? ''
+                    ];
                 });
 
-            // LIMIT DIHILANGKAN DARI KELAS, MURNI MENGANDALKAN MASTER HARI
             $kelassData = Kelas::all()->map(function ($k) {
                 return [ 'id' => $k->id, 'nama_kelas' => $k->nama_kelas, 'max_jam_total' => $k->max_jam ?? 48 ];
             });
