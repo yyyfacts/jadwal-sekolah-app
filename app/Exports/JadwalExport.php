@@ -7,7 +7,7 @@ use App\Models\Jadwal;
 use App\Models\Guru;
 use App\Models\Mapel;
 use App\Models\MasterHari;
-use App\Models\MasterWaktu;
+use App\Models\WaktuHari; // <-- MasterWaktu diganti ke WaktuHari
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -31,11 +31,15 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
         $gurus = Guru::orderBy('kode_guru')->get();
         $mapels = Mapel::orderBy('kode_mapel')->get();
 
-        $dataHari = MasterHari::getActiveDays();
+        // Tarik data Hari beserta WaktuHari-nya
+        $dataHari = MasterHari::with(['waktuHaris' => function($q) {
+            $q->orderBy('waktu_mulai');
+        }])->where('is_active', true)->get();
+        
         $hariList = $dataHari->pluck('nama_hari')->toArray();
-        $dataWaktu = MasterWaktu::orderBy('waktu_mulai')->get();
-
-        $maxJam = $dataWaktu->max('jam_ke');
+        
+        $dataWaktu = WaktuHari::select('jam_ke')->distinct()->orderBy('jam_ke')->get();
+        $maxJam = WaktuHari::max('jam_ke');
 
         $rawJadwals = Jadwal::with(['guru', 'mapel', 'kelas'])
             ->whereNotNull('hari')
@@ -49,10 +53,11 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
 
         // 1. BUAT CANVAS KOSONG
         foreach ($kelass as $k) {
-            foreach ($hariList as $h) {
-                foreach ($dataWaktu as $waktu) {
+            foreach ($dataHari as $hariObj) {
+                $namaHari = $hariObj->nama_hari;
+                foreach ($hariObj->waktuHaris as $waktu) {
                     if ($waktu->jam_ke !== null) {
-                        $jadwals[$k->id][$h][$waktu->jam_ke] = null;
+                        $jadwals[$k->id][$namaHari][$waktu->jam_ke] = null;
                     }
                 }
             }
@@ -63,20 +68,10 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
 
         foreach ($dataHari as $hariObj) {
             $namaHari = $hariObj->nama_hari;
-            $namaHariLower = strtolower($namaHari);
-
             $belajarSlots[$namaHari] = [];
             
-            foreach ($dataWaktu as $waktuObj) {
+            foreach ($hariObj->waktuHaris as $waktuObj) {
                 $tipeSlot = $waktuObj->tipe;
-
-                if ($namaHariLower == 'senin' && $waktuObj->tipe_senin) {
-                    $tipeSlot = $waktuObj->tipe_senin;
-                }
-
-                if ($namaHariLower == 'jumat' && $waktuObj->tipe_jumat) {
-                    $tipeSlot = $waktuObj->tipe_jumat;
-                }
 
                 if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']) && $tipeSlot !== 'Tidak Ada') {
                     if ($waktuObj->jam_ke !== null) {
