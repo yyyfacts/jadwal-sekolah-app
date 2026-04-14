@@ -343,7 +343,7 @@ function tambahBarisWaktu(jamKe = '', mulai = '', selesai = '', tipe = 'Belajar'
                 <option value="Istirahat" ${tipe === 'Istirahat' ? 'selected' : ''}>☕ Istirahat</option>
                 <option value="Upacara" ${tipe === 'Upacara' ? 'selected' : ''}>🚩 Upacara</option>
                 <option value="Sholat" ${tipe === 'Sholat' ? 'selected' : ''}>🕌 Sholat</option>
-                <option value="Lainnya" ${tipe === 'Lainnya' ? 'selected' : ''}>⚙️ Lainnya</option>
+                <option value="Lainnya" ${tipe === 'Senam' ? 'selected' : ''}>⚙️ Senam</option>
             </select>
         </td>
         <td class="px-4 py-2 text-center">

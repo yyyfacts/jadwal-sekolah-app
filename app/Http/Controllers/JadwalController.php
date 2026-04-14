@@ -69,7 +69,7 @@ class JadwalController extends Controller
             foreach ($hariObj->waktuHaris as $waktuObj) {
                 $tipeSlot = $waktuObj->tipe;
                 
-                if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']) && $tipeSlot !== 'Tidak Ada') {
+                if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Belajar']) && $tipeSlot !== 'Tidak Ada') {
                     if ($waktuObj->jam_ke !== null) {
                         $belajarSlots[$namaHari][] = $waktuObj->jam_ke;
                     }
