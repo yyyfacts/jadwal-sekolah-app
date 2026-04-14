@@ -5,15 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\MasterHari;
 use App\Models\WaktuHari;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class MasterHariController extends Controller
 {
     public function index()
     {
         // Tarik data hari beserta relasi waktu-nya
-       $haris = MasterHari::with(['waktuHaris' => function($query) {
-    $query->orderBy('waktu_mulai', 'asc');
-}])->get();
+        $haris = MasterHari::with(['waktuHaris' => function($query) {
+            $query->orderBy('waktu_mulai', 'asc');
+        }])->get();
+        
         return view('penjadwalan.master_hari', compact('haris'));
     }
 
@@ -41,11 +43,11 @@ class MasterHariController extends Controller
     public function destroy($id)
     {
         $hari = MasterHari::find($id);
-        if ($hari) $hari->delete();
+        if ($hari) $hari->delete(); // Pastikan cascade delete aktif di DB agar WaktuHari ikut terhapus
         return redirect()->route('master-hari.index')->with('success', 'Data Hari berhasil dihapus.');
     }
 
-    // --- FUNGSI BARU UNTUK POP-UP WAKTU JAM KE- ---
+    // --- FUNGSI UNTUK POP-UP WAKTU JAM KE- ---
     
     public function getWaktu($id)
     {
@@ -55,22 +57,40 @@ class MasterHariController extends Controller
 
     public function simpanWaktu(Request $request, $id)
     {
-        // 1. Hapus semua jadwal lama di hari ini
-        WaktuHari::where('master_hari_id', $id)->delete();
+        // VALIDASI: Pastikan 'Senam' dan kawan-kawan diizinkan masuk ke server
+        $request->validate([
+            'jam_ke' => 'required|array',
+            'tipe' => 'required|array',
+            'tipe.*' => 'required|in:Belajar,Istirahat,Upacara,Sholat,Senam,Sholat Dhuha,Jumat Bersih,Pramuka',
+            'waktu_mulai' => 'required|array',
+            'waktu_selesai' => 'required|array',
+        ]);
 
-        // 2. Insert jadwal baru dari input pop-up
-        if ($request->jam_ke && is_array($request->jam_ke)) {
-            foreach ($request->jam_ke as $index => $jam) {
-                WaktuHari::create([
-                    'master_hari_id' => $id,
-                    'jam_ke'         => $jam,
-                    'waktu_mulai'    => $request->waktu_mulai[$index],
-                    'waktu_selesai'  => $request->waktu_selesai[$index],
-                    'tipe'           => $request->tipe[$index],
-                ]);
+        try {
+            DB::beginTransaction();
+
+            // 1. Hapus semua jadwal lama di hari ini
+            WaktuHari::where('master_hari_id', $id)->delete();
+
+            // 2. Insert jadwal baru dari input pop-up
+            if ($request->jam_ke && is_array($request->jam_ke)) {
+                foreach ($request->jam_ke as $index => $jam) {
+                    WaktuHari::create([
+                        'master_hari_id' => $id,
+                        'jam_ke'         => $jam,
+                        'waktu_mulai'    => $request->waktu_mulai[$index],
+                        'waktu_selesai'  => $request->waktu_selesai[$index],
+                        'tipe'           => $request->tipe[$index], // Disini 'Senam' akan masuk
+                    ]);
+                }
             }
-        }
 
-        return redirect()->route('master-hari.index')->with('success', 'Aturan Jam Ke- berhasil disimpan!');
+            DB::commit();
+            return redirect()->route('master-hari.index')->with('success', 'Aturan Jam Ke- berhasil disimpan!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->route('master-hari.index')->with('error', 'Gagal menyimpan: ' . $e->getMessage());
+        }
     }
 }
