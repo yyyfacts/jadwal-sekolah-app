@@ -12,7 +12,7 @@ class Mapel extends Model
     protected $table = 'mapels';
 
     // Tambahkan 'mode' agar bisa disimpan
-    protected $fillable = ['nama_mapel', 'kode_mapel', 'kelompok', 'mode'];
+    protected $fillable = ['nama_mapel', 'kode_mapel', 'kelompok', 'status'];
 
     // Relasi ke jadwal (Satu Mapael punya banyak Jadwal/Distribusi)
     public function jadwals()

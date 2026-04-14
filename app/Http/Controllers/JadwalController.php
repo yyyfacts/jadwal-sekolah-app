@@ -8,7 +8,7 @@ use App\Models\Kelas;
 use App\Models\Mapel;
 use App\Models\TahunPelajaran;
 use App\Models\MasterHari;
-use App\Models\WaktuHari;
+use App\Models\WaktuHari; // <-- MasterWaktu diganti ke WaktuHari
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Process;
@@ -26,22 +26,22 @@ class JadwalController extends Controller
         $gurusList = Guru::orderBy('nama_guru')->get();
         $kelassList = Kelas::orderBy('nama_kelas')->get();
 
+        // 1. Tarik Data Hari sekaligus relasi WaktuHari-nya (spesifik per hari)
         $dataHari = MasterHari::with(['waktuHaris' => function($q) {
             $q->orderBy('waktu_mulai');
         }])->where('is_active', true)->get(); 
         
         $hariList = $dataHari->pluck('nama_hari')->toArray();
-        // KODE PERBAIKAN:
-$dataWaktu = WaktuHari::select('jam_ke', 'waktu_mulai', 'waktu_selesai', 'tipe')
-    ->groupBy('jam_ke', 'waktu_mulai', 'waktu_selesai', 'tipe')
-    ->orderBy('waktu_mulai', 'asc') // DIURUTKAN BERDASARKAN JAM ASLINYA
-    ->get();
+        
+        // Buat dummy dataWaktu (Daftar Jam Ke- unik) agar tabel di Blade (View) tidak error saat me-looping header kolom
+        $dataWaktu = WaktuHari::select('jam_ke')->distinct()->orderBy('jam_ke')->get(); 
         
         $minJam = WaktuHari::min('jam_ke') ?? 0;
         $maxJam = WaktuHari::max('jam_ke') ?? 15;
 
         $kelass = $reqKelas ? Kelas::with('waliKelas')->where('id', $reqKelas)->orderBy('nama_kelas')->get() : Kelas::with('waliKelas')->orderBy('nama_kelas')->get();
 
+        // AMBIL JADWAL OFFLINE UNTUK TABEL RAKSASA
         $query = Jadwal::with(['guru', 'mapel', 'kelas'])
             ->whereNotNull('hari')->whereNotNull('jam')
             ->where(function($q) {
@@ -53,6 +53,7 @@ $dataWaktu = WaktuHari::select('jam_ke', 'waktu_mulai', 'waktu_selesai', 'tipe')
         $rawJadwals = $query->get();
         $jadwals = [];
 
+        // Siapkan Canvas Kosong (Disesuaikan dengan WaktuHari per hari)
         foreach ($kelass as $k) {
             foreach ($dataHari as $hariObj) {
                 $namaHari = $hariObj->nama_hari;
@@ -64,13 +65,17 @@ $dataWaktu = WaktuHari::select('jam_ke', 'waktu_mulai', 'waktu_selesai', 'tipe')
             }
         }
 
+        // Cari Jam Belajar Saja (Abaikan Istirahat/Upacara dsb)
         $belajarSlots = [];
         foreach ($dataHari as $hariObj) {
             $namaHari = $hariObj->nama_hari;
             $belajarSlots[$namaHari] = [];
             
+            // Looping dari relasi spesifik hari ini
             foreach ($hariObj->waktuHaris as $waktuObj) {
                 $tipeSlot = $waktuObj->tipe;
+                
+                // LOGIKA BERSIH: Tidak perlu lagi if (senin) tipe_senin dll. Karena tipe sudah spesifik untuk hari tersebut.
                 if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']) && $tipeSlot !== 'Tidak Ada') {
                     if ($waktuObj->jam_ke !== null) {
                         $belajarSlots[$namaHari][] = $waktuObj->jam_ke;
@@ -79,6 +84,7 @@ $dataWaktu = WaktuHari::select('jam_ke', 'waktu_mulai', 'waktu_selesai', 'tipe')
             }
         }
 
+        // Petakan Mapel ke Tabel agar lompatin Istirahat
         foreach ($rawJadwals as $row) {
             $durasi = $row->jumlah_jam;
             $hari = $row->hari;
@@ -112,6 +118,7 @@ $dataWaktu = WaktuHari::select('jam_ke', 'waktu_mulai', 'waktu_selesai', 'tipe')
             }
         }
 
+        // AMBIL JADWAL ONLINE
         $queryOnline = Jadwal::with(['guru', 'mapel', 'kelas'])->where('status', 'online');
         if ($reqGuru) $queryOnline->where('guru_id', $reqGuru);
         if ($reqKelas) $queryOnline->where('kelas_id', $reqKelas);
@@ -123,19 +130,33 @@ $dataWaktu = WaktuHari::select('jam_ke', 'waktu_mulai', 'waktu_selesai', 'tipe')
         return view('penjadwalan.jadwal', compact('kelass', 'jadwals', 'onlineJadwals', 'judulTahun', 'gurusList', 'kelassList', 'reqGuru', 'reqKelas', 'dataHari', 'dataWaktu'));
     }
 
-   public function generate(Request $request)
+    public function generate(Request $request)
     {
         set_time_limit(600);
         try {
-            // 1. MASTER HARI HANYA JADI WADAH (Mengambil nama hari saja yang aktif)
-            $dataHari = MasterHari::where('is_active', true)->get();
+            // Tarik ulang dengan relasinya untuk disuplai ke AI Solver
+            $dataHari = MasterHari::with(['waktuHaris' => function($q) {
+                $q->orderBy('waktu_mulai');
+            }])->where('is_active', true)->get();
 
-            $hariAktif = $dataHari->map(function($hariObj) {
+            $slotMapping = []; 
+
+            // Hitung Max JP Murni Belajar per Hari
+            $hariAktif = $dataHari->map(function($hariObj) use (&$slotMapping) {
+                $teachingSlotCounter = 1;
+
+                foreach($hariObj->waktuHaris as $w) {
+                    $tipeSlot = $w->tipe;
+
+                    if ($tipeSlot !== 'Tidak Ada' && !in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
+                        // Petakan urutan belajar (1,2,3) ke jam_ke fisik di DB (1,2,4)
+                        $slotMapping[$hariObj->nama_hari][$teachingSlotCounter] = $w->jam_ke;
+                        $teachingSlotCounter++;
+                    }
+                }
                 return [
                     'nama' => $hariObj->nama_hari,
-                    // Karena aturan pindah ke kelas, max_jam di sini bisa diberi nilai null/bebas, 
-                    // atau cukup di-passing sebagai pelengkap wadah.
-                    'max_jam' => 15 // Angka aman, nanti script python yang akan membatasi berdasar limit kelas
+                    'max_jam' => $teachingSlotCounter - 1 
                 ];
             });
 
@@ -147,35 +168,18 @@ $dataWaktu = WaktuHari::select('jam_ke', 'waktu_mulai', 'waktu_selesai', 'tipe')
                 ];
             });
 
-            $assignments = Jadwal::with('mapel')->where(function($q) {
+            $assignments = Jadwal::where(function($q) {
                     $q->where('status', 'offline')->orWhereNull('status');
                 })->get()->map(function ($j) {
-                    return [ 
-                        'id' => $j->id, 
-                        'guru_id' => $j->guru_id, 
-                        'kelas_id' => $j->kelas_id, 
-                        'mapel_id' => $j->mapel_id, 
-                        'jumlah_jam' => $j->jumlah_jam,
-                        'nama_mapel' => $j->mapel->nama_mapel ?? ''
-                    ];
+                    return [ 'id' => $j->id, 'guru_id' => $j->guru_id, 'kelas_id' => $j->kelas_id, 'mapel_id' => $j->mapel_id, 'jumlah_jam' => $j->jumlah_jam ];
                 });
 
-            // 2. PATOKAN ATURAN DIAMBIL DARI KELAS CONTROLLER / MODEL KELAS
             $kelassData = Kelas::all()->map(function ($k) {
-                return [ 
-                    'id' => $k->id, 
-                    'nama_kelas' => $k->nama_kelas, 
-                    'max_jam_total' => $k->max_jam ?? 48,
-                    'limit_harian' => $k->limit_harian ?? 10, // Patokan baru untuk generator
-                    'limit_jumat' => $k->limit_jumat ?? 7     // Patokan baru untuk generator
-                ];
+                return [ 'id' => $k->id, 'nama_kelas' => $k->nama_kelas, 'limit_harian' => $k->limit_harian ?? 10, 'limit_jumat' => $k->limit_jumat ?? 7, 'max_jam_total' => $k->max_jam ?? 48 ];
             });
 
             $dataInput = [
-                'hari_aktif' => $hariAktif, 
-                'gurus' => $gurus, 
-                'kelass' => $kelassData, 
-                'assignments' => $assignments,
+                'hari_aktif' => $hariAktif, 'gurus' => $gurus, 'kelass' => $kelassData, 'assignments' => $assignments,
             ];
 
             $jsonPath = storage_path('app/input_solver.json');
@@ -194,14 +198,11 @@ $dataWaktu = WaktuHari::select('jam_ke', 'waktu_mulai', 'waktu_selesai', 'tipe')
                 try {
                     foreach ($result['solution'] as $item) {
                         $hari = $item['hari'];
-                        // 3. KARENA WAKTU HARI DIBUANG DARI GENERATOR, KITA LANGSUNG PAKAI JAM DARI SOLVER
-                        $pSlot = $item['jam']; 
+                        $tSlot = $item['jam']; 
+                        
+                        $pSlot = $slotMapping[$hari][$tSlot] ?? $tSlot; 
 
-                        DB::table('jadwals')->where('id', $item['id'])->update([ 
-                            'hari' => $hari, 
-                            'jam' => $pSlot, 
-                            'updated_at' => now() 
-                        ]);
+                        DB::table('jadwals')->where('id', $item['id'])->update([ 'hari' => $hari, 'jam' => $pSlot, 'updated_at' => now() ]);
                     }
                     DB::commit();
                     return redirect()->route('jadwal.index')->with('success', $result['message'])->with('waktu_komputasi', $result['waktu_komputasi_detik'] ?? null);
@@ -217,6 +218,7 @@ $dataWaktu = WaktuHari::select('jam_ke', 'waktu_mulai', 'waktu_selesai', 'tipe')
             return redirect()->route('jadwal.index')->with('error', 'Error: ' . $e->getMessage());
         }
     }
+
     public function export()
     {
         $tahunAktif = TahunPelajaran::getActive();
