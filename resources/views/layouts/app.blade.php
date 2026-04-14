@@ -59,8 +59,10 @@
         border-radius: 10px;
     }
     </style>
+
+    {{-- DI SINI TEMPAT YANG BENAR UNTUK PUSH STYLES DARI CHILD VIEW --}}
+    @stack('styles')
 </head>
-@stack('scripts')
 
 <body class="bg-slate-50 font-sans text-slate-800 antialiased h-screen flex flex-col overflow-hidden">
 
@@ -115,7 +117,7 @@
                         Tahun Ajaran
                     </a>
 
-                    {{-- 4A. HARI AKTIF (DIKEMBALIKAN) --}}
+                    {{-- 4A. HARI AKTIF --}}
                     <a href="{{ route('master-hari.index') }}"
                         class="px-3 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs('master-hari.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
                         Hari Aktif
@@ -161,7 +163,8 @@
 
                                 <div class="px-4 py-2 border-b border-slate-100 bg-slate-50/50">
                                     <p class="text-xs text-slate-500">Login sebagai:</p>
-                                    <p class="text-sm font-bold text-slate-800 truncate">{{ Auth::user()->email }}</p>
+                                    <p class="text-sm font-bold text-slate-800 truncate">
+                                        {{ Auth::user()->email ?? 'admin@sman1sampang.sch.id' }}</p>
                                 </div>
 
                                 <a href="{{ route('profile.edit') }}"
@@ -206,43 +209,36 @@
 
             <div class="px-4 py-6 space-y-2">
 
-                {{-- Mobile: Guru --}}
                 <a href="{{ route('guru.index') }}"
                     class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('guru.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                     <span class="text-xl">👨‍🏫</span> Data Guru
                 </a>
 
-                {{-- Mobile: Mapel --}}
                 <a href="{{ route('mapel.index') }}"
                     class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('mapel.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                     <span class="text-xl">📚</span> Mata Pelajaran
                 </a>
 
-                {{-- Mobile: Kelas --}}
                 <a href="{{ route('kelas.index') }}"
                     class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('kelas.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                     <span class="text-xl">🏫</span> Data Kelas
                 </a>
 
-                {{-- Mobile: Tahun Pelajaran --}}
                 <a href="{{ route('tahun-pelajaran.index') }}"
                     class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('tahun-pelajaran.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                     <span class="text-xl">🗓️</span> Tahun Pelajaran
                 </a>
 
-                {{-- TAMBAHAN Mobile: Hari Aktif (DIKEMBALIKAN) --}}
                 <a href="{{ route('master-hari.index') }}"
                     class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('master-hari.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                     <span class="text-xl">🌞</span> Hari Aktif
                 </a>
 
-                {{-- Mobile: Jadwal --}}
                 <a href="{{ route('jadwal.index') }}"
                     class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('jadwal.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                     <span class="text-xl">📅</span> Jadwal Pelajaran
                 </a>
 
-                {{-- Mobile: Admin --}}
                 <a href="{{ route('user.index') }}"
                     class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('user.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                     <span class="text-xl">⚙️</span> Admin User
@@ -255,8 +251,8 @@
                             class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold text-white border border-white/20">
                             {{ substr(Auth::user()->name ?? 'A', 0, 1) }}</div>
                         <div>
-                            <div class="text-white font-medium">{{ Auth::user()->name }}</div>
-                            <div class="text-xs text-slate-400">{{ Auth::user()->email }}</div>
+                            <div class="text-white font-medium">{{ Auth::user()->name ?? 'Admin' }}</div>
+                            <div class="text-xs text-slate-400">{{ Auth::user()->email ?? 'admin' }}</div>
                         </div>
                     </div>
 
@@ -283,6 +279,7 @@
         @yield('content')
     </main>
 
+    {{-- DI SINI TEMPAT YANG BENAR UNTUK PUSH SCRIPTS DARI CHILD VIEW --}}
     @stack('scripts')
 </body>
 

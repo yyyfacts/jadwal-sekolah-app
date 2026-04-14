@@ -52,7 +52,7 @@
                         </span>
                     </div>
 
-                    <button onclick="openModal('modaltambah')"
+                    <button type="button" onclick="openModal('modaltambah')"
                         class="px-6 py-2.5 font-bold text-white transition-all duration-300 bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-md flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
@@ -153,7 +153,7 @@
                         </td>
                         <td class="px-6 py-5">
                             <div class="flex items-center justify-center gap-2">
-                                <button onclick="openModal('modaljadwal{{ $g->id }}')"
+                                <button type="button" onclick="openModal('modaljadwal{{ $g->id }}')"
                                     class="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 hover:border-indigo-400 hover:text-indigo-600 text-xs font-bold rounded-full transition-colors bg-white">
                                     <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
@@ -162,7 +162,7 @@
                                         </path>
                                     </svg> Jadwal
                                 </button>
-                                <button onclick="openModal('edit{{ $g->id }}')"
+                                <button type="button" onclick="openModal('edit{{ $g->id }}')"
                                     class="p-2 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg transition-colors bg-white"
                                     title="Edit">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -224,19 +224,18 @@
             <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Secure Data</span>
         </div>
     </div>
-
 </div>
 
 {{-- MODALS AREA --}}
 
 {{-- 1. Modal Tambah Guru --}}
 <div id="modaltambah"
-    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden flex items-center justify-center p-4">
+    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-scale-in">
         <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
             <h3 class="font-bold text-slate-800 flex items-center gap-2"><span
                     class="w-1.5 h-5 bg-indigo-600 rounded-full"></span> Tambah Guru</h3>
-            <button onclick="closeModal('modaltambah')"
+            <button type="button" onclick="closeModal('modaltambah')"
                 class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
         </div>
         <form action="{{ route('guru.store') }}" method="POST" class="p-6 space-y-5">
@@ -278,12 +277,12 @@
 @foreach($gurus as $g)
 {{-- 2. Modal Edit Guru --}}
 <div id="edit{{ $g->id }}"
-    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden flex items-center justify-center p-4">
+    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
         <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
             <h3 class="font-bold text-amber-800 flex items-center gap-2"><span
                     class="w-1.5 h-5 bg-amber-500 rounded-full"></span> Edit Guru</h3>
-            <button onclick="closeModal('edit{{ $g->id }}')"
+            <button type="button" onclick="closeModal('edit{{ $g->id }}')"
                 class="text-amber-400 hover:text-amber-600 text-2xl leading-none">&times;</button>
         </div>
         <form action="{{ route('guru.update', $g->id) }}" method="POST" class="p-6 space-y-5">
@@ -324,7 +323,7 @@
 
 {{-- 3. Modal Jadwal Mengajar (Distribusi/Plotting) --}}
 <div id="modaljadwal{{ $g->id }}"
-    class="fixed inset-0 bg-slate-900/80 z-[99] hidden flex items-center justify-center p-2 sm:p-4 transition-opacity duration-300">
+    class="fixed inset-0 bg-slate-900/80 z-[99] hidden items-center justify-center p-2 sm:p-4 transition-opacity duration-300">
     <div
         class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-200 overflow-hidden animate-scale-in">
         <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
@@ -341,7 +340,7 @@
                     <p class="text-xs text-slate-500">{{ $g->kode_guru }}</p>
                 </div>
             </div>
-            <button onclick="closeModal('modaljadwal{{ $g->id }}')"
+            <button type="button" onclick="closeModal('modaljadwal{{ $g->id }}')"
                 class="text-slate-400 hover:text-red-500 text-3xl leading-none transition-colors">&times;</button>
         </div>
 
@@ -402,7 +401,7 @@
                                 <td class="px-4 py-3 text-right align-middle">
                                     <div
                                         class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
+                                        <button type="button"
                                             onclick="editJadwalInline({{ $g->id }}, {{ $jadwal->id }}, {{ $jadwal->mapel_id }}, {{ $jadwal->kelas_id }}, {{ $jadwal->jumlah_jam }}, '{{ $jadwal->tipe_jam }}', '{{ $jadwal->status ?? 'offline' }}')"
                                             class="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded-lg transition"
                                             title="Edit">
@@ -412,7 +411,7 @@
                                                 </path>
                                             </svg>
                                         </button>
-                                        <button onclick="hapusJadwal({{ $jadwal->id }}, this)"
+                                        <button type="button" onclick="hapusJadwal({{ $jadwal->id }}, this)"
                                             class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"
                                             title="Hapus">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -579,14 +578,17 @@
             </div>
         </div>
     </div>
-    @endforeach
+</div>
+@endforeach
 
 </div>
 @endsection
 
 @push('scripts')
 <script>
-const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
+// Penulisan aman untuk ambil CSRF Token biar tidak error
+const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+const CSRF_TOKEN = csrfMeta ? csrfMeta.content : '';
 
 function searchMainTable() {
     const input = document.getElementById('search-guru-main').value.toLowerCase();
@@ -610,6 +612,7 @@ function searchMainTable() {
     }
 }
 
+// UPDATE LOGIKA BUKA MODAL
 function openModal(modalID) {
     const modal = document.getElementById(modalID);
     if (modal) {
@@ -627,21 +630,25 @@ function closeModal(modalID) {
     }
 }
 
-window.onclick = function(event) {
-    if (event.target.classList.contains('fixed')) {
-        event.target.classList.add('hidden');
-        event.target.classList.remove('flex');
+// LOGIKA KLIK LATAR BELAKANG LEBIH AMAN
+document.addEventListener('click', function(event) {
+    // Tutup Modal jika klik backdrop
+    if (event.target.classList.contains('fixed') && event.target.id) {
+        closeModal(event.target.id);
     }
+
+    // Tutup Dropdown Select Custom
     if (!event.target.closest('.custom-select-wrapper')) {
         document.querySelectorAll('[id^="dropdown-"]').forEach(el => el.classList.add('hidden'));
         document.querySelectorAll('.custom-select-wrapper').forEach(el => el.style.zIndex = "0");
     }
-}
+});
 
 function searchTable(guruId) {
     const filter = document.getElementById('search-' + guruId).value.toLowerCase();
     const rows = document.getElementById('tbody-guru-' + guruId).getElementsByTagName('tr');
     for (let row of rows) {
+        if (row.classList.contains('empty-row')) continue;
         const text = row.innerText.toLowerCase();
         row.style.display = text.includes(filter) ? "" : "none";
     }
@@ -835,10 +842,10 @@ function updateTableUI(guruId, jadwal, isEdit) {
             </td>
             <td class="px-4 py-3 text-right align-middle">
                 <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onclick="editJadwalInline(${guruId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.kelas_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}', '${jadwal.status}')" class="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded-lg transition" title="Edit">
+                    <button type="button" onclick="editJadwalInline(${guruId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.kelas_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}', '${jadwal.status}')" class="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded-lg transition" title="Edit">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                     </button>
-                    <button onclick="hapusJadwal(${jadwal.id}, this)" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition" title="Hapus">
+                    <button type="button" onclick="hapusJadwal(${jadwal.id}, this)" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition" title="Hapus">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
                 </div>
@@ -854,7 +861,7 @@ async function hapusJadwal(id, btn) {
     if (!confirm("Hapus distribusi ini?")) return;
     try {
         const res = await fetch(`/guru/jadwal/${id}`, {
-            method: 'DELETE',
+            method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': CSRF_TOKEN,
                 'Content-Type': 'application/json'
