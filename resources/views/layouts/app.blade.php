@@ -60,6 +60,7 @@
     }
     </style>
 </head>
+@stack('scripts')
 
 <body class="bg-slate-50 font-sans text-slate-800 antialiased h-screen flex flex-col overflow-hidden">
 
