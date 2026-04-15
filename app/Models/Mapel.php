@@ -11,10 +11,14 @@ class Mapel extends Model
 
     protected $table = 'mapels';
 
-    // Tambahkan 'mode' agar bisa disimpan
-    protected $fillable = ['nama_mapel', 'kode_mapel', 'kelompok', 'status', 'batas_maksimal_jam'];
+    // <--- KOREKSI: Hapus 'kelompok' karena tidak ada di tabel database
+    protected $fillable = [
+        'nama_mapel', 
+        'kode_mapel', 
+        'status', 
+        'batas_maksimal_jam'
+    ];
 
-    // Relasi ke jadwal (Satu Mapael punya banyak Jadwal/Distribusi)
     public function jadwals()
     {
         return $this->hasMany(Jadwal::class);

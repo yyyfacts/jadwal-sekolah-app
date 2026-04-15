@@ -39,8 +39,8 @@ class JadwalController extends Controller
 
         $kelass = $reqKelas ? Kelas::with('waliKelas')->where('id', $reqKelas)->orderBy('nama_kelas')->get() : Kelas::with('waliKelas')->orderBy('nama_kelas')->get();
 
-        $query = Jadwal::with(['guru', 'mapel', 'kelas'])
-            ->whereNotNull('hari')->whereNotNull('jam')
+       $query = Jadwal::with(['guru', 'mapel', 'kelas', 'masterHari'])
+           ->whereNotNull('master_hari_id')>whereNotNull('jam')
             ->where(function($q) {
                 $q->where('status', 'offline')->orWhereNull('status');
             });
@@ -79,7 +79,7 @@ class JadwalController extends Controller
 
         foreach ($rawJadwals as $row) {
             $durasi = $row->jumlah_jam;
-            $hari = $row->hari;
+           $hari = $row->masterHari->nama_hari ?? null;
             $jamMulaiFisik = $row->jam; 
             
             $slotsTersedia = $belajarSlots[$hari] ?? [];
@@ -152,7 +152,7 @@ class JadwalController extends Controller
                 return [
                     'id' => $guru->id,
                     'nama' => $guru->nama_guru,
-                    'hari_mengajar' => $guru->hari_mengajar ? json_decode($guru->hari_mengajar, true) : [],
+                   'hari_mengajar' => is_array($guru->hari_mengajar) ? $guru->hari_mengajar : [],
                 ];
             });
 
@@ -186,7 +186,7 @@ class JadwalController extends Controller
             ];
 
             // SIMPAN DI FOLDER UTAMA PROJECT (BASE PATH) AGAR MUNCUL DI VS CODE
-            $jsonPath = base_path('input_solver.json'); 
+           $jsonPath = storage_path('app/input_solver.json');
             $simpan = file_put_contents($jsonPath, json_encode($dataInput, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
             if ($simpan === false) {
@@ -208,13 +208,15 @@ class JadwalController extends Controller
                 DB::beginTransaction();
                 try {
                     foreach ($result['solution'] as $item) {
-                        $hari = $item['hari'];
+                       $hariString = $item['hari'];
                         $tSlot = $item['jam']; 
                         
-                        $pSlot = $slotMapping[$hari][$tSlot] ?? $tSlot; 
+                       $pSlot = $slotMapping[$hariString][$tSlot] ?? $tSlot;
+                        
+$masterHari = $dataHari->firstWhere('nama_hari', $hariString);
 
                         DB::table('jadwals')->where('id', $item['id'])->update([ 
-                            'hari' => $hari, 
+                            'master_hari_id' => $masterHari ? $masterHari->id : null,
                             'jam' => $pSlot, 
                             'updated_at' => now() 
                         ]);

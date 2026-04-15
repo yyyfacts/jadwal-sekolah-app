@@ -21,9 +21,14 @@ class MasterHari extends Model
         return self::where('is_active', true)->get();
     }
 
-    // --- TAMBAHKAN INI ---
     public function waktuHaris()
     {
         return $this->hasMany(WaktuHari::class)->orderBy('jam_ke', 'asc');
+    }
+
+    // --- TAMBAHAN: Relasi ke tabel Jadwal ---
+    public function jadwals()
+    {
+        return $this->hasMany(Jadwal::class, 'master_hari_id');
     }
 }

@@ -9,21 +9,21 @@ class Guru extends Model
 {
     use HasFactory;
 
-    // Nama tabel di database (default: gurus)
     protected $table = 'gurus';
 
-    // Kolom yang boleh diisi (Mass Assignment)
     protected $fillable = [
         'nama_guru',
         'kode_guru',
         'hari_mengajar'
     ];
 
-    // Relasi: Satu guru punya banyak jadwal
+    // --- TAMBAHAN: Casting agar hari_mengajar otomatis jadi Array ---
+    protected $casts = [
+        'hari_mengajar' => 'array',
+    ];
+
     public function jadwals()
     {
         return $this->hasMany(Jadwal::class, 'guru_id');
     }
-
-   
 }

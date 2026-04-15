@@ -39,7 +39,7 @@ class GuruController extends Controller
 
         foreach ($gurus as $g) {
             $g->total_jam_mengajar = $g->jadwals->sum('jumlah_jam');
-            $g->hari_array = $g->hari_mengajar ? json_decode($g->hari_mengajar, true) : [];
+           $g->hari_array = is_array($g->hari_mengajar) ? $g->hari_mengajar : [];
         }
 
         $mapels = Mapel::orderBy('nama_mapel')->get();
@@ -57,7 +57,7 @@ class GuruController extends Controller
         ]);
 
         $data = $request->only('nama_guru', 'kode_guru');
-        $data['hari_mengajar'] = json_encode($request->hari_mengajar ?? []);
+        $data['hari_mengajar'] = $request->hari_mengajar ?? [];
 
         Guru::create($data);
         return redirect()->route('guru.index')->with('success', 'Guru berhasil ditambahkan.');
@@ -124,7 +124,7 @@ class GuruController extends Controller
             $jadwal->jumlah_jam = $request->jumlah_jam;
             $jadwal->tipe_jam   = $request->tipe_jam;
             $jadwal->status     = $request->status; 
-            $jadwal->hari       = null; 
+            $jadwal->master_hari_id = null;
             $jadwal->jam        = null; 
             $jadwal->save();
 

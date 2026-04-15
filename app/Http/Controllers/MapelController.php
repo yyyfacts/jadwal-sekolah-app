@@ -60,7 +60,6 @@ class MapelController extends Controller
         $request->validate([
             'nama_mapel' => 'required|string',
             'kode_mapel' => 'required|string|unique:mapels',
-            'kelompok' => 'nullable|string',
             'batas_maksimal_jam' => 'nullable|integer|min:1|max:15',
         ]);
         
@@ -137,6 +136,8 @@ class MapelController extends Controller
             $jadwal->jumlah_jam = $request->jumlah_jam;
             $jadwal->tipe_jam   = $request->tipe_jam;
             $jadwal->status     = $request->status; 
+            $jadwal->master_hari_id = null;
+            $jadwal->jam        = null; 
             $jadwal->save();
 
             $jadwal->load(['guru', 'kelas']);
