@@ -123,7 +123,7 @@ class JadwalController extends Controller
 
     public function generate(Request $request)
     {
-        set_time_limit(600);
+        set_time_limit(1500);
         try {
             $dataHari = MasterHari::with(['waktuHaris' => function($q) {
                 $q->orderBy('waktu_mulai');
@@ -198,7 +198,7 @@ class JadwalController extends Controller
             
             // Eksekusi Python dengan path JSON yang sudah dipindah
             $process = new Process(['python', $scriptPath, $jsonPath]);
-            $process->setTimeout(600);
+            $process->setTimeout(1500);
             $process->run();
 
             if (!$process->isSuccessful()) throw new ProcessFailedException($process);
