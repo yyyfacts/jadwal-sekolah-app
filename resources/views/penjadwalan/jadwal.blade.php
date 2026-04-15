@@ -166,8 +166,8 @@
 
                             <td
                                 class="h-[45px] w-[35px] min-w-[35px] sticky left-[40px] z-[30] p-1 bg-white border-r border-b border-slate-200 text-center font-bold text-slate-700 text-[11px]">
-                                @if(!in_array($tipeTampil, ['Istirahat', 'Upacara', 'Senam', 'Sholat Dhuha', 'Jumat
-                                Bersih', 'Pramuka']))
+                                @if(!in_array($tipeTampil, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha',
+                                'Jumat Bersih', 'Pramuka']))
                                 {{ $j }}
                                 @endif
                             </td>
@@ -177,8 +177,9 @@
                                 {{ $waktuTampil }}
                             </td>
 
-                            @if(in_array($tipeTampil, ['Istirahat', 'Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih',
-                            'Pramuka']))
+                            {{-- PERBAIKAN: SEMUA TIPE NON-BELAJAR DIBUAT MENYATU --}}
+                            @if(in_array($tipeTampil, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat
+                            Bersih', 'Pramuka']))
                             <td colspan="{{ $kelass->count() }}"
                                 class="h-[45px] p-1 border-b border-slate-200 bg-slate-50 align-middle">
                                 <div class="w-full h-full rounded flex items-center justify-center">
