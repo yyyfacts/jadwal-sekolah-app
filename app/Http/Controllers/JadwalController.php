@@ -69,7 +69,6 @@ class JadwalController extends Controller
             foreach ($hariObj->waktuHaris as $waktuObj) {
                 $tipeSlot = $waktuObj->tipe;
                 
-                // DISAMAKAN DAN DILENGKAPI: Sholat masuk sini!
                 if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']) && $tipeSlot !== 'Tidak Ada') {
                     if ($waktuObj->jam_ke !== null) {
                         $belajarSlots[$namaHari][] = $waktuObj->jam_ke;
@@ -138,7 +137,6 @@ class JadwalController extends Controller
                 foreach($hariObj->waktuHaris as $w) {
                     $tipeSlot = $w->tipe;
 
-                    // DISAMAKAN DAN DILENGKAPI: Sholat masuk sini agar AI melompatinya!
                     if ($tipeSlot !== 'Tidak Ada' && !in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
                         $slotMapping[$hariObj->nama_hari][$teachingSlotCounter] = $w->jam_ke;
                         $teachingSlotCounter++;
@@ -168,12 +166,16 @@ class JadwalController extends Controller
                         'mapel_id' => $j->mapel_id, 
                         'jumlah_jam' => $j->jumlah_jam,
                         'nama_mapel' => $j->mapel->nama_mapel ?? '',
-                        'batas_maksimal_jam' => $j->mapel->batas_maksimal_jam ?? null
                     ];
                 });
 
             $kelassData = Kelas::all()->map(function ($k) {
-                return [ 'id' => $k->id, 'nama_kelas' => $k->nama_kelas, 'limit_harian' => $k->limit_harian ?? 10, 'limit_jumat' => $k->limit_jumat ?? 7, 'max_jam_total' => $k->max_jam ?? 48 ];
+                return [ 
+                    'id' => $k->id, 
+                    'nama_kelas' => $k->nama_kelas, 
+                    'limit_harian' => (int)($k->limit_harian ?? 10), 
+                    'limit_jumat' => (int)($k->limit_jumat ?? 7)
+                ];
             });
 
             $dataInput = [
@@ -183,19 +185,23 @@ class JadwalController extends Controller
                 'assignments' => $assignments,
             ];
 
-            // ==== TAMBAHKAN KODE INI SEMENTARA ====
-          //  dd($dataInput);
-            // ======================================
+            // SIMPAN DI FOLDER UTAMA PROJECT (BASE PATH) AGAR MUNCUL DI VS CODE
+            $jsonPath = base_path('input_solver.json'); 
+            $simpan = file_put_contents($jsonPath, json_encode($dataInput, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
-            $jsonPath = storage_path('app/input_solver.json');
-            file_put_contents($jsonPath, json_encode($dataInput));
+            if ($simpan === false) {
+                throw new \Exception("Gagal menulis file JSON ke: " . $jsonPath . ". Pastikan folder project memiliki izin tulis!");
+            }
 
             $scriptPath = base_path('python/scheduler.py');
+            
+            // Eksekusi Python dengan path JSON yang sudah dipindah
             $process = new Process(['python', $scriptPath, $jsonPath]);
             $process->setTimeout(600);
             $process->run();
 
             if (!$process->isSuccessful()) throw new ProcessFailedException($process);
+            
             $result = json_decode($process->getOutput(), true);
 
             if (isset($result['status']) && ($result['status'] === 'OPTIMAL' || $result['status'] === 'FEASIBLE')) {
@@ -207,10 +213,14 @@ class JadwalController extends Controller
                         
                         $pSlot = $slotMapping[$hari][$tSlot] ?? $tSlot; 
 
-                        DB::table('jadwals')->where('id', $item['id'])->update([ 'hari' => $hari, 'jam' => $pSlot, 'updated_at' => now() ]);
+                        DB::table('jadwals')->where('id', $item['id'])->update([ 
+                            'hari' => $hari, 
+                            'jam' => $pSlot, 
+                            'updated_at' => now() 
+                        ]);
                     }
                     DB::commit();
-                    return redirect()->route('jadwal.index')->with('success', $result['message'])->with('waktu_komputasi', $result['waktu_komputasi_detik'] ?? null);
+                    return redirect()->route('jadwal.index')->with('success', $result['message']);
                 } catch (\Exception $e) {
                     DB::rollBack();
                     throw $e;
