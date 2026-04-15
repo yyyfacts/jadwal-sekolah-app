@@ -40,7 +40,7 @@ class JadwalController extends Controller
         $kelass = $reqKelas ? Kelas::with('waliKelas')->where('id', $reqKelas)->orderBy('nama_kelas')->get() : Kelas::with('waliKelas')->orderBy('nama_kelas')->get();
 
        $query = Jadwal::with(['guru', 'mapel', 'kelas', 'masterHari'])
-           ->whereNotNull('master_hari_id')>whereNotNull('jam')
+           ->whereNotNull('master_hari_id')->whereNotNull('jam')
             ->where(function($q) {
                 $q->where('status', 'offline')->orWhereNull('status');
             });
