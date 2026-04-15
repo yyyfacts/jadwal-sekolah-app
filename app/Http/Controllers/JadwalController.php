@@ -175,7 +175,7 @@ class JadwalController extends Controller
                     'id' => $k->id, 
                     'nama_kelas' => $k->nama_kelas, 
                     'limit_harian' => (int)($k->limit_harian ?? 10), 
-                    'limit_jumat' => (int)($k->limit_jumat ?? 7)
+                    'limit_jumat' => (int)($k->limit_jumat ?? 9)
                 ];
             });
 
