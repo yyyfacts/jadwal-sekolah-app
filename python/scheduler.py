@@ -103,19 +103,55 @@ def main():
             limit = int(k_info['limit_jumat']) if 'jumat' in day_name else int(k_info['limit_harian'])
             model.Add(sum(duration_exprs) <= limit)
 
-    # 4. SOLVE MODEL & OPTIMASI (PERBAIKAN TERPENTING!)
+   # 4. SOLVE MODEL & OPTIMASI (PENYESUAIAN SERVER CLOUD/RENDER)
     solver = cp_model.CpSolver()
     
-    # Kunci 1: Set waktu Python di bawah waktu Laravel (580 detik vs 600 detik)
-    # Supaya Python sempat mereturn status "UNKNOWN/TIMEOUT" lewat JSON sebelum di-kill paksa oleh Laravel.
-    solver.parameters.max_time_in_seconds = 580.0 
+    # 1. Batasi waktu sangat ketat (Max 45 Detik)
+    # Render akan memutus koneksi web secara paksa di detik 60.
+    # Kita paksa Python berhenti mencari di detik ke-45 agar sempat mengembalikan
+    # pesan JSON ke Laravel sebelum diputus oleh Render.
+    solver.parameters.max_time_in_seconds = 45.0 
     
-    # Kunci 2: MULTI-THREADING
-    # Paksa OR-Tools jalan di banyak core CPU secara paralel (8 thread biasanya paling optimal)
-    # Ini akan membuat proses pencarian jadwal puluhan kali lipat lebih ngebut.
-    solver.parameters.num_search_workers = 8 
+    # 2. Turunkan beban RAM (Max 2 Core saja)
+    # Agar server Render tidak crash (Out of Memory) yang menyebabkan Error 502.
+    solver.parameters.num_search_workers = 2 
 
     status = solver.Solve(model)
+
+    # 5. KEMBALIKAN HASIL KE LARAVEL
+    if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+        solution = []
+        for a in assignments:
+            a_id = a['id']
+            for d, day_info in enumerate(hari_aktif):
+                if (a_id, d) in presences and solver.Value(presences[(a_id, d)]):
+                    start_time = solver.Value(starts[(a_id, d)])
+                    solution.append({
+                        'id': a_id,
+                        'hari': day_info['nama'], 
+                        'jam': start_time         
+                    })
+                    break 
+
+        status_name = solver.StatusName(status)
+        print(json.dumps({
+            'status': status_name,
+            'message': f'Jadwal berhasil diselesaikan ({status_name})!',
+            'solution': solution
+        }))
+    elif status == cp_model.UNKNOWN:
+        print(json.dumps({
+            'status': 'UNKNOWN',
+            'message': 'Gagal: Waktu habis (Timeout 45 detik server). Jadwal saat ini terlalu kompleks untuk server ini. Coba longgarkan ketersediaan hari Guru.'
+        }))
+    else:
+        print(json.dumps({
+            'status': solver.StatusName(status),
+            'message': 'Gagal (INFEASIBLE): Algoritma tidak menemukan solusi jadwal. Pastikan total beban jam tidak melebihi kapasitas.'
+        }))
+
+if __name__ == '__main__':
+    main()
 
     # 5. KEMBALIKAN HASIL KE LARAVEL
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
