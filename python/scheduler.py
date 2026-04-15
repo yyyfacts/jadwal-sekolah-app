@@ -92,7 +92,7 @@ def solve():
                 max_j = next(x['max_jam'] for x in hari_aktif if x['nama'] == h_nama)
                 model.AddLinearConstraint(start_var, offset, offset + max_j - duration).OnlyEnforceIf(lit)
                 day_literals.append(lit)
-            model.AddArcConsistentExactlyOne(day_literals)
+            model.AddExactlyOne(day_literals)
 
     # --- Constraint 4: No Overlap (Guru & Kelas) ---
     for gid, intervals in intervals_per_guru.items():
