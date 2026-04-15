@@ -9,9 +9,14 @@ use App\Models\Jadwal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 
 class MapelController extends Controller
 {
+    /**
+     * Fungsi otomatis benerin struktur DB yang kurang.
+     * Kolom batas_maksimal_jam DIHAPUS dari pengecekan.
+     */
     private function checkAndFixDatabase()
     {
         if (Schema::hasTable('jadwals') && !Schema::hasColumn('jadwals', 'tipe_jam')) {
@@ -26,18 +31,11 @@ class MapelController extends Controller
                 $table->integer('limit_jumat')->default(7)->after('limit_harian');
             });
         }
-
-        // Otomatis bikin kolom batas_maksimal_jam kalau belum ada
-        if (Schema::hasTable('mapels') && !Schema::hasColumn('mapels', 'batas_maksimal_jam')) {
-            Schema::table('mapels', function (Blueprint $table) {
-                $table->integer('batas_maksimal_jam')->nullable()->after('status');
-            });
-        }
     }
 
     public function index()
     {
-        $this->checkAndFixDatabase(); // Cek DB saat memuat halaman
+        $this->checkAndFixDatabase();
 
         $mapels = Mapel::with(['jadwals.kelas', 'jadwals.guru'])
             ->orderBy('nama_mapel')
@@ -59,11 +57,12 @@ class MapelController extends Controller
         $request->validate([
             'nama_mapel' => 'required|string',
             'kode_mapel' => 'required|string|unique:mapels',
-            'batas_maksimal_jam' => 'nullable|integer|min:1|max:15',
-            'status' => 'nullable|string', // Tambahan validasi status jika diinput saat create
+            'status'     => 'nullable|string',
         ]);
         
-        Mapel::create($request->all());
+        // Simpan hanya field yang ada di database
+        Mapel::create($request->only(['nama_mapel', 'kode_mapel', 'status']));
+        
         return redirect()->route('mapel.index')->with('success', 'Mata Pelajaran berhasil ditambahkan.');
     }
 
@@ -72,23 +71,25 @@ class MapelController extends Controller
         $request->validate([
             'nama_mapel' => 'required|string',
             'kode_mapel' => 'required|string|unique:mapels,kode_mapel,' . $id,
-            'batas_maksimal_jam' => 'nullable|integer|min:1|max:15',
-            'status' => 'nullable|string',
+            'status'     => 'nullable|string',
         ]);
         
-        Mapel::findOrFail($id)->update($request->all());
+        $mapel = Mapel::findOrFail($id);
+        $mapel->update($request->only(['nama_mapel', 'kode_mapel', 'status']));
+        
         return redirect()->route('mapel.index')->with('success', 'Data Mapel diperbarui.');
     }
 
     public function destroy($id)
     {
         $mapel = Mapel::findOrFail($id);
+        // Hapus distribusi terkait sebelum hapus mapelnya
         $mapel->jadwals()->delete();
         $mapel->delete();
-        return redirect()->route('mapel.index')->with('success', 'Mapel dihapus.');
+        
+        return redirect()->route('mapel.index')->with('success', 'Mapel dan distribusi terkait dihapus.');
     }
 
-    // PERBAIKAN: Menggunakan updateStatus alih-alih updateMode
     public function updateStatus(Request $request, $id)
     {
         try {
@@ -106,8 +107,6 @@ class MapelController extends Controller
     public function simpanJadwal(Request $request, $id)
     {
         try {
-            $this->checkAndFixDatabase();
-            
             $request->validate([
                 'kelas_id'   => 'required|exists:kelas,id',
                 'guru_id'    => 'required|exists:gurus,id',
@@ -118,37 +117,35 @@ class MapelController extends Controller
 
             $kelas = Kelas::with('jadwals')->findOrFail($request->kelas_id);
             
+            // Validasi sisa slot fisik agar tidak over-capacity di satu kelas
             $currentTotalOffline = $kelas->jadwals->where('status', 'offline')->sum('jumlah_jam');
-            $maxJam = $kelas->max_jam; 
+            $maxJamKelas = $kelas->max_jam ?? 50; // Default 50 jika null
             
             $tambahanBeban = ($request->status == 'offline') ? $request->jumlah_jam : 0;
 
-            if (($currentTotalOffline + $tambahanBeban) > $maxJam) {
+            if (($currentTotalOffline + $tambahanBeban) > $maxJamKelas) {
                 return response()->json([
                     'success' => false, 
-                    'message' => "Gagal! Slot Fisik (Offline) Kelas {$kelas->nama_kelas} penuh. Terisi: $currentTotalOffline JP, Maks: $maxJam JP."
+                    'message' => "Gagal! Slot Fisik Kelas {$kelas->nama_kelas} penuh. Terisi: $currentTotalOffline JP, Maks: $maxJamKelas JP."
                 ], 422);
             }
 
             $jadwal = new Jadwal();
-            $jadwal->kelas_id   = $request->kelas_id;
-            $jadwal->mapel_id   = $id; // Menggunakan ID mapel dari URL
-            $jadwal->guru_id    = $request->guru_id;
-            $jadwal->jumlah_jam = $request->jumlah_jam;
-            $jadwal->tipe_jam   = $request->tipe_jam;
-            $jadwal->status     = $request->status; 
-            
-            // PERBAIKAN: Tangkap inputan lock manual dari form (jika ada)
+            $jadwal->kelas_id       = $request->kelas_id;
+            $jadwal->mapel_id       = $id; 
+            $jadwal->guru_id        = $request->guru_id;
+            $jadwal->jumlah_jam     = $request->jumlah_jam;
+            $jadwal->tipe_jam       = $request->tipe_jam;
+            $jadwal->status         = $request->status; 
             $jadwal->master_hari_id = $request->master_hari_id ?? null;
-            $jadwal->jam        = $request->jam ?? null; 
-            
+            $jadwal->jam            = $request->jam ?? null; 
             $jadwal->save();
 
             $jadwal->load(['guru', 'kelas']);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Berhasil Disimpan!',
+                'message' => 'Distribusi SKS Berhasil!',
                 'jadwal'  => $jadwal
             ]);
 
@@ -160,7 +157,6 @@ class MapelController extends Controller
     public function updateJadwal(Request $request, $id)
     {
         try {
-            $this->checkAndFixDatabase();
             $jadwal = Jadwal::findOrFail($id);
 
             $request->validate([
@@ -174,15 +170,15 @@ class MapelController extends Controller
             $kelas = Kelas::with('jadwals')->findOrFail($request->kelas_id);
             
             $currentTotalOthersOffline = $kelas->jadwals->where('id', '!=', $id)->where('status', 'offline')->sum('jumlah_jam');
-            $maxJam = $kelas->max_jam;
+            $maxJamKelas = $kelas->max_jam ?? 50;
             
             $tambahanBeban = ($request->status == 'offline') ? $request->jumlah_jam : 0;
             $newTotal = $currentTotalOthersOffline + $tambahanBeban;
 
-            if ($newTotal > $maxJam) {
+            if ($newTotal > $maxJamKelas) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Gagal! Total Fisik Kelas {$kelas->nama_kelas} ($newTotal JP) melebihi batas ($maxJam JP)."
+                    'message' => "Gagal! Total Fisik Kelas {$kelas->nama_kelas} ($newTotal JP) melebihi batas."
                 ], 422);
             }
 
@@ -192,19 +188,14 @@ class MapelController extends Controller
             $jadwal->tipe_jam   = $request->tipe_jam;
             $jadwal->status     = $request->status; 
             
-            // PERBAIKAN: Tangkap inputan lock manual saat update (jika form mengirimkannya)
-            $jadwal->master_hari_id = $request->has('master_hari_id') ? $request->master_hari_id : $jadwal->master_hari_id;
-            $jadwal->jam        = $request->has('jam') ? $request->jam : $jadwal->jam;
+            // Pertahankan nilai lock manual jika ada
+            if($request->has('master_hari_id')) $jadwal->master_hari_id = $request->master_hari_id;
+            if($request->has('jam')) $jadwal->jam = $request->jam;
 
             $jadwal->save();
-
             $jadwal->load(['guru', 'kelas']);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Berhasil Diupdate!',
-                'jadwal'  => $jadwal
-            ]);
+            return response()->json(['success' => true, 'message' => 'Update Berhasil!', 'jadwal' => $jadwal]);
 
         } catch (\Throwable $e) {
             return response()->json(['success' => false,'message' => 'Error: ' . $e->getMessage()], 500);

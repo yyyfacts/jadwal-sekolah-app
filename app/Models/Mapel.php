@@ -14,9 +14,7 @@ class Mapel extends Model
     // <--- KOREKSI: Hapus 'kelompok' karena tidak ada di tabel database
     protected $fillable = [
         'nama_mapel', 
-        'kode_mapel',  
-        'batas_maksimal_jam',
-        'mode',               // Wajib ditambahkan (karena ada fitur updateMode)
+        'kode_mapel',              // Wajib ditambahkan (karena ada fitur updateMode)
     'status',
     ];
 

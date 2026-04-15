@@ -30,14 +30,9 @@ class JadwalController extends Controller
             $q->orderBy('waktu_mulai');
         }])->where('is_active', true)->get(); 
         
-        $hariList = $dataHari->pluck('nama_hari')->toArray();
-        
-        $dataWaktu = WaktuHari::select('jam_ke')->distinct()->orderBy('jam_ke')->get(); 
-        
-        $minJam = WaktuHari::min('jam_ke') ?? 0;
-        $maxJam = WaktuHari::max('jam_ke') ?? 15;
-
-        $kelass = $reqKelas ? Kelas::with('waliKelas')->where('id', $reqKelas)->orderBy('nama_kelas')->get() : Kelas::with('waliKelas')->orderBy('nama_kelas')->get();
+        $kelass = $reqKelas 
+            ? Kelas::with('waliKelas')->where('id', $reqKelas)->orderBy('nama_kelas')->get() 
+            : Kelas::with('waliKelas')->orderBy('nama_kelas')->get();
 
         $query = Jadwal::with(['guru', 'mapel', 'kelas', 'masterHari'])
             ->whereNotNull('master_hari_id')->whereNotNull('jam')
@@ -47,34 +42,27 @@ class JadwalController extends Controller
             
         if ($reqGuru) $query->where('guru_id', $reqGuru);
         if ($reqKelas) $query->where('kelas_id', $reqKelas);
+        
         $rawJadwals = $query->get();
         $jadwals = [];
 
+        // Inisialisasi Grid Jadwal
         foreach ($kelass as $k) {
             foreach ($dataHari as $hariObj) {
-                $namaHari = $hariObj->nama_hari;
                 foreach ($hariObj->waktuHaris as $waktu) {
                     if ($waktu->jam_ke !== null) {
-                        $jadwals[$k->id][$namaHari][$waktu->jam_ke] = null;
+                        $jadwals[$k->id][$hariObj->nama_hari][$waktu->jam_ke] = null;
                     }
                 }
             }
         }
 
+        // Mapping Slot Belajar (Menghindari Istirahat/Upacara)
         $belajarSlots = [];
         foreach ($dataHari as $hariObj) {
-            $namaHari = $hariObj->nama_hari;
-            $belajarSlots[$namaHari] = [];
-            
-            foreach ($hariObj->waktuHaris as $waktuObj) {
-                $tipeSlot = $waktuObj->tipe;
-                
-                if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']) && $tipeSlot !== 'Tidak Ada') {
-                    if ($waktuObj->jam_ke !== null) {
-                        $belajarSlots[$namaHari][] = $waktuObj->jam_ke;
-                    }
-                }
-            }
+            $belajarSlots[$hariObj->nama_hari] = $hariObj->waktuHaris
+                ->whereNotIn('tipe', ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka', 'Tidak Ada'])
+                ->pluck('jam_ke')->toArray();
         }
 
         foreach ($rawJadwals as $row) {
@@ -95,8 +83,6 @@ class JadwalController extends Controller
                 for ($i = 0; $i < $durasi; $i++) {
                     if (isset($slotsTersedia[$startIndex + $i])) {
                         $jamSekarang = $slotsTersedia[$startIndex + $i]; 
-                        
-                        if (!isset($jadwals[$row->kelas_id])) continue;
                         $jadwals[$row->kelas_id][$hari][$jamSekarang] = [
                             'id' => $row->id,
                             'mapel' => $row->mapel->nama_mapel ?? '-',
@@ -110,15 +96,15 @@ class JadwalController extends Controller
             }
         }
 
-        $queryOnline = Jadwal::with(['guru', 'mapel', 'kelas'])->where('status', 'online');
-        if ($reqGuru) $queryOnline->where('guru_id', $reqGuru);
-        if ($reqKelas) $queryOnline->where('kelas_id', $reqKelas);
-        $onlineJadwals = $queryOnline->orderBy('kelas_id')->get();
+        $onlineJadwals = Jadwal::with(['guru', 'mapel', 'kelas'])->where('status', 'online');
+        if ($reqGuru) $onlineJadwals->where('guru_id', $reqGuru);
+        if ($reqKelas) $onlineJadwals->where('kelas_id', $reqKelas);
+        $onlineJadwals = $onlineJadwals->orderBy('kelas_id')->get();
 
         $tahunAktif = TahunPelajaran::getActive();
         $judulTahun = $tahunAktif ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}" : date('Y') . '/' . (date('Y') + 1);
 
-        return view('penjadwalan.jadwal', compact('kelass', 'jadwals', 'onlineJadwals', 'judulTahun', 'gurusList', 'kelassList', 'reqGuru', 'reqKelas', 'dataHari', 'dataWaktu'));
+        return view('penjadwalan.jadwal', compact('kelass', 'jadwals', 'onlineJadwals', 'judulTahun', 'gurusList', 'kelassList', 'reqGuru', 'reqKelas', 'dataHari'));
     }
 
     public function generate(Request $request)
@@ -130,20 +116,14 @@ class JadwalController extends Controller
             }])->where('is_active', true)->get();
 
             $slotMapping = []; 
-            $reverseSlotMapping = []; // Variabel baru untuk reverse mapping
+            $reverseSlotMapping = [];
 
             $hariAktif = $dataHari->map(function($hariObj) use (&$slotMapping, &$reverseSlotMapping) {
                 $teachingSlotCounter = 1;
-
                 foreach($hariObj->waktuHaris as $w) {
-                    $tipeSlot = $w->tipe;
-
-                    if ($tipeSlot !== 'Tidak Ada' && !in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
-                        $slotMapping[$hariObj->nama_hari][$teachingSlotCounter] = $w->jam_ke;
-                        
-                        // Isi reverse mapping: dari jam_ke (fisik) ke teachingSlotCounter
-                        $reverseSlotMapping[$hariObj->nama_hari][$w->jam_ke] = $teachingSlotCounter; 
-                        
+                    if ($w->tipe !== 'Tidak Ada' && !in_array($w->tipe, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
+                        $slotMapping[$hariObj->nama_hari][$teachingSlotCounter] = (int)$w->jam_ke;
+                        $reverseSlotMapping[$hariObj->nama_hari][(int)$w->jam_ke] = $teachingSlotCounter; 
                         $teachingSlotCounter++;
                     }
                 }
@@ -155,36 +135,38 @@ class JadwalController extends Controller
 
             $gurus = Guru::all()->map(function ($guru) {
                 return [
-                    'id' => $guru->id,
+                    'id' => (int)$guru->id,
                     'nama' => $guru->nama_guru,
-                   'hari_mengajar' => is_array($guru->hari_mengajar) ? $guru->hari_mengajar : [],
+                    'hari_mengajar' => is_array($guru->hari_mengajar) ? $guru->hari_mengajar : json_decode($guru->hari_mengajar, true) ?? [],
                 ];
             });
 
-            // Pastikan memanggil relasi 'masterHari' di sini
-            $assignments = Jadwal::with(['mapel', 'masterHari'])->where(function($q) {
+            $mapels = Mapel::all()->map(function ($m) {
+                return [
+                    'id' => (int)$m->id,
+                    'nama_mapel' => $m->nama_mapel
+                ];
+            });
+
+            $assignments = Jadwal::with(['mapel', 'masterHari'])
+                ->where(function($q) {
                     $q->where('status', 'offline')->orWhereNull('status');
                 })->get()->map(function ($j) use ($reverseSlotMapping) {
-                    
-                    // Deteksi jika jadwal sudah diset manual (di-lock)
                     $locked_hari = $j->masterHari->nama_hari ?? null;
                     $locked_jam_fisik = $j->jam ?? null;
-                    
-                    // Terjemahkan jam fisik ke teaching slot untuk Python
                     $locked_teaching_slot = null;
+                    
                     if ($locked_hari && $locked_jam_fisik !== null) {
-                        $locked_teaching_slot = $reverseSlotMapping[$locked_hari][$locked_jam_fisik] ?? null;
+                        $locked_teaching_slot = $reverseSlotMapping[$locked_hari][(int)$locked_jam_fisik] ?? null;
                     }
 
                     return [ 
-                        'id' => $j->id, 
-                        'guru_id' => $j->guru_id, 
-                        'kelas_id' => $j->kelas_id, 
-                        'mapel_id' => $j->mapel_id, 
-                        'jumlah_jam' => $j->jumlah_jam,
-                        'nama_mapel' => $j->mapel->nama_mapel ?? '',
+                        'id' => (int)$j->id, 
+                        'guru_id' => (int)$j->guru_id, 
+                        'kelas_id' => (int)$j->kelas_id, 
+                        'mapel_id' => (int)$j->mapel_id, 
+                        'jumlah_jam' => (int)$j->jumlah_jam,
                         'status' => $j->status ?? 'offline',
-                        // Kirim status lock ke Python
                         'locked_hari' => $locked_hari,
                         'locked_jam' => $locked_teaching_slot,
                     ];
@@ -192,29 +174,25 @@ class JadwalController extends Controller
 
             $kelassData = Kelas::all()->map(function ($k) {
                 return [ 
-                    'id' => $k->id, 
+                    'id' => (int)$k->id, 
                     'nama_kelas' => $k->nama_kelas, 
                     'limit_harian' => (int)($k->limit_harian ?? 10), 
-                    'limit_jumat' => (int)($k->limit_jumat ?? 9)
+                    'limit_jumat' => (int)($k->limit_jumat ?? 7)
                 ];
             });
 
             $dataInput = [
                 'hari_aktif' => $hariAktif, 
                 'gurus' => $gurus, 
+                'mapels' => $mapels,
                 'kelass' => $kelassData, 
                 'assignments' => $assignments,
             ];
 
             $jsonPath = storage_path('app/input_solver.json');
-            $simpan = file_put_contents($jsonPath, json_encode($dataInput, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-
-            if ($simpan === false) {
-                throw new \Exception("Gagal menulis file JSON ke: " . $jsonPath . ". Pastikan folder project memiliki izin tulis!");
-            }
+            file_put_contents($jsonPath, json_encode($dataInput, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
             $scriptPath = base_path('python/scheduler.py');
-            
             $process = new Process(['python', $scriptPath, $jsonPath]);
             $process->setTimeout(1500);
             $process->run();
@@ -227,11 +205,9 @@ class JadwalController extends Controller
                 DB::beginTransaction();
                 try {
                     foreach ($result['solution'] as $item) {
-                       $hariString = $item['hari'];
+                        $hariString = $item['hari'];
                         $tSlot = $item['jam']; 
-                        
-                       $pSlot = $slotMapping[$hariString][$tSlot] ?? $tSlot;
-                        
+                        $pSlot = $slotMapping[$hariString][$tSlot] ?? $tSlot;
                         $masterHari = $dataHari->firstWhere('nama_hari', $hariString);
 
                         DB::table('jadwals')->where('id', $item['id'])->update([ 
