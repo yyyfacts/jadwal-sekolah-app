@@ -1,264 +1,82 @@
-<?php
+import sys
+import json
+import time
+import math
+from ortools.sat.python import cp_model
 
-namespace App\Http\Controllers;
+def main():
+start_time = time.time()
 
-use App\Models\Jadwal;
-use App\Models\Guru;
-use App\Models\Kelas;
-use App\Models\Mapel;
-use App\Models\TahunPelajaran;
-use App\Models\MasterHari;
-use App\Models\WaktuHari;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Symfony\Component\Process\Process;
-use Symfony\Component\Process\Exception\ProcessFailedException;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\JadwalExport;
+# ==========================================
+# 1. PERSIAPAN DATA & PARSING JSON
+# ==========================================
+if len(sys.argv) < 2: print(json.dumps({"status": "ERROR" , "message" : "Path JSON diperlukan" })) return
+    json_path=sys.argv[1] try: with open(json_path, 'r' , encoding='utf-8' ) as f: data=json.load(f) except Exception as
+    e: print(json.dumps({"status": "ERROR" , "message" : str(e)})) return hari_aktif=data.get('hari_aktif', [])
+    gurus=data.get('gurus', []) kelass=data.get('kelass', []) assignments=data.get('assignments', []) if not
+    assignments: print(json.dumps({"status": "ERROR" , "message" : "Data penugasan (assignments) kosong." })) return
+    hari_list=[h['nama'] for h in hari_aktif] hari_max_jam={h['nama']: int(h['max_jam']) for h in hari_aktif}
+    kelas_limits={} for k in kelass: kelas_limits[k['id']]={ 'limit_harian' : int(k.get('limit_harian',
+    10)), 'limit_jumat' : int(k.get('limit_jumat', 7)) } def get_max_jam(kelas_id, hari):
+    limits=kelas_limits.get(kelas_id, {'limit_harian': 10, 'limit_jumat' : 7}) batas_kelas=limits['limit_jumat'] if
+    hari=='Jumat' else limits['limit_harian'] batas_global=hari_max_jam.get(hari, 10) return min(batas_kelas,
+    batas_global) guru_hari_map={} for g in gurus: allowed_days=g.get('hari_mengajar', []) if not allowed_days:
+    allowed_days=hari_list guru_hari_map[g['id']]=allowed_days #==========================================# 2. MEMBANGUN
+    MODEL CP-SAT (VERSI TUKANG SUSUN) #==========================================model=cp_model.CpModel() starts={}
+    presences={} all_start_vars=[] intervals_per_kelas={k['id']: {h: [] for h in hari_list} for k in kelass}
+    intervals_per_guru={g['id']: {h: [] for h in hari_list} for g in gurus} tasks_per_mapel_group={} tasks_metadata=[] #
+    Mengurutkan balok dari yang terbesar (triple) ke terkecil (single) agar muat duluan assignments.sort(key=lambda x: (
+    0 if x.get('locked_hari') and x.get('locked_jam') is not None else 1, -int(x['jumlah_jam']) )) for t in assignments:
+    durasi=int(t['jumlah_jam']) if durasi <=0: continue t_id=t['id'] g_id=t['guru_id'] k_id=t['kelas_id']
+    m_id=t.get('mapel_id') locked_hari=t.get('locked_hari') locked_jam=t.get('locked_jam') tasks_metadata.append({'id':
+    t_id}) group_key=(k_id, m_id if m_id else f"guru_{g_id}") if group_key not in tasks_per_mapel_group:
+    tasks_per_mapel_group[group_key]=[] tasks_per_mapel_group[group_key].append(t_id) possible_days=[] for h in
+    hari_list: is_locked_here=(locked_hari==h) if locked_hari and not is_locked_here: continue if not locked_hari and h
+    not in guru_hari_map[g_id]: continue batas_jam=get_max_jam(k_id, h) if is_locked_here and locked_jam is not None:
+    l_jam=int(locked_jam) start_var=model.NewIntVar(l_jam, l_jam, f'start_{t_id}_{h}') end_var=model.NewIntVar(l_jam +
+    durasi, l_jam + durasi, f'end_{t_id}_{h}') is_present=model.NewBoolVar(f'present_{t_id}_{h}')
+    model.Add(is_present==1) else: if durasi> batas_jam:
+    continue
 
-class JadwalController extends Controller
-{
-    public function index(Request $request)
-    {
-        $reqGuru = $request->input('guru_id');
-        $reqKelas = $request->input('kelas_id');
+    max_start = batas_jam - durasi + 1
+    if max_start < 1: continue start_var=model.NewIntVar(1, max_start, f'start_{t_id}_{h}') end_var=model.NewIntVar(1 +
+        durasi, batas_jam + 1, f'end_{t_id}_{h}') is_present=model.NewBoolVar(f'present_{t_id}_{h}')
+        interval_var=model.NewOptionalIntervalVar( start_var, durasi, end_var, is_present, f'interval_{t_id}_{h}' )
+        starts[(t_id, h)]=start_var presences[(t_id, h)]=is_present possible_days.append(is_present)
+        all_start_vars.append(start_var) intervals_per_kelas[k_id][h].append(interval_var)
+        intervals_per_guru[g_id][h].append(interval_var) if possible_days: model.AddExactlyOne(possible_days) else:
+        print(json.dumps({ "status" : "INFEASIBLE" , "message" : f"Bentrok: ID {t_id} tidak punya ruang hari yang
+        valid." })) return # --- KENDALA MUTLAK (HANYA MENCEGAH BENTROK) --- for k_id, days in
+        intervals_per_kelas.items(): for h, intervals in days.items(): if len(intervals)> 1:
+        model.AddNoOverlap(intervals)
 
-        $gurusList = Guru::orderBy('nama_guru')->get();
-        $kelassList = Kelas::orderBy('nama_kelas')->get();
+        for g_id, days in intervals_per_guru.items():
+        for h, intervals in days.items():
+        if len(intervals) > 1:
+        model.AddNoOverlap(intervals)
 
-        $dataHari = MasterHari::with(['waktuHaris' => function($q) {
-            $q->orderBy('waktu_mulai');
-        }])->where('is_active', true)->get(); 
-        
-        $hariList = $dataHari->pluck('nama_hari')->toArray();
-        
-        $dataWaktu = WaktuHari::select('jam_ke')->distinct()->orderBy('jam_ke')->get(); 
-        
-        $minJam = WaktuHari::min('jam_ke') ?? 0;
-        $maxJam = WaktuHari::max('jam_ke') ?? 15;
-
-        $kelass = $reqKelas ? Kelas::with('waliKelas')->where('id', $reqKelas)->orderBy('nama_kelas')->get() : Kelas::with('waliKelas')->orderBy('nama_kelas')->get();
-
-        $query = Jadwal::with(['guru', 'mapel', 'kelas', 'masterHari'])
-            ->whereNotNull('master_hari_id')->whereNotNull('jam')
-            ->where(function($q) {
-                $q->where('status', 'offline')->orWhereNull('status');
-            });
-            
-        if ($reqGuru) $query->where('guru_id', $reqGuru);
-        if ($reqKelas) $query->where('kelas_id', $reqKelas);
-        $rawJadwals = $query->get();
-        $jadwals = [];
-
-        foreach ($kelass as $k) {
-            foreach ($dataHari as $hariObj) {
-                $namaHari = $hariObj->nama_hari;
-                foreach ($hariObj->waktuHaris as $waktu) {
-                    if ($waktu->jam_ke !== null) {
-                        $jadwals[$k->id][$namaHari][$waktu->jam_ke] = null;
-                    }
-                }
-            }
-        }
-
-        $belajarSlots = [];
-        foreach ($dataHari as $hariObj) {
-            $namaHari = $hariObj->nama_hari;
-            $belajarSlots[$namaHari] = [];
-            
-            foreach ($hariObj->waktuHaris as $waktuObj) {
-                $tipeSlot = $waktuObj->tipe;
-                
-                if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']) && $tipeSlot !== 'Tidak Ada') {
-                    if ($waktuObj->jam_ke !== null) {
-                        $belajarSlots[$namaHari][] = $waktuObj->jam_ke;
-                    }
-                }
-            }
-        }
-
-        foreach ($rawJadwals as $row) {
-            $durasi = $row->jumlah_jam;
-            $hari = $row->masterHari->nama_hari ?? null;
-            $jamMulaiFisik = $row->jam; 
-            
-            $slotsTersedia = $belajarSlots[$hari] ?? [];
-            $startIndex = array_search($jamMulaiFisik, $slotsTersedia); 
-            
-            $color = match ($row->tipe_jam) {
-                'double' => 'bg-blue-100 text-blue-800 border-blue-200',
-                'triple' => 'bg-purple-100 text-purple-800 border-purple-200',
-                default => 'bg-white text-slate-700 border-slate-200'
-            };
-
-            if ($startIndex !== false) {
-                for ($i = 0; $i < $durasi; $i++) {
-                    if (isset($slotsTersedia[$startIndex + $i])) {
-                        $jamSekarang = $slotsTersedia[$startIndex + $i]; 
-                        
-                        if (!isset($jadwals[$row->kelas_id])) continue;
-                        $jadwals[$row->kelas_id][$hari][$jamSekarang] = [
-                            'id' => $row->id,
-                            'mapel' => $row->mapel->nama_mapel ?? '-',
-                            'guru' => $row->guru->nama_guru ?? '-',
-                            'kode_guru' => $row->guru->kode_guru ?? '?',
-                            'color' => $color,
-                            'tipe' => $row->tipe_jam
-                        ];
-                    }
-                }
-            }
-        }
-
-        $queryOnline = Jadwal::with(['guru', 'mapel', 'kelas'])->where('status', 'online');
-        if ($reqGuru) $queryOnline->where('guru_id', $reqGuru);
-        if ($reqKelas) $queryOnline->where('kelas_id', $reqKelas);
-        $onlineJadwals = $queryOnline->orderBy('kelas_id')->get();
-
-        $tahunAktif = TahunPelajaran::getActive();
-        $judulTahun = $tahunAktif ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}" : date('Y') . '/' . (date('Y') + 1);
-
-        return view('penjadwalan.jadwal', compact('kelass', 'jadwals', 'onlineJadwals', 'judulTahun', 'gurusList', 'kelassList', 'reqGuru', 'reqKelas', 'dataHari', 'dataWaktu'));
-    }
-
-    public function generate(Request $request)
-    {
-        set_time_limit(1500);
-        try {
-            $dataHari = MasterHari::with(['waktuHaris' => function($q) {
-                $q->orderBy('waktu_mulai');
-            }])->where('is_active', true)->get();
-
-            $slotMapping = []; 
-            $reverseSlotMapping = []; // Variabel baru untuk reverse mapping
-
-            $hariAktif = $dataHari->map(function($hariObj) use (&$slotMapping, &$reverseSlotMapping) {
-                $teachingSlotCounter = 1;
-
-                foreach($hariObj->waktuHaris as $w) {
-                    $tipeSlot = $w->tipe;
-
-                    if ($tipeSlot !== 'Tidak Ada' && !in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
-                        $slotMapping[$hariObj->nama_hari][$teachingSlotCounter] = $w->jam_ke;
-                        
-                        // Isi reverse mapping: dari jam_ke (fisik) ke teachingSlotCounter
-                        $reverseSlotMapping[$hariObj->nama_hari][$w->jam_ke] = $teachingSlotCounter; 
-                        
-                        $teachingSlotCounter++;
-                    }
-                }
-                return [
-                    'nama' => $hariObj->nama_hari,
-                    'max_jam' => $teachingSlotCounter - 1 
-                ];
-            });
-
-            $gurus = Guru::all()->map(function ($guru) {
-                return [
-                    'id' => $guru->id,
-                    'nama' => $guru->nama_guru,
-                   'hari_mengajar' => is_array($guru->hari_mengajar) ? $guru->hari_mengajar : [],
-                ];
-            });
-
-            // Pastikan memanggil relasi 'masterHari' di sini
-            $assignments = Jadwal::with(['mapel', 'masterHari'])->where(function($q) {
-                    $q->where('status', 'offline')->orWhereNull('status');
-                })->get()->map(function ($j) use ($reverseSlotMapping) {
-                    
-                    // Deteksi jika jadwal sudah diset manual (di-lock)
-                    $locked_hari = $j->masterHari->nama_hari ?? null;
-                    $locked_jam_fisik = $j->jam ?? null;
-                    
-                    // Terjemahkan jam fisik ke teaching slot untuk Python
-                    $locked_teaching_slot = null;
-                    if ($locked_hari && $locked_jam_fisik !== null) {
-                        $locked_teaching_slot = $reverseSlotMapping[$locked_hari][$locked_jam_fisik] ?? null;
-                    }
-
-                    return [ 
-                        'id' => $j->id, 
-                        'guru_id' => $j->guru_id, 
-                        'kelas_id' => $j->kelas_id, 
-                        'mapel_id' => $j->mapel_id, 
-                        'jumlah_jam' => $j->jumlah_jam,
-                        'nama_mapel' => $j->mapel->nama_mapel ?? '',
-                        'status' => $j->status ?? 'offline',
-                        // Kirim status lock ke Python
-                        'locked_hari' => $locked_hari,
-                        'locked_jam' => $locked_teaching_slot,
-                    ];
-                });
-
-            $kelassData = Kelas::all()->map(function ($k) {
-                return [ 
-                    'id' => $k->id, 
-                    'nama_kelas' => $k->nama_kelas, 
-                    'limit_harian' => (int)($k->limit_harian ?? 10), 
-                    'limit_jumat' => (int)($k->limit_jumat ?? 9)
-                ];
-            });
-
-            $dataInput = [
-                'hari_aktif' => $hariAktif, 
-                'gurus' => $gurus, 
-                'kelass' => $kelassData, 
-                'assignments' => $assignments,
-            ];
-
-            $jsonPath = storage_path('app/input_solver.json');
-            $simpan = file_put_contents($jsonPath, json_encode($dataInput, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-
-            if ($simpan === false) {
-                throw new \Exception("Gagal menulis file JSON ke: " . $jsonPath . ". Pastikan folder project memiliki izin tulis!");
-            }
-
-            $scriptPath = base_path('python/scheduler.py');
-            
-            $process = new Process(['python', $scriptPath, $jsonPath]);
-            $process->setTimeout(1500);
-            $process->run();
-
-            if (!$process->isSuccessful()) throw new ProcessFailedException($process);
-            
-            $result = json_decode($process->getOutput(), true);
-
-            if (isset($result['status']) && ($result['status'] === 'OPTIMAL' || $result['status'] === 'FEASIBLE')) {
-                DB::beginTransaction();
-                try {
-                    foreach ($result['solution'] as $item) {
-                       $hariString = $item['hari'];
-                        $tSlot = $item['jam']; 
-                        
-                       $pSlot = $slotMapping[$hariString][$tSlot] ?? $tSlot;
-                        
-                        $masterHari = $dataHari->firstWhere('nama_hari', $hariString);
-
-                        DB::table('jadwals')->where('id', $item['id'])->update([ 
-                            'master_hari_id' => $masterHari ? $masterHari->id : null,
-                            'jam' => $pSlot, 
-                            'updated_at' => now() 
-                        ]);
-                    }
-                    DB::commit();
-                    return redirect()->route('jadwal.index')->with('success', $result['message']);
-                } catch (\Exception $e) {
-                    DB::rollBack();
-                    throw $e;
-                }
-            } else {
-                return redirect()->route('jadwal.index')->with('error', 'Gagal: ' . ($result['message'] ?? 'Solusi tidak ditemukan.'));
-            }
-
-        } catch (\Exception $e) {
-            return redirect()->route('jadwal.index')->with('error', 'Error: ' . $e->getMessage());
-        }
-    }
-
-    public function export()
-    {
-        $tahunAktif = TahunPelajaran::getActive();
-        $judulTahun = $tahunAktif ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}" : date('Y');
-        return Excel::download(new JadwalExport($judulTahun), 'Jadwal_Pelajaran.xlsx');
-    }
-}
+        # --- KENDALA PENYEBARAN MAPEL DIPERLONGGAR EKSTREM ---
+        # Membiarkan guru ngajar 1 mapel beberapa kali dalam sehari jika memang mendesak
+        for key, task_ids in tasks_per_mapel_group.items():
+        if len(task_ids) > 1:
+        max_per_day = max(2, math.ceil(len(task_ids) / len(hari_list)) + 1)
+        for h in hari_list:
+        daily_presence = [presences[(tid, h)] for tid in task_ids if (tid, h) in presences]
+        if len(daily_presence) > max_per_day:
+        model.Add(sum(daily_presence) <= max_per_day) # Catatan: Aturan Pemerataan Beban Guru (Load Balancing) DIHAPUS.
+            # Biar solver murni nyusun balok asal muat. #==========================================# 3. PENYELESAIAN
+            (VERSI CEPAT & KASAR) #==========================================if all_start_vars: # Coba susun dari kiri
+            (jam 1) ke kanan model.AddDecisionStrategy(all_start_vars, cp_model.CHOOSE_FIRST, cp_model.SELECT_MIN_VALUE)
+            solver=cp_model.CpSolver() solver.parameters.max_time_in_seconds=180 # 3 Menit cukup untuk susun kasar
+            solver.parameters.num_search_workers=8 # Biar solver ga terlalu banyak mikir rute optimal
+            solver.parameters.linearization_level=0 status=solver.Solve(model) waktu_komputasi=time.time() - start_time
+            #==========================================# 4. FORMATTING OUTPUT KE PHP
+            #==========================================if status==cp_model.OPTIMAL or status==cp_model.FEASIBLE:
+            final_solution=[] for t in tasks_metadata: t_id=t['id'] for h in hari_list: if (t_id, h) in presences and
+            solver.Value(presences[(t_id, h)])==1: final_solution.append({ 'id' : t_id, 'hari' : h, 'jam' :
+            solver.Value(starts[(t_id, h)]) }) break print(json.dumps({ "status" : "OPTIMAL" , "solution" :
+            final_solution, "waktu_komputasi_detik" : round(waktu_komputasi, 2), "message" : f"Susun balok berhasil!
+            Selesai dalam {waktu_komputasi:.2f} detik." })) else: print(json.dumps({ "status" : "INFEASIBLE"
+            , "waktu_komputasi_detik" : round(waktu_komputasi, 2), "message" : f"Susun balok gagal (Waktu:
+            {waktu_komputasi:.2f} detik). Grid sudah benar-benar penuh atau ada guru yang tumpang tindih mutlak." })) if
+            __name__=='__main__' : main()
