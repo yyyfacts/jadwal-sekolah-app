@@ -107,129 +107,131 @@ class JadwalController extends Controller
         return view('penjadwalan.jadwal', compact('kelass', 'jadwals', 'onlineJadwals', 'judulTahun', 'gurusList', 'kelassList', 'reqGuru', 'reqKelas', 'dataHari'));
     }
 
-    public function generate(Request $request)
-    {
-        set_time_limit(1500);
-        try {
-            $dataHari = MasterHari::with(['waktuHaris' => function($q) {
-                $q->orderBy('waktu_mulai');
-            }])->where('is_active', true)->get();
+       public function generate(Request $request)
+{
+    set_time_limit(1500);
+    try {
+        $dataHari = MasterHari::with(['waktuHaris' => function($q) {
+            $q->orderBy('waktu_mulai');
+        }])->where('is_active', true)->get();
 
-            $slotMapping = []; 
-            $reverseSlotMapping = [];
+        $slotMapping = []; 
+        $reverseSlotMapping = [];
 
-            $hariAktif = $dataHari->map(function($hariObj) use (&$slotMapping, &$reverseSlotMapping) {
-                $teachingSlotCounter = 1;
-                foreach($hariObj->waktuHaris as $w) {
-                    if ($w->tipe !== 'Tidak Ada' && !in_array($w->tipe, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
-                        $slotMapping[$hariObj->nama_hari][$teachingSlotCounter] = (int)$w->jam_ke;
-                        $reverseSlotMapping[$hariObj->nama_hari][(int)$w->jam_ke] = $teachingSlotCounter; 
-                        $teachingSlotCounter++;
-                    }
+        $hariAktif = $dataHari->map(function($hariObj) use (&$slotMapping, &$reverseSlotMapping) {
+            $teachingSlotCounter = 1;
+            foreach($hariObj->waktuHaris as $w) {
+                if ($w->tipe !== 'Tidak Ada' && !in_array($w->tipe, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
+                    $slotMapping[$hariObj->nama_hari][$teachingSlotCounter] = (int)$w->jam_ke;
+                    $reverseSlotMapping[$hariObj->nama_hari][(int)$w->jam_ke] = $teachingSlotCounter; 
+                    $teachingSlotCounter++;
                 }
-                return [
-                    'nama' => $hariObj->nama_hari,
-                    'max_jam' => $teachingSlotCounter - 1 
-                ];
-            });
-
-            $gurus = Guru::all()->map(function ($guru) {
-                return [
-                    'id' => (int)$guru->id,
-                    'nama' => $guru->nama_guru,
-                    'hari_mengajar' => is_array($guru->hari_mengajar) ? $guru->hari_mengajar : json_decode($guru->hari_mengajar, true) ?? [],
-                ];
-            });
-
-            $mapels = Mapel::all()->map(function ($m) {
-                return [
-                    'id' => (int)$m->id,
-                    'nama_mapel' => $m->nama_mapel
-                ];
-            });
-
-            $assignments = Jadwal::with(['mapel', 'masterHari'])
-                ->where(function($q) {
-                    $q->where('status', 'offline')->orWhereNull('status');
-                })->get()->map(function ($j) use ($reverseSlotMapping) {
-                    $locked_hari = $j->masterHari->nama_hari ?? null;
-                    $locked_jam_fisik = $j->jam ?? null;
-                    $locked_teaching_slot = null;
-                    
-                    if ($locked_hari && $locked_jam_fisik !== null) {
-                        $locked_teaching_slot = $reverseSlotMapping[$locked_hari][(int)$locked_jam_fisik] ?? null;
-                    }
-
-                    return [ 
-                        'id' => (int)$j->id, 
-                        'guru_id' => (int)$j->guru_id, 
-                        'kelas_id' => (int)$j->kelas_id, 
-                        'mapel_id' => (int)$j->mapel_id, 
-                        'jumlah_jam' => (int)$j->jumlah_jam,
-                        'status' => $j->status ?? 'offline',
-                        'locked_hari' => $locked_hari,
-                        'locked_jam' => $locked_teaching_slot,
-                    ];
-                });
-
-            $kelassData = Kelas::all()->map(function ($k) {
-                return [ 
-                    'id' => (int)$k->id, 
-                    'nama_kelas' => $k->nama_kelas, 
-                    'limit_harian' => (int)($k->limit_harian ?? 10), 
-                    'limit_jumat' => (int)($k->limit_jumat ?? 7)
-                ];
-            });
-
-            $dataInput = [
-                'hari_aktif' => $hariAktif, 
-                'gurus' => $gurus, 
-                'mapels' => $mapels,
-                'kelass' => $kelassData, 
-                'assignments' => $assignments,
-            ];
-
-            $jsonPath = storage_path('app/input_solver.json');
-            file_put_contents($jsonPath, json_encode($dataInput, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-
-            $scriptPath = base_path('python/scheduler.py');
-            $process = new Process(['python', $scriptPath, $jsonPath]);
-            $process->setTimeout(1500);
-            $process->run();
-
-            if (!$process->isSuccessful()) throw new ProcessFailedException($process);
-            
-            $result = json_decode($process->getOutput(), true);
-
-            if (isset($result['status']) && ($result['status'] === 'OPTIMAL' || $result['status'] === 'FEASIBLE')) {
-                DB::beginTransaction();
-                try {
-                    foreach ($result['solution'] as $item) {
-                        $hariString = $item['hari'];
-                        $tSlot = $item['jam']; 
-                        $pSlot = $slotMapping[$hariString][$tSlot] ?? $tSlot;
-                        $masterHari = $dataHari->firstWhere('nama_hari', $hariString);
-
-                        DB::table('jadwals')->where('id', $item['id'])->update([ 
-                            'master_hari_id' => $masterHari ? $masterHari->id : null,
-                            'jam' => $pSlot, 
-                            'updated_at' => now() 
-                        ]);
-                    }
-                    DB::commit();
-                    return redirect()->route('jadwal.index')->with('success', $result['message']);
-                } catch (\Exception $e) {
-                    DB::rollBack();
-                    throw $e;
-                }
-            } else {
-                return redirect()->route('jadwal.index')->with('error', 'Gagal: ' . ($result['message'] ?? 'Solusi tidak ditemukan.'));
             }
+            return [
+                'nama' => $hariObj->nama_hari,
+                'max_jam' => $teachingSlotCounter - 1 
+            ];
+        });
 
-        } catch (\Exception $e) {
-            return redirect()->route('jadwal.index')->with('error', 'Error: ' . $e->getMessage());
+        $gurus = Guru::all()->map(function ($guru) {
+            return [
+                'id' => (int)$guru->id,
+                'nama' => $guru->nama_guru,
+                // Pastikan format hari mengajar adalah array
+                'hari_mengajar' => is_array($guru->hari_mengajar) ? $guru->hari_mengajar : json_decode($guru->hari_mengajar, true) ?? [],
+            ];
+        });
+
+        // PENTING: Tambahkan nama_mapel di assignments agar Python bisa deteksi PJOK
+        $assignments = Jadwal::with(['mapel', 'masterHari'])
+            ->where(function($q) {
+                $q->where('status', 'offline')->orWhereNull('status');
+            })->get()->map(function ($j) use ($reverseSlotMapping) {
+                $locked_hari = $j->masterHari->nama_hari ?? null;
+                $locked_jam_fisik = $j->jam ?? null;
+                $locked_teaching_slot = null;
+                
+                if ($locked_hari && $locked_jam_fisik !== null) {
+                    $locked_teaching_slot = $reverseSlotMapping[$locked_hari][(int)$locked_jam_fisik] ?? null;
+                }
+
+                return [ 
+                    'id' => (int)$j->id, 
+                    'guru_id' => (int)$j->guru_id, 
+                    'kelas_id' => (int)$j->kelas_id, 
+                    'mapel_id' => (int)$j->mapel_id, 
+                    'nama_mapel' => $j->mapel->nama_mapel ?? '', // WAJIB ADA untuk aturan PJOK
+                    'jumlah_jam' => (int)$j->jumlah_jam,
+                    'status' => $j->status ?? 'offline',
+                    'locked_hari' => $locked_hari,
+                    'locked_jam' => $locked_teaching_slot,
+                ];
+            });
+
+        $kelassData = Kelas::all()->map(function ($k) {
+            return [ 
+                'id' => (int)$k->id, 
+                'nama_kelas' => $k->nama_kelas, 
+                'limit_harian' => (int)($k->limit_harian ?? 10), 
+                'limit_jumat' => (int)($k->limit_jumat ?? 7)
+            ];
+        });
+
+        $dataInput = [
+            'hari_aktif' => $hariAktif, 
+            'gurus' => $gurus, 
+            'kelass' => $kelassData, 
+            'assignments' => $assignments,
+            // Jika ada kendala mapel khusus (opsional)
+            'mapel_constraints' => [] 
+        ];
+
+        $jsonPath = storage_path('app/input_solver.json');
+        file_put_contents($jsonPath, json_encode($dataInput, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        // Eksekusi Python (Gunakan python3 jika di Linux)
+        $scriptPath = base_path('python/scheduler.py');
+        $process = new Process(['python3', $scriptPath, $jsonPath]);
+        $process->setTimeout(1500);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
         }
+        
+        $result = json_decode($process->getOutput(), true);
+
+        if (isset($result['status']) && ($result['status'] === 'OPTIMAL' || $result['status'] === 'FEASIBLE')) {
+            DB::beginTransaction();
+            try {
+                foreach ($result['solution'] as $item) {
+                    $hariString = $item['hari'];
+                    $tSlot = $item['jam']; 
+                    
+                    // Terjemahkan balik: Slot Python -> Jam Ke Fisik
+                    $pSlot = $slotMapping[$hariString][$tSlot] ?? $tSlot;
+                    $masterHari = $dataHari->firstWhere('nama_hari', $hariString);
+
+                    DB::table('jadwals')->where('id', $item['id'])->update([ 
+                        'master_hari_id' => $masterHari ? $masterHari->id : null,
+                        'jam' => $pSlot, 
+                        'updated_at' => now() 
+                    ]);
+                }
+                DB::commit();
+                return redirect()->route('jadwal.index')->with('success', $result['message']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } else {
+            return redirect()->route('jadwal.index')->with('error', 'Gagal: ' . ($result['message'] ?? 'Solusi tidak ditemukan.'));
+        }
+
+    } catch (\Exception $e) {
+        return redirect()->route('jadwal.index')->with('error', 'Error: ' . $e->getMessage());
     }
+}
 
     public function export()
     {
