@@ -15,7 +15,9 @@ class Mapel extends Model
     protected $fillable = [
         'nama_mapel', 
         'kode_mapel',  
-        'batas_maksimal_jam'
+        'batas_maksimal_jam',
+        'mode',               // Wajib ditambahkan (karena ada fitur updateMode)
+    'status',
     ];
 
     public function jadwals()

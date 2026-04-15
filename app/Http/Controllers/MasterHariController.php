@@ -33,7 +33,8 @@ class MasterHariController extends Controller
     {
         $request->validate([
             'nama_hari' => 'required|string|max:20',
-            'is_active' => 'required|boolean',
+            // Gunakan boolean untuk is_active
+            'is_active' => 'required|boolean', 
         ]);
 
         MasterHari::findOrFail($id)->update($request->only('nama_hari', 'is_active'));
@@ -42,8 +43,11 @@ class MasterHariController extends Controller
 
     public function destroy($id)
     {
-        $hari = MasterHari::find($id);
-        if ($hari) $hari->delete(); // Pastikan cascade delete aktif di DB agar WaktuHari ikut terhapus
+        $hari = MasterHari::findOrFail($id);
+        // PERBAIKAN: Hapus anaknya dulu secara eksplisit biar tidak error constraint DB
+        $hari->waktuHaris()->delete(); 
+        $hari->delete(); 
+        
         return redirect()->route('master-hari.index')->with('success', 'Data Hari berhasil dihapus.');
     }
 
@@ -57,13 +61,16 @@ class MasterHariController extends Controller
 
     public function simpanWaktu(Request $request, $id)
     {
-        // VALIDASI: Pastikan 'Senam' dan kawan-kawan diizinkan masuk ke server
+        // PERBAIKAN: Tambahkan validasi untuk ISI array (*), bukan cuma wadah array-nya saja
         $request->validate([
-            'jam_ke' => 'required|array',
-            'tipe' => 'required|array',
-            'tipe.*' => 'required|in:Belajar,Istirahat,Upacara,Sholat,Senam,Sholat Dhuha,Jumat Bersih,Pramuka',
-            'waktu_mulai' => 'required|array',
-            'waktu_selesai' => 'required|array',
+            'jam_ke'          => 'required|array',
+            'jam_ke.*'        => 'nullable|integer', // Nullable: misal jam istirahat tidak diisi angka
+            'tipe'            => 'required|array',
+            'tipe.*'          => 'required|in:Belajar,Istirahat,Upacara,Sholat,Senam,Sholat Dhuha,Jumat Bersih,Pramuka',
+            'waktu_mulai'     => 'required|array',
+            'waktu_mulai.*'   => 'required|string', 
+            'waktu_selesai'   => 'required|array',
+            'waktu_selesai.*' => 'required|string',
         ]);
 
         try {
@@ -80,7 +87,7 @@ class MasterHariController extends Controller
                         'jam_ke'         => $jam,
                         'waktu_mulai'    => $request->waktu_mulai[$index],
                         'waktu_selesai'  => $request->waktu_selesai[$index],
-                        'tipe'           => $request->tipe[$index], // Disini 'Senam' akan masuk
+                        'tipe'           => $request->tipe[$index], 
                     ]);
                 }
             }

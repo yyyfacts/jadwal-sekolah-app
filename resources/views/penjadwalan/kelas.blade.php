@@ -51,6 +51,21 @@
                                 class="text-purple-600 text-sm ml-1 font-extrabold">{{ $kelass->count() }}</span>
                         </span>
                     </div>
+
+                    <form action="{{ route('kelas.sinkronisasi') }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit"
+                            onclick="return confirm('Sistem akan menghitung ulang kapasitas (Max JP) dan Limit Jumat berdasarkan data OFFLINE yang ada. Lanjutkan?')"
+                            class="hidden lg:flex items-center gap-2 px-5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl transition-all duration-300 shadow-sm group">
+                            <svg class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                </path>
+                            </svg>
+                            <span class="text-xs font-bold uppercase tracking-wider">Sinkronisasi Limit</span>
+                        </button>
+                    </form>
                     <button onclick="openModal('modaltambah')"
                         class="px-6 py-2.5 font-bold text-white transition-all duration-300 bg-[#9333ea] rounded-xl hover:bg-purple-700 shadow-md flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,10 +115,11 @@
                 <tbody id="tbody-kelas-main" class="divide-y divide-slate-100/80">
                     @forelse($kelass as $index => $k)
                     @php
-                    $totalJam = $k->jadwals->sum('jumlah_jam');
+                    $totalJamOffline = $k->jadwals->where('status', 'offline')->sum('jumlah_jam');
+                    $totalJamOnline = $k->jadwals->where('status', 'online')->sum('jumlah_jam');
                     $maxJam = $k->max_jam ?? 48;
-                    $percentage = $maxJam > 0 ? ($totalJam / $maxJam) * 100 : 0;
-                    $barColor = $totalJam > $maxJam ? 'bg-rose-500' : 'bg-[#34d399]';
+                    $percentage = $maxJam > 0 ? ($totalJamOffline / $maxJam) * 100 : 0;
+                    $barColor = $totalJamOffline > $maxJam ? 'bg-rose-500' : 'bg-[#34d399]';
                     @endphp
                     <tr class="group hover:bg-slate-50/50 transition-colors duration-200"
                         data-filter="{{ strtolower($k->nama_kelas) }} {{ strtolower($k->kode_kelas) }}">
@@ -138,8 +154,14 @@
                         </td>
                         <td class="px-6 py-5 text-center align-middle">
                             <div class="flex flex-col items-center gap-1.5">
-                                <span class="text-[12px] font-bold text-emerald-600">{{ $totalJam }} / {{ $maxJam }}
-                                    JP</span>
+                                <span class="text-[12px] font-bold text-emerald-600">
+                                    {{ $totalJamOffline }} / {{ $maxJam }} JP (Fisik)
+                                </span>
+                                @if($totalJamOnline > 0)
+                                <span class="block text-[10px] text-slate-400 font-medium">
+                                    Online: {{ $totalJamOnline }} JP
+                                </span>
+                                @endif
                                 <div class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                     <div class="h-full {{ $barColor }} rounded-full transition-all duration-500"
                                         style="width: {{ min($percentage, 100) }}%"></div>

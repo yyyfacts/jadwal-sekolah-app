@@ -88,6 +88,10 @@ def main():
         k_id = t['kelas_id']
         m_id = t.get('mapel_id')
         
+        # --- TANGKAP DATA JADWAL MANUAL (LOCK) ---
+        locked_hari = t.get('locked_hari')
+        locked_jam = t.get('locked_jam')
+        
         tasks_metadata.append({'id': t_id})
 
         group_key = (k_id, m_id if m_id else f"guru_{g_id}")
@@ -99,24 +103,40 @@ def main():
 
         for h in hari_list:
             # FILTER 1: Tolak jadwal jika hari ini TIDAK DICENTANG oleh Guru tersebut
-            if h not in guru_hari_map.get(g_id, hari_list):
+            # Pengecualian: Jika jadwal sudah di-lock manual di hari ini, paksa lolos filter
+            if h not in guru_hari_map.get(g_id, hari_list) and h != locked_hari:
                 continue 
 
             # FILTER 2: Cek batas jam maksimal hari ini untuk kelas ini
             batas_jam = get_max_jam(k_id, h)
-            if durasi > batas_jam:
-                continue # Kalau durasi mapel lebih panjang dari jam buka sekolah, buang!
+            # Jika di-lock manual tapi melampaui batas, longgarkan batas khusus untuk jadwal ini agar tidak bentrok sistem
+            if locked_hari == h and locked_jam is not None:
+                max_start_allowed = max(batas_jam - durasi + 1, int(locked_jam) + 1)
+                end_jam_allowed = max(batas_jam + 1, int(locked_jam) + durasi + 1)
+            else:
+                if durasi > batas_jam:
+                    continue # Kalau durasi mapel lebih panjang dari jam buka sekolah, buang!
+                max_start_allowed = batas_jam - durasi + 1
+                end_jam_allowed = batas_jam + 1
 
-            max_start = batas_jam - durasi + 1
-            
             # Pembentukan Variabel Ruang/Waktu
-            start_var = model.NewIntVar(1, max_start, f'start_{t_id}_{h}')
-            end_var = model.NewIntVar(1 + durasi, batas_jam + 1, f'end_{t_id}_{h}')
+            start_var = model.NewIntVar(1, max_start_allowed, f'start_{t_id}_{h}')
+            end_var = model.NewIntVar(1 + durasi, end_jam_allowed, f'end_{t_id}_{h}')
             is_present = model.NewBoolVar(f'present_{t_id}_{h}')
             
             interval_var = model.NewOptionalIntervalVar(
                 start_var, durasi, end_var, is_present, f'interval_{t_id}_{h}'
             )
+
+            # ==========================================
+            # KUNCI MUTLAK: PAKSA AI PATUH PADA JADWAL MANUAL
+            # ==========================================
+            if locked_hari and locked_jam is not None:
+                if h == locked_hari:
+                    model.Add(is_present == 1) # Wajib ada di hari ini
+                    model.Add(start_var == int(locked_jam)) # Wajib mulai di jam ini
+                else:
+                    model.Add(is_present == 0) # Tutup kemungkinan AI memindahkannya ke hari lain
 
             starts[(t_id, h)] = start_var
             presences[(t_id, h)] = is_present

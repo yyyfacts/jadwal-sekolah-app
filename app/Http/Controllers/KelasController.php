@@ -9,6 +9,7 @@ use App\Models\Jadwal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 
 class KelasController extends Controller
 {
@@ -38,7 +39,9 @@ class KelasController extends Controller
             ->get();
 
         foreach ($kelass as $k) {
-            $k->total_jam = $k->jadwals->sum('jumlah_jam');
+         $k->jam_offline = $k->jadwals->where('status', 'offline')->sum('jumlah_jam');
+    $k->jam_online  = $k->jadwals->where('status', 'online')->sum('jumlah_jam');
+    $k->total_jam   = $k->jadwals->sum('jumlah_jam');
         }
 
         $mapels = Mapel::all();
@@ -198,6 +201,32 @@ class KelasController extends Controller
             return response()->json(['success' => true,'message' => 'Berhasil Dihapus!']);
         } catch (\Throwable $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+    public function sinkronisasiMaxJam()
+    {
+        try {
+            DB::statement("
+                UPDATE kelas k
+                SET 
+                    max_jam = (
+                        SELECT COALESCE(SUM(jumlah_jam), 0)
+                        FROM jadwals j
+                        WHERE j.kelas_id = k.id
+                          AND j.status = 'offline'
+                    ),
+                    limit_harian = 10,
+                    limit_jumat = GREATEST((
+                        SELECT COALESCE(SUM(jumlah_jam), 0)
+                        FROM jadwals j
+                        WHERE j.kelas_id = k.id
+                          AND j.status = 'offline'
+                    ) - 40, 0)
+            ");
+
+            return redirect()->back()->with('success', 'Max jam, limit harian, dan limit jumat berhasil disesuaikan dengan total offline!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal sinkronisasi: ' . $e->getMessage());
         }
     }
 }

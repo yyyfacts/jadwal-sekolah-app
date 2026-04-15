@@ -105,7 +105,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{id}', [MasterHariController::class, 'update'])->name('update');
         Route::delete('/{id}', [MasterHariController::class, 'destroy'])->name('destroy');
         
-        // Rute khusus pop-up waktu (sudah diperbaiki prefix-nya)
+        // Rute khusus pop-up waktu
         Route::get('/{id}/waktu', [MasterHariController::class, 'getWaktu']);
         Route::post('/{id}/waktu', [MasterHariController::class, 'simpanWaktu'])->name('waktu');
     });
@@ -136,8 +136,8 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{id}', [MapelController::class, 'update'])->name('update');
         Route::delete('/{id}', [MapelController::class, 'destroy'])->name('destroy');
         
-        // Fitur Ganti Mode (Online/Offline)
-        Route::post('/{id}/mode', [MapelController::class, 'updateMode'])->name('updateMode');
+        // Fitur Ganti Status (Online/Offline) - SUDAH DIPERBAIKI
+        Route::post('/{id}/status', [MapelController::class, 'updateStatus'])->name('updateStatus');
         
         // Rute Jadwal Mapel
         Route::post('/{id}/jadwal', [MapelController::class, 'simpanJadwal'])->name('simpanJadwal');
@@ -149,6 +149,11 @@ Route::middleware(['auth'])->group(function () {
     // GROUP: DATA MASTER (KELAS)
     // --------------------------------------------------------------
     Route::prefix('kelas')->name('kelas.')->group(function () {
+        
+        // --- TAMBAHAN RUTE SINKRONISASI JAM ---
+        Route::post('/sinkronisasi-jam', [KelasController::class, 'sinkronisasiMaxJam'])->name('sinkronisasi');
+        // --------------------------------------
+
         // CRUD Kelas
         Route::get('/', [KelasController::class, 'index'])->name('index');
         Route::post('/', [KelasController::class, 'store'])->name('store');

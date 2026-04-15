@@ -72,7 +72,7 @@ class GuruController extends Controller
         ]);
 
         $data = $request->only('nama_guru', 'kode_guru');
-        $data['hari_mengajar'] = json_encode($request->hari_mengajar ?? []);
+        $data['hari_mengajar'] = $request->hari_mengajar ?? [];
 
         Guru::findOrFail($id)->update($data);
         return redirect()->route('guru.index')->with('success', 'Data guru diperbarui.');
