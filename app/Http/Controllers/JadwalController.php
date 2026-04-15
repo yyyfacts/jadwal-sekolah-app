@@ -177,8 +177,15 @@ class JadwalController extends Controller
             });
 
             $dataInput = [
-                'hari_aktif' => $hariAktif, 'gurus' => $gurus, 'kelass' => $kelassData, 'assignments' => $assignments,
+                'hari_aktif' => $hariAktif, 
+                'gurus' => $gurus, 
+                'kelass' => $kelassData, 
+                'assignments' => $assignments,
             ];
+
+            // ==== TAMBAHKAN KODE INI SEMENTARA ====
+            dd($dataInput);
+            // ======================================
 
             $jsonPath = storage_path('app/input_solver.json');
             file_put_contents($jsonPath, json_encode($dataInput));
