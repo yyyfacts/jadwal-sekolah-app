@@ -1,124 +1,145 @@
-import sys
 import json
-import time
+import sys
+import os
 from ortools.sat.python import cp_model
 
-def main():
-    start_time = time.time()
+def solve():
+    # 1. Load Data dari Laravel
+    if len(sys.argv) < 2:
+        print(json.dumps({"status": "ERROR", "message": "No input file provided"}))
+        return
 
-    # 1. BACA DATA
-    if len(sys.argv) < 2: return
-    try:
-        with open(sys.argv[1], 'r', encoding='utf-8') as f:
-            data = json.load(f)
-    except: return
+    json_path = sys.argv[1]
+    with open(json_path, 'r') as f:
+        data = json.load(f)
 
-    assignments = [a for a in data.get('assignments', []) if a.get('status') == 'offline']
-    kelass = data.get('kelass', [])
-    gurus = data.get('gurus', [])
-    hari_info = data.get('hari_aktif', [])
-    
-    # Urutkan balok paling panjang dulu (biar susunnya gampang)
-    assignments.sort(key=lambda x: int(x['jumlah_jam']), reverse=True)
-
-    hari_list = [h['nama'] for h in hari_info]
-    global_max_map = {h['nama']: int(h['max_jam']) for h in hari_info}
-    
-    kelas_limits = {k['id']: {
-        'normal': int(k.get('limit_harian', 10)),
-        'jumat': int(k.get('limit_jumat', 9))
-    } for k in kelass}
-
-    def get_max_jam(k_id, h_nama):
-        limits = kelas_limits.get(k_id, {'normal': 10, 'jumat': 9})
-        batas_k = limits['jumat'] if "jumat" in h_nama.lower() else limits['normal']
-        return min(batas_k, global_max_map.get(h_nama, 10))
-
-    # 2. MODEL
     model = cp_model.CpModel()
+
+    # --- Persiapan Data ---
+    hari_aktif = data['hari_aktif'] # [{'nama': 'Senin', 'max_jam': 10}, ...]
+    assignments = data['assignments'] # [{'id': 1, 'guru_id': 5, 'jumlah_jam': 2, ...}]
+    gurus = {g['id']: g for g in data['gurus']}
+    kelass = {k['id']: k for k in data['kelass']}
+
+    # Mapping Hari ke Index
+    hari_to_idx = {h['nama']: i for i, h in enumerate(hari_aktif)}
+    idx_to_hari = {i: h['nama'] for i, h in enumerate(hari_aktif)}
     
-    starts = {}
-    presences = {}
-    intervals_kelas = {k['id']: {h: [] for h in hari_list} for k in kelass}
-    intervals_guru = {g['id']: {h: [] for h in hari_list} for g in gurus}
+    # Total slot sepanjang minggu (linear)
+    # Misal: Senin 10 jam, Selasa 10 jam. Senin jam 1 = slot 0, Selasa jam 1 = slot 10.
+    day_offsets = {}
+    current_offset = 0
+    total_slots = 0
+    for h in hari_aktif:
+        day_offsets[h['nama']] = current_offset
+        current_offset += h['max_jam']
+    total_slots = current_offset
+
+    # --- Variabel Keputusan ---
+    # task_vars[(assignment_id)] = interval_variable
+    intervals_per_guru = {}
+    intervals_per_kelas = {}
     
-    all_starts = []
+    results_vars = {} # Untuk menyimpan start_var guna mengambil hasil akhir
 
-    # 3. PROSES BALOK
-    for task in assignments:
-        t_id = task['id']
-        g_id = task['guru_id']
-        k_id = task['kelas_id']
-        durasi = int(task['jumlah_jam'])
+    for asm in assignments:
+        asm_id = asm['id']
+        duration = int(asm['jumlah_jam'])
+        gid = asm['guru_id']
+        kid = asm['kelas_id']
         
-        # Pilihan hari mengajar guru
-        allowed_days = task.get('hari_mengajar', []) or hari_list
-        locked_h = task.get('locked_hari')
-        locked_j = task.get('locked_jam')
-
-        possible_days_vars = []
+        # Variabel Start (Slot mana jadwal ini dimulai)
+        start_var = model.NewIntVar(0, total_slots - duration, f'start_{asm_id}')
+        end_var = model.NewIntVar(0, total_slots, f'end_{asm_id}')
         
-        for h in hari_list:
-            # Filter hari mengajar guru
-            if h not in allowed_days and h != locked_h: continue
+        # Interval variable (menjamin durasi berurutan)
+        interval_var = model.NewIntervalVar(start_var, duration, end_var, f'interval_{asm_id}')
+        
+        results_vars[asm_id] = start_var
+
+        # Tambahkan ke koleksi untuk constraint No-Overlap
+        intervals_per_guru.setdefault(gid, []).append(interval_var)
+        intervals_per_kelas.setdefault(kid, []).append(interval_var)
+
+        # --- Constraint 1: Cek Locked (Manual) ---
+        if asm.get('locked_hari') and asm.get('locked_jam') is not None:
+            day_idx = day_offsets[asm['locked_hari']]
+            # Jam di sistem PHP mulai dari 1, konversi ke index 0
+            target_start = day_idx + (int(asm['locked_jam']) - 1)
+            model.Add(start_var == target_start)
+
+        # --- Constraint 2: Tidak boleh melewati batas hari ---
+        # (Jadwal tidak boleh mulai di Senin selesai di Selasa)
+        for h_nama, offset in day_offsets.items():
+            max_jam = next(x['max_jam'] for x in hari_aktif if x['nama'] == h_nama)
+            day_end = offset + max_jam
             
-            max_jam_hari_ini = get_max_jam(k_id, h)
-            if durasi > max_jam_hari_ini: continue
+            # Jika jadwal dimulai di hari ini, maka harus selesai di hari yang sama
+            # Logic: If start >= offset AND start < day_end THEN end <= day_end
+            starts_in_day = model.NewBoolVar(f'starts_in_{h_nama}_{asm_id}')
+            model.AddLinearConstraint(start_var, offset, day_end - 1).OnlyEnforceIf(starts_in_day)
+            model.Add(end_var <= day_end).OnlyEnforceIf(starts_in_day)
 
-            # Variabel Balok
-            is_present = model.NewBoolVar(f'p_{t_id}_{h}')
-            start_var = model.NewIntVar(1, max_jam_hari_ini - durasi + 1, f's_{t_id}_{h}')
-            end_var = model.NewIntVar(1 + durasi, max_jam_hari_ini + 1, f'e_{t_id}_{h}')
-            interval_var = model.NewOptionalIntervalVar(start_var, durasi, end_var, is_present, f'i_{t_id}_{h}')
+        # --- Constraint 3: Ketersediaan Guru (hari_mengajar) ---
+        guru_data = gurus.get(gid)
+        if guru_data and guru_data['hari_mengajar']:
+            allowed_days = guru_data['hari_mengajar'] # ['Senin', 'Rabu']
+            # Buat list bool: apakah start_var berada di hari yang diizinkan?
+            day_literals = []
+            for h_nama in allowed_days:
+                lit = model.NewBoolVar(f'guru_{gid}_on_{h_nama}')
+                offset = day_offsets[h_nama]
+                max_j = next(x['max_jam'] for x in hari_aktif if x['nama'] == h_nama)
+                model.AddLinearConstraint(start_var, offset, offset + max_j - duration).OnlyEnforceIf(lit)
+                day_literals.append(lit)
+            model.AddArcConsistentExactlyOne(day_literals)
 
-            # Jika di-lock manual
-            if locked_h == h and locked_j is not None:
-                model.Add(is_present == 1)
-                model.Add(start_var == int(locked_j))
-            elif locked_h and locked_h != h:
-                model.Add(is_present == 0)
+    # --- Constraint 4: No Overlap (Guru & Kelas) ---
+    for gid, intervals in intervals_per_guru.items():
+        model.AddNoOverlap(intervals)
+    
+    for kid, intervals in intervals_per_kelas.items():
+        model.AddNoOverlap(intervals)
 
-            starts[(t_id, h)] = start_var
-            presences[(t_id, h)] = is_present
-            possible_days_vars.append(is_present)
-            all_starts.append(start_var)
-            
-            intervals_kelas[k_id][h].append(interval_var)
-            intervals_guru[g_id][h].append(interval_var)
-
-        # Balok harus terpasang 1 kali
-        if possible_days_vars:
-            model.Add(sum(possible_days_vars) == 1)
-        else:
-            print(json.dumps({"status": "INFEASIBLE", "message": f"Balok {t_id} kegedean, gak muat di hari manapun."}))
-            return
-
-    # 4. ATURAN ANTI-BENTROK (Overlap)
-    for h in hari_list:
-        for k_id in intervals_kelas:
-            if intervals_kelas[k_id][h]:
-                model.AddNoOverlap(intervals_kelas[k_id][h])
-        for g_id in intervals_guru:
-            if intervals_guru[g_id][h]:
-                model.AddNoOverlap(intervals_guru[g_id][h])
-
-    # 5. STRATEGI RATA KIRI (BALOK MEPET KE PAGI)
-    # Ini kuncinya biar urut dari kiri ke kanan (jam 1, jam 2, dst)
-    model.Minimize(sum(all_starts))
-
-    # 6. SOLVE
+    # --- Solver ---
     solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = 60
+    solver.parameters.max_time_in_seconds = 60.0 # Limit 1 menit
     status = solver.Solve(model)
 
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-        sol = []
-        for t in assignments:
-            for h in hari_list:
-                if (t['id'], h) in presences and solver.Value(presences[(t['id'], h)]):
-                    sol.append({'id': t['id'], 'hari': h, 'jam': solver.Value(starts[(t['id'], h)])})
-        print(json.dumps({"status": "OPTIMAL", "solution": sol, "message": "Balok berhasil disusun rapi!"}))
-    else:
-        print(json.dumps({"status": "INFEASIBLE", "message": "Gagal susun! Balok kepenuhan atau ada guru yang dipaksa di dua tempat."}))
+        output_solution = []
+        for asm in assignments:
+            asm_id = asm['id']
+            start_val = solver.Value(results_vars[asm_id])
+            
+            # Konversi kembali slot linear ke (Hari, Jam)
+            final_hari = ""
+            final_jam = 0
+            
+            # Cari hari berdasarkan offset
+            sorted_offsets = sorted(day_offsets.items(), key=lambda x: x[1], reverse=True)
+            for h_nama, offset in sorted_offsets:
+                if start_val >= offset:
+                    final_hari = h_nama
+                    final_jam = (start_val - offset) + 1 # Jam ke-1, 2, dst
+                    break
+            
+            output_solution.append({
+                "id": asm_id,
+                "hari": final_hari,
+                "jam": final_jam
+            })
 
-if __name__ == '__main__': main()
+        print(json.dumps({
+            "status": "OPTIMAL",
+            "message": "Jadwal berhasil dibuat tanpa bentrok!",
+            "solution": output_solution
+        }))
+    else:
+        print(json.dumps({
+            "status": "INFEASIBLE",
+            "message": "Tidak ditemukan solusi. Periksa kembali ketersediaan guru atau limit jam."
+        }))
+
+if __name__ == '__main__':
+    solve()
