@@ -23,7 +23,7 @@ def main():
     kelass = data.get('kelass', [])
     gurus = data.get('gurus', [])
 
-    # Sortir Blok Dadu: Susun dari mapel yang jamnya paling gendut (3 SKS / 4 SKS) duluan
+    # LJF (Longest Job First): Sesuai teori Mas di 2.2.7
     raw_assignments.sort(key=lambda x: int(x['jumlah_jam']), reverse=True)
 
     mapel_busy = {}
@@ -32,30 +32,10 @@ def main():
 
     hari_list = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']
     
-    # === AMBIL DATA KAPASITAS MASTER HARI ===
     hari_aktif_data = data.get('hari_aktif', [])
     kapasitas_hari = {}
     for h in hari_aktif_data:
         kapasitas_hari[h['nama']] = int(h['max_jam'])
-
-    # === AMBIL DATA LIMIT PER KELAS ===
-    kelas_limits = {}
-    for k in kelass:
-        kelas_limits[k['id']] = {
-            'normal': int(k.get('limit_harian', 10)),
-            'jumat': int(k.get('limit_jumat', 7))
-        }
-
-    def get_max_jam(kelas_id, hari):
-        # 1. Cek limit dari Kelas (misal Jumat = 7)
-        limit_k = kelas_limits.get(kelas_id, {'normal': 10, 'jumat': 7})
-        batas_kelas = limit_k['jumat'] if hari == 'Jumat' else limit_k['normal']
-        
-        # 2. Cek limit dari Master Hari (misal Jumat buka 9 kotak belajar)
-        batas_hari = kapasitas_hari.get(hari, 10)
-        
-        # 3. KUNCI PENTING: Pakai angka yang paling kecil agar kelas tidak pulang kesorean!
-        return min(batas_kelas, batas_hari)
 
     guru_hari_map = {}
     for g in gurus:
@@ -64,31 +44,12 @@ def main():
             allowed_days = hari_list
         guru_hari_map[g['id']] = allowed_days
 
-    for g in gurus:
-        g_id = g['id']
-        nama_guru = g['nama']
-        total_sks_guru = sum(int(t['jumlah_jam']) for t in raw_assignments if t['guru_id'] == g_id)
-        
-        kapasitas_maksimal = 0
-        for h in guru_hari_map[g_id]:
-            kapasitas_maksimal += kapasitas_hari.get(h, 10)
-            
-        if total_sks_guru > kapasitas_maksimal:
-            print(json.dumps({
-                "status": "INFEASIBLE", 
-                "message": f"STOP! Guru '{nama_guru}' punya beban {total_sks_guru} JP, tapi kapasitas mengajarnya cuma muat {kapasitas_maksimal} JP. Tambah hari mengajar beliau!"
-            }))
-            return
-
     model = cp_model.CpModel()
 
     starts = {}      
     presences = {}   
-    all_start_vars = [] 
-
     intervals_per_kelas = {k['id']: {h: [] for h in hari_list} for k in kelass}
     intervals_per_guru = {g['id']: {h: [] for h in hari_list} for g in gurus}
-    presences_per_guru = {g['id']: {h: [] for h in hari_list} for g in gurus}
     
     tasks_per_mapel_group = {} 
     tasks_metadata = []
@@ -115,7 +76,9 @@ def main():
             if h not in guru_hari_map[g_id]:
                 continue 
 
-            batas_jam = get_max_jam(k_id, h)
+            # Sekarang hanya pakai kapasitas hari (kotak Belajar) tanpa filter batas_maksimal
+            batas_jam = kapasitas_hari.get(h, 10)
+            
             if durasi > batas_jam:
                 continue
 
@@ -131,22 +94,12 @@ def main():
                 start_var, durasi, end_var, is_present, f'interval_{t_id}_{h}'
             )
 
-            batas_jam_dari_db = t.get('batas_maksimal_jam')
-            if batas_jam_dari_db is not None and str(batas_jam_dari_db).strip() != "":
-                try:
-                    b_jam = int(batas_jam_dari_db)
-                    model.Add(end_var <= (b_jam + 1)).OnlyEnforceIf(is_present)
-                except ValueError:
-                    pass 
-
             starts[(t_id, h)] = start_var
             presences[(t_id, h)] = is_present
             possible_days.append(is_present)
-            all_start_vars.append(start_var)
 
             intervals_per_kelas[k_id][h].append(interval_var)
             intervals_per_guru[g_id][h].append(interval_var)
-            presences_per_guru[g_id][h].append((is_present, durasi))
 
             if m_id in mapel_busy:
                 for blocked in mapel_busy[m_id]:
@@ -161,61 +114,55 @@ def main():
         if possible_days:
             model.AddExactlyOne(possible_days)
         else:
-            print(json.dumps({
-                "status": "INFEASIBLE", 
-                "message": f"Gagal: Mapel ID {t_id} tidak bisa masuk ke hari mana pun. Cek jadwal guru!"
-            }))
+            print(json.dumps({"status": "INFEASIBLE", "message": f"Mapel ID {t_id} tidak muat di hari manapun."}))
             return
 
+    # No Overlap Constraints
     for k_id in intervals_per_kelas:
         for h in hari_list:
             if intervals_per_kelas[k_id][h]:
                 model.AddNoOverlap(intervals_per_kelas[k_id][h])
 
-    for g in gurus:
-        g_id = g['id']
+    for g_id in intervals_per_guru:
         for h in hari_list:
             if intervals_per_guru[g_id][h]:
                 model.AddNoOverlap(intervals_per_guru[g_id][h])
 
+    # Limit Mapel per Hari (Agar tidak numpuk mapel yang sama di satu hari)
     for key, task_ids in tasks_per_mapel_group.items():
         if len(task_ids) > 1:
-            g_id_current = next((t['guru_id'] for t in raw_assignments if t['id'] == task_ids[0]), None)
-            hari_aktif_guru = len(guru_hari_map[g_id_current]) if g_id_current else 5
-            max_per_hari = math.ceil(len(task_ids) / hari_aktif_guru)
-            
             for h in hari_list:
                 daily_presence = [presences[(tid, h)] for tid in task_ids if (tid, h) in presences]
                 if daily_presence:
-                    model.Add(sum(daily_presence) <= max_per_hari)
-
+                    # Max 1 kali mapel yang sama per kelas per hari (standard sekolah)
+                    model.Add(sum(daily_presence) <= 1)
 
     # ==========================================
-    # STRATEGI BLOK DADU (PENGGANTI MINIMIZE)
-    # Memaksa AI mengisi jadwal dari Senin dulu, mepet ke jam 1!
+    # STRATEGI BLOK DADU (SESUAI PERMINTAAN)
+    # CHOOSE_FIRST + SELECT_MIN_VALUE
     # ==========================================
-    ordered_start_vars = []
+    ordered_vars = []
+    # Urutan: Senin (semua mapel), Selasa (semua mapel), dst.
     for h in hari_list:
         for t in tasks_metadata:
             if (t['id'], h) in starts:
-                ordered_start_vars.append(starts[(t['id'], h)])
+                ordered_vars.append(starts[(t['id'], h)])
 
-    if ordered_start_vars:
+    if ordered_vars:
         model.AddDecisionStrategy(
-            ordered_start_vars, 
+            ordered_vars, 
             cp_model.CHOOSE_FIRST, 
             cp_model.SELECT_MIN_VALUE
         )
 
     # ==========================================
-    # EKSEKUSI
+    # SOLVER
     # ==========================================
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 300 
     solver.parameters.num_search_workers = 8    
     
     status = solver.Solve(model)
-
     waktu_komputasi = time.time() - start_time  
 
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
@@ -236,13 +183,12 @@ def main():
             "status": "OPTIMAL",
             "solution": final_solution,
             "waktu_komputasi_detik": round(waktu_komputasi, 2), 
-            "message": f"Berhasil disusun rapat ala BLOK DADU dalam {waktu_komputasi:.2f} detik!"
+            "message": "Jadwal Berhasil Disusun Rapat!"
         }))
     else:
         print(json.dumps({
             "status": "INFEASIBLE", 
-            "waktu_komputasi_detik": round(waktu_komputasi, 2),
-            "message": f"Data terlalu ketat untuk diselesaikan tanpa bentrok! (Cek apakah ada guru yang bentrok murni di jam yang sama)."
+            "message": "Gagal menemukan solusi. Pastikan tidak ada guru yang bentrok di jam yang sama atau kapasitas hari kurang."
         }))
 
 if __name__ == '__main__':
