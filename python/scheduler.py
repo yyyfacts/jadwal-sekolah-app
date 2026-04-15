@@ -30,15 +30,16 @@ def main():
 
     hari_list = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']
     
+    # Sesuai permintaanmu: Limit Jumat disamakan jadi 10
     kelas_limits = {
         k['id']: {
             'normal': int(k.get('limit_harian', 10)),
-            'jumat': int(k.get('limit_jumat', 7))
+            'jumat': 10  # Diubah dari 7 ke 10
         } for k in kelass
     }
 
     def get_max_jam(kelas_id, hari):
-        limits = kelas_limits.get(kelas_id, {'normal': 10, 'jumat': 7})
+        limits = kelas_limits.get(kelas_id, {'normal': 10, 'jumat': 10})
         return limits['jumat'] if hari == 'Jumat' else limits['normal']
 
     # Pilihan Hari Guru
@@ -63,7 +64,6 @@ def main():
         
         t_id, g_id, k_id = t['id'], t['guru_id'], t['kelas_id']
         m_id = t.get('mapel_id')
-        nama_mapel = t.get('nama_mapel', '').upper()
         
         tasks_metadata.append({'id': t_id})
         group_key = (k_id, m_id if m_id else f"g_{g_id}")
@@ -74,20 +74,12 @@ def main():
         for h in hari_list:
             if h not in guru_hari_map.get(g_id, hari_list): continue 
 
-            # Ambil batas jam normal/jumat
             batas_jam = get_max_jam(k_id, h)
-            
-            # --- ATURAN KHUSUS P J O K ---
-            # Maksimal selesai di jam ke-7 (supaya olahraga nggak siang-siang banget)
-            if "P J O K" in nama_mapel or "OLAHRAGA" in nama_mapel:
-                # Batas jam untuk PJOK diperketat ke jam 7, atau limit hari itu mana yang lebih kecil
-                batas_jam_pjok = min(7, batas_jam)
-                max_start = batas_jam_pjok - durasi + 1
-            else:
-                max_start = batas_jam - durasi + 1
+            max_start = batas_jam - durasi + 1
 
-            if max_start < 1: continue # Nggak muat kalau durasinya kepanjangan
+            if max_start < 1: continue 
 
+            # Variabel Keputusan
             start_var = model.NewIntVar(1, max_start, f's_{t_id}_{h}')
             end_var = model.NewIntVar(1 + durasi, batas_jam + 1, f'e_{t_id}_{h}')
             is_present = model.NewBoolVar(f'p_{t_id}_{h}')
@@ -108,25 +100,22 @@ def main():
         if possible_days:
             model.AddExactlyOne(possible_days)
         else:
-            print(json.dumps({"status": "INFEASIBLE", "message": f"ID {t_id} ({nama_mapel}) gak muat di slot hari/jam tersedia."}))
+            print(json.dumps({"status": "INFEASIBLE", "message": f"ID {t_id} tidak muat di slot manapun."}))
             return
 
     # ==========================================
     # 3. KENDALA FISIK & DISTRIBUSI
     # ==========================================
-    # Bentrok Kelas
     for k_id in intervals_per_kelas:
         for h in hari_list:
             if intervals_per_kelas[k_id][h]:
                 model.AddNoOverlap(intervals_per_kelas[k_id][h])
 
-    # Bentrok Guru
     for g_id in intervals_per_guru:
         for h in hari_list:
             if intervals_per_guru[g_id][h]:
                 model.AddNoOverlap(intervals_per_guru[g_id][h])
 
-    # Distribusi Harian (Jangan ada mapel sama di satu hari)
     for key, task_ids in tasks_per_mapel_group.items():
         if len(task_ids) > 1:
             for h in hari_list:
@@ -139,7 +128,7 @@ def main():
         total_jp = sum(int(t['jumlah_jam']) for t in raw_assignments if t['guru_id'] == g_id)
         hari_aktif = len([h for h in hari_list if h in guru_hari_map[g_id]])
         if hari_aktif == 0: hari_aktif = 5
-        limit_beban = (total_jp // hari_aktif) + 2 # Kelonggaran 2 jam
+        limit_beban = (total_jp // hari_aktif) + 3 
         for h in hari_list:
             beban = [p * d for p, d in presences_per_guru[g_id][h]]
             if beban: model.Add(sum(beban) <= limit_beban)
@@ -147,7 +136,6 @@ def main():
     # ==========================================
     # 4. EKSEKUSI
     # ==========================================
-    # CHOOSE_FIRST: Balok gede duluan. SELECT_MIN_VALUE: Jam pagi duluan.
     model.AddDecisionStrategy(all_start_vars, cp_model.CHOOSE_FIRST, cp_model.SELECT_MIN_VALUE)
 
     solver = cp_model.CpSolver()
@@ -168,10 +156,10 @@ def main():
         print(json.dumps({
             "status": "OPTIMAL", 
             "solution": solution, 
-            "message": f"Jadwal rapi pagi (PJOK aman max jam 7) dalam {waktu_komputasi:.2f} detik."
+            "message": f"Jadwal berhasil dibuat (Tanpa batas PJOK & Limit Jumat 10) dalam {waktu_komputasi:.2f} detik."
         }))
     else:
-        print(json.dumps({"status": "INFEASIBLE", "message": "Mentok! Cek beban guru atau batasan PJOK."}))
+        print(json.dumps({"status": "INFEASIBLE", "message": "Masih mentok! Cek apakah ada guru yang JP-nya melebihi total jam tersedia."}))
 
 if __name__ == '__main__':
     main()
