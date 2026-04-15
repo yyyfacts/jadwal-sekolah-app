@@ -166,6 +166,7 @@ class JadwalController extends Controller
                         'mapel_id' => $j->mapel_id, 
                         'jumlah_jam' => $j->jumlah_jam,
                         'nama_mapel' => $j->mapel->nama_mapel ?? '',
+                        'status' => $j->status ?? 'offline',
                     ];
                 });
 

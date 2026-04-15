@@ -157,11 +157,7 @@
                         <td class="px-6 py-5 text-right pr-12">
                             <div class="flex items-center justify-end gap-2.5">
                                 {{-- TOGGLE MODE OFFLINE / ONLINE (DITEMPEL DI MAPEL) --}}
-                                <button onclick="toggleMode({{ $m->id }}, '{{ $m->mode ?? 'offline' }}', this)"
-                                    class="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider rounded-lg border-2 transition-all duration-300 {{ ($m->mode ?? 'offline') == 'online' ? 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100' : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100' }}"
-                                    title="Klik untuk ubah mode (Ikut Jadwal Besar atau Terpisah)">
-                                    {{ ($m->mode ?? 'offline') == 'online' ? '💻 ONLINE' : '🏫 OFFLINE' }}
-                                </button>
+
 
                                 <button onclick="openModal('modaljadwal{{ $m->id }}')"
                                     class="flex items-center gap-2 px-4 py-2 {{ $theme['btn'] }} text-white text-xs font-bold rounded-lg shadow-sm transition-all hover:-translate-y-0.5">
@@ -895,53 +891,6 @@ async function hapusJadwal(id, btn) {
         }
     } catch (e) {
         alert("Error koneksi.");
-    }
-}
-
-async function toggleMode(id, currentMode, btn) {
-    const newMode = currentMode === 'online' ? 'offline' : 'online';
-    const oldText = btn.innerHTML;
-
-    btn.innerHTML = '⏳ Loading...';
-    btn.classList.add('opacity-50', 'pointer-events-none');
-
-    try {
-        const res = await fetch(`/mapel/${id}/mode`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': CSRF_TOKEN,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                mode: newMode
-            })
-        });
-
-        const json = await res.json();
-
-        if (json.success) {
-            btn.innerHTML = newMode === 'online' ? '💻 ONLINE' : '🏫 OFFLINE';
-
-            if (newMode === 'online') {
-                btn.classList.remove('bg-slate-50', 'text-slate-500', 'border-slate-200', 'hover:bg-slate-100');
-                btn.classList.add('bg-amber-50', 'text-amber-600', 'border-amber-200', 'hover:bg-amber-100');
-            } else {
-                btn.classList.remove('bg-amber-50', 'text-amber-600', 'border-amber-200', 'hover:bg-amber-100');
-                btn.classList.add('bg-slate-50', 'text-slate-500', 'border-slate-200', 'hover:bg-slate-100');
-            }
-
-            btn.setAttribute('onclick', `toggleMode(${id}, '${newMode}', this)`);
-
-        } else {
-            alert(json.message);
-            btn.innerHTML = oldText;
-        }
-
-    } catch (err) {
-        alert('Gagal mengupdate mode. Cek koneksi / route web.php Anda.');
-        btn.innerHTML = oldText;
-    } finally {
-        btn.classList.remove('opacity-50', 'pointer-events-none');
     }
 }
 </script>

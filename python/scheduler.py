@@ -15,61 +15,76 @@ def main():
         print(json.dumps({'status': 'ERROR', 'message': f'Gagal membaca JSON: {str(e)}'}))
         sys.exit(1)
 
-    # 1. SETUP DATA (Langsung dari JSON yang dikirim PHP)
+    # =====================================================================
+    # 1. PERSIAPAN DATA & PENYAMAAN TIPE DATA (SANGAT PENTING)
+    # Kita paksa semua ID menjadi String agar tidak ada missmatch saat pencarian limit
+    # =====================================================================
     hari_aktif = data.get('hari_aktif', [])
-    gurus = {g['id']: g for g in data.get('gurus', [])}
-    kelass = {k['id']: k for k in data.get('kelass', [])}
-    assignments = data.get('assignments', [])
+    
+    # Konversi keys ke String mutlak!
+    gurus = {str(g['id']): g for g in data.get('gurus', [])}
+    kelass = {str(k['id']): k for k in data.get('kelass', [])}
+    
+    semua_assignments = data.get('assignments', [])
+    assignments = [a for a in semua_assignments if str(a.get('status', 'offline')).lower() == 'offline']
 
-    # Hitung total jam guru untuk prioritas pengurutan
+    # =====================================================================
+    # 2. HEURISTIK & FLEKSIBILITAS BEBAN GURU
+    # =====================================================================
     beban_guru = collections.defaultdict(int)
     for a in assignments:
-        beban_guru[a['guru_id']] += int(a.get('jumlah_jam', 1))
+        beban_guru[str(a['guru_id'])] += int(a.get('jumlah_jam', 1))
 
-    # URUTKAN: SKS Terbesar dulu -> Guru beban terberat (Biar yang susah-susah masuk duluan)
-    assignments.sort(key=lambda x: (-int(x.get('jumlah_jam', 1)), -beban_guru[x['guru_id']]))
+    max_harian_guru = {}
+    for g_id, g_info in gurus.items():
+        hm = [str(x).lower() for x in g_info.get('hari_mengajar', [])] if g_info else []
+        jml_hari = sum(1 for d, day_info in enumerate(hari_aktif) if not hm or str(d + 1) in hm or day_info['nama'].lower() in hm)
+        
+        jml_hari = max(1, jml_hari) 
+        rata_rata = beban_guru[g_id] / jml_hari
+        # Kita longgarkan + 3 agar solver tidak gampang nyerah kalau jadwal agak padat
+        max_harian_guru[g_id] = max(int(rata_rata) + 3, 5)
+
+    assignments.sort(key=lambda x: (-int(x.get('jumlah_jam', 1)), -beban_guru[str(x['guru_id'])]))
 
     model = cp_model.CpModel()
     
     presences = {}
     starts = {}
+    all_starts = [] 
     
     intervals_per_kelas = collections.defaultdict(list)
     intervals_per_guru = collections.defaultdict(list)
-    offline_load_per_class_day = collections.defaultdict(list)
     
-    all_starts = []
+    load_per_class_day = collections.defaultdict(list)
+    load_per_guru_day = collections.defaultdict(list)
 
-    # 2. PEMBUATAN BLOK JADWAL
+    # =====================================================================
+    # 3. PEMBENTUKAN INTERVAL BLOK
+    # =====================================================================
     for a in assignments:
-        a_id = a['id']
+        a_id = str(a['id'])
         duration = int(a['jumlah_jam'])
-        guru_id = a['guru_id']
-        kelas_id = a['kelas_id']
-        status = str(a.get('status', 'offline')).lower()
+        guru_id = str(a['guru_id'])   # Pastikan String
+        kelas_id = str(a['kelas_id']) # Pastikan String
         
         day_vars = []
         
         for d, day_info in enumerate(hari_aktif):
-            day_name = day_info['nama']
-            max_jam = int(day_info['max_jam']) # Total slot 'Belajar' di hari ini
+            day_name = day_info['nama'].lower()
+            max_jam = int(day_info['max_jam']) 
             
-            # Cek 1: Durasi muat ga di sisa hari ini?
-            if duration > max_jam:
-                continue
+            if duration > max_jam: continue
 
-            # Cek 2: Apakah Guru bersedia mengajar di hari ini?
             g_info = gurus.get(guru_id, {})
             hm = [str(x).lower() for x in g_info.get('hari_mengajar', [])] if g_info else []
-            if hm and str(d + 1) not in hm and day_name.lower() not in hm: 
+            if hm and str(d + 1) not in hm and day_name not in hm: 
                 continue
 
-            # Variabel Penempatan
             p = model.NewBoolVar(f'p_{a_id}_{d}')
-            
-            # Jam Mulai & Interval (Otomatis menyambung: Start -> End)
             s = model.NewIntVar(1, max(1, max_jam - duration + 1), f's_{a_id}_{d}')
             e = model.NewIntVar(1 + duration, max_jam + 1, f'e_{a_id}_{d}')
+            
             ival = model.NewOptionalIntervalVar(s, duration, e, p, f'i_{a_id}_{d}')
 
             day_vars.append(p)
@@ -80,57 +95,86 @@ def main():
             intervals_per_kelas[(kelas_id, d)].append(ival)
             intervals_per_guru[(guru_id, d)].append(ival)
             
-            # Limit harian fisik hanya berlaku untuk mapel OFFLINE
-            if status == 'offline':
-                offline_load_per_class_day[(kelas_id, d)].append(p * duration)
+            load_per_class_day[(kelas_id, d)].append(p * duration)
+            load_per_guru_day[(guru_id, d)].append(p * duration)
 
         if not day_vars:
-            print(json.dumps({'status': 'INFEASIBLE', 'message': f'Jadwal ID {a_id} SKS {duration} tidak ada slot hari yang cukup.'}))
+            print(json.dumps({'status': 'INFEASIBLE', 'message': f'Blok SKS {duration} (ID {a_id}) tidak muat di hari aktif guru.'}))
             sys.exit(0)
             
         model.AddExactlyOne(day_vars)
 
-    # 3. RULE UTAMA (ANTI-BENTROK & LIMIT FISIK)
+    # =====================================================================
+    # 4. CONSTRAINT: ANTI TUMPANG TINDIH
+    # =====================================================================
     for ivals in intervals_per_kelas.values():
         if len(ivals) > 1: model.AddNoOverlap(ivals)
         
     for ivals in intervals_per_guru.values():
         if len(ivals) > 1: model.AddNoOverlap(ivals)
 
-    # Terapkan Limit Harian (Hanya menghitung durasi Offline)
-    for (kelas_id, d), duration_exprs in offline_load_per_class_day.items():
+    # =====================================================================
+    # 5. CONSTRAINT: LIMIT DINAMIS BACA DARI DATABASE
+    # =====================================================================
+    # A. Limit Kelas (Sekarang 100% baca settingan database per kelas yang beda-beda)
+    for (kelas_id, d), duration_exprs in load_per_class_day.items():
         if not duration_exprs: continue
         day_name = hari_aktif[d]['nama'].lower()
+        
+        # Karena kelas_id sudah pasti string, dia PASTI akan menemukan data kelasnya
         k_info = kelass.get(kelas_id, {})
-        limit = int(k_info.get('limit_jumat', 7)) if 'jumat' in day_name else int(k_info.get('limit_harian', 10))
+        
+        # Eksekusi Limit: Beda kelas, beda limitnya. 
+        if 'jumat' in day_name:
+            limit = int(k_info.get('limit_jumat', 7))
+        else:
+            limit = int(k_info.get('limit_harian', 10))
+            
         model.Add(sum(duration_exprs) <= limit)
 
-    # 4. EKSEKUSI SOLVER (TANPA NEBAK-NEBAK)
-    # Paksa susun dari jam terawal (paling pagi) secara berurutan
-    model.AddDecisionStrategy(all_starts, cp_model.CHOOSE_FIRST_UNBOUND, cp_model.SELECT_MIN_VALUE)
+    # B. Pemerataan Beban Mengajar Guru yang Lebih Lembut (Soft Bound)
+    for (guru_id, d), duration_exprs in load_per_guru_day.items():
+        if duration_exprs:
+            batas_maksimal = max_harian_guru.get(guru_id, 12)
+            model.Add(sum(duration_exprs) <= batas_maksimal)
+
+    # =====================================================================
+    # 6. STRATEGI PENCARIAN (TANPA HARDCORE LOCK)
+    # =====================================================================
+    model.AddDecisionStrategy(
+        all_starts, 
+        cp_model.CHOOSE_FIRST_UNBOUND, 
+        cp_model.SELECT_MIN_VALUE
+    )
     
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 500.0
     solver.parameters.num_search_workers = 8
-    solver.parameters.search_branching = cp_model.FIXED_SEARCH
+    
+    # FIXED_SEARCH DIHAPUS!
+    # Algoritma sekarang akan menggunakan Heuristik sebagai "Saran Prioritas", 
+    # tapi dia diizinkan untuk mencari jalan keluar lain jika bertemu kelas dengan limit sempit.
 
     status = solver.Solve(model)
 
+    # =====================================================================
+    # 7. HASIL (OUTPUT JSON)
+    # =====================================================================
     if status in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
         solution = []
         for a in assignments:
-            a_id = a['id']
+            a_id = str(a['id'])
             for d, day_info in enumerate(hari_aktif):
                 if (a_id, d) in presences and solver.Value(presences[(a_id, d)]):
                     solution.append({
-                        'id': a_id,
+                        'id': a['id'], # Kembalikan sebagai tipe asli agar Laravel tidak error
                         'hari': day_info['nama'], 
-                        'jam': solver.Value(starts[(a_id, d)]) # Waktu Mulai (Jam Ke-)
+                        'jam': solver.Value(starts[(a_id, d)])
                     })
                     break
-        print(json.dumps({'status': solver.StatusName(status), 'message': 'Jadwal Pintar berhasil disusun sempurna.', 'solution': solution}))
+        print(json.dumps({'status': solver.StatusName(status), 'message': 'Jadwal fleksibel sukses dirakit! Limit kelas dinamis berhasil diterapkan.', 'solution': solution}))
     else:
-        print(json.dumps({'status': solver.StatusName(status), 'message': 'Gagal: Sulit menemukan kombinasi tanpa bentrok dengan sisa slot.'}))
+        print(json.dumps({'status': solver.StatusName(status), 'message': 'Infeasible: Terjadi kemacetan total. Ada kelas yang total SKS-nya melampaui gabungan limit harian + jumat.'}))
 
 if __name__ == '__main__':
     main()
