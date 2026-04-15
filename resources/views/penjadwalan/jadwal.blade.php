@@ -135,9 +135,10 @@
                         $namaHari = $hariItem->nama_hari;
 
                         // Filter hanya slot jam yang terisi (Abaikan tipe "Tidak Ada")
+                        // Filter dan PAKSA URUTKAN berdasarkan jam dinding (waktu_mulai)
                         $waktuAktif = $hariItem->waktuHaris->filter(function($w) {
                         return $w->tipe !== 'Tidak Ada';
-                        });
+                        })->sortBy('waktu_mulai');
 
                         $rowSpanTotal = $waktuAktif->count();
                         $firstRow = true;
