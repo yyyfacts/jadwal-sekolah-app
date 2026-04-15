@@ -22,7 +22,6 @@ def main():
         print(json.dumps({"status": "ERROR", "message": str(e)}))
         return
 
-    # Menangkap payload dari controller PHP
     hari_aktif = data.get('hari_aktif', [])
     gurus = data.get('gurus', [])
     kelass = data.get('kelass', [])
@@ -35,7 +34,6 @@ def main():
     hari_list = [h['nama'] for h in hari_aktif]
     hari_max_jam = {h['nama']: int(h['max_jam']) for h in hari_aktif}
 
-    # Limit Harian per Kelas (berdasarkan settingan database)
     kelas_limits = {}
     for k in kelass:
         kelas_limits[k['id']] = {
@@ -49,7 +47,6 @@ def main():
         batas_global = hari_max_jam.get(hari, 10)
         return min(batas_kelas, batas_global)
 
-    # Mapping hari mengajar preferensi Guru
     guru_hari_map = {}
     for g in gurus:
         allowed_days = g.get('hari_mengajar', [])
@@ -58,7 +55,7 @@ def main():
         guru_hari_map[g['id']] = allowed_days
 
     # ==========================================
-    # 2. MEMBANGUN MODEL CP-SAT
+    # 2. MEMBANGUN MODEL CP-SAT (VERSI TUKANG SUSUN)
     # ==========================================
     model = cp_model.CpModel()
 
@@ -68,12 +65,11 @@ def main():
 
     intervals_per_kelas = {k['id']: {h: [] for h in hari_list} for k in kelass}
     intervals_per_guru = {g['id']: {h: [] for h in hari_list} for g in gurus}
-    presences_per_guru = {g['id']: {h: [] for h in hari_list} for g in gurus}
 
     tasks_per_mapel_group = {}
     tasks_metadata = []
 
-    # Sort assignments: Prioritaskan mapel yang di-lock manual, baru urut durasi terbesar
+    # Mengurutkan balok dari yang terbesar (triple) ke terkecil (single) agar muat duluan
     assignments.sort(key=lambda x: (
         0 if x.get('locked_hari') and x.get('locked_jam') is not None else 1,
         -int(x['jumlah_jam'])
@@ -103,20 +99,16 @@ def main():
         for h in hari_list:
             is_locked_here = (locked_hari == h)
 
-            # Jika jadwal terkunci di hari tertentu, lewati iterasi untuk hari lainnya
             if locked_hari and not is_locked_here:
                 continue
 
-            # Jika tidak dilock manual, hormati pilihan hari kosong guru
             if not locked_hari and h not in guru_hari_map[g_id]:
                 continue
 
             batas_jam = get_max_jam(k_id, h)
             
-            # --- PENERAPAN ABSOLUT LOCK MANUAL ---
             if is_locked_here and locked_jam is not None:
                 l_jam = int(locked_jam)
-                # Gunakan domain lebar agar lock tidak bertabrakan dengan batasan domain
                 start_var = model.NewIntVar(l_jam, l_jam, f'start_{t_id}_{h}')
                 end_var = model.NewIntVar(l_jam + durasi, l_jam + durasi, f'end_{t_id}_{h}')
                 is_present = model.NewBoolVar(f'present_{t_id}_{h}')
@@ -144,66 +136,53 @@ def main():
 
             intervals_per_kelas[k_id][h].append(interval_var)
             intervals_per_guru[g_id][h].append(interval_var)
-            presences_per_guru[g_id][h].append((is_present, durasi))
 
         if possible_days:
-            # Gunakan AddExactlyOne untuk performa dan keamanan logic (wajib 1 hari)
             model.AddExactlyOne(possible_days)
         else:
             print(json.dumps({
                 "status": "INFEASIBLE", 
-                "message": f"Bentrok fatal! Mapel ID {t_id} gagal diproses. Pastikan lock manual tidak menabrak batas harian kelas/guru."
+                "message": f"Bentrok: ID {t_id} tidak punya ruang hari yang valid."
             }))
             return
 
-    # --- KENDALA 1: TIDAK ADA KELAS BENTROK ---
+    # --- KENDALA MUTLAK (HANYA MENCEGAH BENTROK) ---
     for k_id, days in intervals_per_kelas.items():
         for h, intervals in days.items():
             if len(intervals) > 1:
                 model.AddNoOverlap(intervals)
 
-    # --- KENDALA 2: TIDAK ADA GURU BENTROK ---
     for g_id, days in intervals_per_guru.items():
         for h, intervals in days.items():
             if len(intervals) > 1:
                 model.AddNoOverlap(intervals)
 
-    # --- KENDALA 3: PENYEBARAN MAPEL HARIAN (DIPERBAIKI AGAR FLEKSIBEL) ---
+    # --- KENDALA PENYEBARAN MAPEL DIPERLONGGAR EKSTREM ---
+    # Membiarkan guru ngajar 1 mapel beberapa kali dalam sehari jika memang mendesak
     for key, task_ids in tasks_per_mapel_group.items():
         if len(task_ids) > 1:
-            # Hitung logis: Jika mapel ada 6 potongan tapi hari cuma 5, otomatis batas 1 hari jadi 2.
-            max_per_day = max(1, math.ceil(len(task_ids) / len(hari_list)))
+            max_per_day = max(2, math.ceil(len(task_ids) / len(hari_list)) + 1)
             for h in hari_list:
                 daily_presence = [presences[(tid, h)] for tid in task_ids if (tid, h) in presences]
                 if len(daily_presence) > max_per_day:
                     model.Add(sum(daily_presence) <= max_per_day)
 
-    # --- KENDALA 4: PEMERATAAN BEBAN GURU (DILONGGARKAN EXTREME) ---
-    for g in gurus:
-        g_id = g['id']
-        total_sks_guru = sum(int(t['jumlah_jam']) for t in assignments if t['guru_id'] == g_id)
-        hari_aktif_guru = max(len(guru_hari_map[g_id]), 1)
-        
-        # Dikasih buffer + 6 jam per hari biar solver bebas bergerilya
-        batas_dinamis_harian = int(total_sks_guru / hari_aktif_guru) + 6 
-        
-        for h in hari_list:
-            beban_harian = []
-            for is_present, durasi in presences_per_guru[g_id][h]:
-                beban_harian.append(is_present * durasi)
-            
-            if beban_harian:
-                model.Add(sum(beban_harian) <= batas_dinamis_harian)
+    # Catatan: Aturan Pemerataan Beban Guru (Load Balancing) DIHAPUS.
+    # Biar solver murni nyusun balok asal muat.
 
     # ==========================================
-    # 3. PENYELESAIAN
+    # 3. PENYELESAIAN (VERSI CEPAT & KASAR)
     # ==========================================
     if all_start_vars:
+        # Coba susun dari kiri (jam 1) ke kanan
         model.AddDecisionStrategy(all_start_vars, cp_model.CHOOSE_FIRST, cp_model.SELECT_MIN_VALUE)
 
     solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = 300 
+    solver.parameters.max_time_in_seconds = 180 # 3 Menit cukup untuk susun kasar
     solver.parameters.num_search_workers = 8    
+    
+    # Biar solver ga terlalu banyak mikir rute optimal
+    solver.parameters.linearization_level = 0
     
     status = solver.Solve(model)
     waktu_komputasi = time.time() - start_time
@@ -228,13 +207,13 @@ def main():
             "status": "OPTIMAL",
             "solution": final_solution,
             "waktu_komputasi_detik": round(waktu_komputasi, 2),
-            "message": f"Jadwal berhasil disusun dalam {waktu_komputasi:.2f} detik. Kotak aman, tidak ada Infeasible!"
+            "message": f"Susun balok berhasil! Selesai dalam {waktu_komputasi:.2f} detik."
         }))
     else:
         print(json.dumps({
             "status": "INFEASIBLE", 
             "waktu_komputasi_detik": round(waktu_komputasi, 2),
-            "message": f"Gagal menyusun (Waktu: {waktu_komputasi:.2f} detik). Jadwal mutlak mustahil! Pastikan tidak ada Guru yang mengajar SKS lebih banyak dari hari kerjanya."
+            "message": f"Susun balok gagal (Waktu: {waktu_komputasi:.2f} detik). Grid sudah benar-benar penuh atau ada guru yang tumpang tindih mutlak."
         }))
 
 if __name__ == '__main__':
