@@ -23,6 +23,7 @@ def main():
     kelass = data.get('kelass', [])
     gurus = data.get('gurus', [])
 
+    # Sortir: Mapel durasi besar diutamakan duluan oleh mesin
     raw_assignments.sort(key=lambda x: int(x['jumlah_jam']), reverse=True)
 
     mapel_busy = {}
@@ -31,30 +32,19 @@ def main():
 
     hari_list = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']
     
-    # === AMBIL DATA KAPASITAS MASTER HARI ===
+    # =========================================================
+    # PERBAIKAN UTAMA: AMBIL KAPASITAS DARI KOTAK "BELAJAR" ASLI
+    # =========================================================
     hari_aktif_data = data.get('hari_aktif', [])
     kapasitas_hari = {}
     for h in hari_aktif_data:
+        # Ini mengambil total kotak 'Belajar' yang sudah difilter oleh PHP
         kapasitas_hari[h['nama']] = int(h['max_jam'])
 
-    # === AMBIL DATA LIMIT PER KELAS ===
-    kelas_limits = {}
-    for k in kelass:
-        kelas_limits[k['id']] = {
-            'normal': int(k.get('limit_harian', 10)),
-            'jumat': int(k.get('limit_jumat', 7))
-        }
-
     def get_max_jam(kelas_id, hari):
-        # 1. Cek limit dari Kelas (misal Jumat = 7)
-        limit_k = kelas_limits.get(kelas_id, {'normal': 10, 'jumat': 7})
-        batas_kelas = limit_k['jumat'] if hari == 'Jumat' else limit_k['normal']
-        
-        # 2. Cek limit dari Master Hari (misal Jumat buka 9 kotak belajar)
-        batas_hari = kapasitas_hari.get(hari, 10)
-        
-        # 3. KUNCI PENTING: Pakai angka yang paling kecil agar kelas tidak pulang kesorean!
-        return min(batas_kelas, batas_hari)
+        # Sekarang AI 100% percaya pada jumlah kotak 'Belajar' di web!
+        # Kalau Jumat Mas set 9 kotak Belajar, AI pakai 9. Nggak ada lagi patokan angka 7!
+        return kapasitas_hari.get(hari, 10) # default 10 jika error
 
     guru_hari_map = {}
     for g in gurus:
@@ -63,6 +53,7 @@ def main():
             allowed_days = hari_list
         guru_hari_map[g['id']] = allowed_days
 
+    # --- DETEKSI DINI ---
     for g in gurus:
         g_id = g['id']
         nama_guru = g['nama']
@@ -70,6 +61,7 @@ def main():
         
         kapasitas_maksimal = 0
         for h in guru_hari_map[g_id]:
+            # Deteksi dini juga pakai perhitungan kotak 'Belajar' asli
             kapasitas_maksimal += kapasitas_hari.get(h, 10)
             
         if total_sks_guru > kapasitas_maksimal:
@@ -130,6 +122,7 @@ def main():
                 start_var, durasi, end_var, is_present, f'interval_{t_id}_{h}'
             )
 
+            # --- PROTEKSI ERROR STRING KOSONG DARI DATABASE ---
             batas_jam_dari_db = t.get('batas_maksimal_jam')
             if batas_jam_dari_db is not None and str(batas_jam_dari_db).strip() != "":
                 try:
@@ -137,6 +130,7 @@ def main():
                     model.Add(end_var <= (b_jam + 1)).OnlyEnforceIf(is_present)
                 except ValueError:
                     pass 
+            # --------------------------------------------------
 
             starts[(t_id, h)] = start_var
             presences[(t_id, h)] = is_present
@@ -188,7 +182,11 @@ def main():
                 if daily_presence:
                     model.Add(sum(daily_presence) <= max_per_hari)
 
+    # ==========================================
+    # OBJEKTIF: MEMAKSA AI MERAPATKAN JADWAL KE PAGI HARI
+    # ==========================================
     objective_terms = []
+    
     for t in tasks_metadata:
         t_id = t['id']
         durasi = t['durasi']
@@ -203,6 +201,9 @@ def main():
 
     model.Minimize(sum(objective_terms))
 
+    # ==========================================
+    # EKSEKUSI
+    # ==========================================
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 300 
     solver.parameters.num_search_workers = 8    
