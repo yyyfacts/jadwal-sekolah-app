@@ -69,7 +69,8 @@ class JadwalController extends Controller
             foreach ($hariObj->waktuHaris as $waktuObj) {
                 $tipeSlot = $waktuObj->tipe;
                 
-                if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat']) && $tipeSlot !== 'Tidak Ada') {
+                // DISAMAKAN DAN DILENGKAPI: Sholat masuk sini!
+                if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']) && $tipeSlot !== 'Tidak Ada') {
                     if ($waktuObj->jam_ke !== null) {
                         $belajarSlots[$namaHari][] = $waktuObj->jam_ke;
                     }
@@ -137,7 +138,8 @@ class JadwalController extends Controller
                 foreach($hariObj->waktuHaris as $w) {
                     $tipeSlot = $w->tipe;
 
-                    if ($tipeSlot !== 'Tidak Ada' && !in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat'])) {
+                    // DISAMAKAN DAN DILENGKAPI: Sholat masuk sini agar AI melompatinya!
+                    if ($tipeSlot !== 'Tidak Ada' && !in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
                         $slotMapping[$hariObj->nama_hari][$teachingSlotCounter] = $w->jam_ke;
                         $teachingSlotCounter++;
                     }
@@ -156,7 +158,6 @@ class JadwalController extends Controller
                 ];
             });
 
-            // LOGIKA DINAMIS MAPEL DITAMBAHKAN DI SINI
             $assignments = Jadwal::with('mapel')->where(function($q) {
                     $q->where('status', 'offline')->orWhereNull('status');
                 })->get()->map(function ($j) {
@@ -167,7 +168,7 @@ class JadwalController extends Controller
                         'mapel_id' => $j->mapel_id, 
                         'jumlah_jam' => $j->jumlah_jam,
                         'nama_mapel' => $j->mapel->nama_mapel ?? '',
-                        'batas_maksimal_jam' => $j->mapel->batas_maksimal_jam ?? null // <-- Nilai dari DBeaver ditarik ke sini
+                        'batas_maksimal_jam' => $j->mapel->batas_maksimal_jam ?? null
                     ];
                 });
 
