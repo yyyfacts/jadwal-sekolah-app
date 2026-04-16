@@ -192,35 +192,26 @@ class JadwalController extends Controller
                 'mapel_constraints' => []
             ];
 
-            // ==============================================================
-            // PERBAIKAN 1: Pastikan folder storage ada dan bisa ditulis
-            // ==============================================================
+            // Tulis file input_solver.json ke storage Laravel
             $storageDir = storage_path('app');
             if (!file_exists($storageDir)) {
                 mkdir($storageDir, 0775, true);
             }
-
             $jsonPath = $storageDir . '/input_solver.json';
-
-            // Konversi ke JSON
             $jsonContent = json_encode($dataInput, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-
-            // Tulis dan pastikan tidak gagal
-            $writeStatus = file_put_contents($jsonPath, $jsonContent);
-            if ($writeStatus === false) {
-                throw new \Exception("Gagal menulis/menimpa file JSON di: {$jsonPath}. Pastikan folder storage memiliki izin tulis (chmod 775)!");
+            
+            if (file_put_contents($jsonPath, $jsonContent) === false) {
+                throw new \Exception("Gagal menulis file JSON. Pastikan folder storage memiliki izin tulis.");
             }
 
-            // ==============================================================
-            // PERBAIKAN 2: Pastikan script Python yang dituju BENAR
-            // ==============================================================
-            $scriptPath = base_path('python/scheduler.py'); // <-- Pastikan file kodemu ada di folder 'python' namanya 'scheduler.py'
+            // Path script python
+            $scriptPath = base_path('python/scheduler.py'); 
 
             if (!file_exists($scriptPath)) {
                 throw new \Exception("File script Python tidak ditemukan di: {$scriptPath}");
             }
 
-            // Jalankan Python (Gunakan 'python' biasa jika di Windows, 'python3' jika di Linux/Mac)
+            // Eksekusi Python
             $pythonCommand = PHP_OS_FAMILY === 'Windows' ? 'python' : 'python3';
             $process = new Process([$pythonCommand, $scriptPath, $jsonPath]);
             $process->setTimeout(1500);
@@ -232,11 +223,11 @@ class JadwalController extends Controller
 
             $result = json_decode($process->getOutput(), true);
 
-            // Jika hasil solver bukan JSON yang valid
             if ($result === null) {
-                throw new \Exception("Output dari Python bukan JSON yang valid. Output: " . $process->getOutput());
+                throw new \Exception("Output dari Python bukan JSON yang valid. Cek script python-mu.");
             }
 
+            // Proses Hasil
             if (isset($result['status']) && ($result['status'] === 'OPTIMAL' || $result['status'] === 'FEASIBLE')) {
                 DB::beginTransaction();
                 try {
