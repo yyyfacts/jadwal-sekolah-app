@@ -32,6 +32,10 @@ def main():
 
     hari_list = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']
 
+    # Kapasitas mentok 10
+    def get_max_jam(kelas_id, hari):
+        return 10 
+
     guru_hari_map = {}
     for g in gurus:
         allowed_days = g.get('hari_mengajar', [])
@@ -50,7 +54,7 @@ def main():
     intervals_per_kelas = {k['id']: {h: [] for h in hari_list} for k in kelass}
     intervals_per_guru = {g['id']: {h: [] for h in hari_list} for g in gurus}
     
-    # Wadah untuk menghitung total JP per hari untuk tiap kelas
+    # Wadah untuk menghitung SKS harian per kelas
     durasi_per_kelas_harian = {k['id']: {h: [] for h in hari_list} for k in kelass}
     
     tasks_per_mapel_group = {} 
@@ -73,7 +77,9 @@ def main():
         for h in hari_list:
             if h not in guru_hari_map[g_id]: continue 
 
-            batas_jam = 10 # Semua hari kita hajar limitnya 10 JP
+            batas_jam = get_max_jam(k_id, h)
+            if durasi > batas_jam: continue
+
             max_start = batas_jam - durasi + 1
             if max_start < 1: continue
             
@@ -94,10 +100,10 @@ def main():
             intervals_per_kelas[k_id][h].append(interval_var)
             intervals_per_guru[g_id][h].append(interval_var)
             
-            # Simpan durasi yang terpilih ke dalam list harian kelas
+            # Catat durasi yang masuk ke hari ini
             durasi_per_kelas_harian[k_id][h].append(is_present * durasi)
 
-            # Blokir manual mapel (nggak boleh ditabrak)
+            # Blokir manual mapel
             if m_id in mapel_busy:
                 for blocked in mapel_busy[m_id]:
                     if blocked['hari'] == h:
@@ -113,15 +119,31 @@ def main():
             return
 
     # ==========================================
-    # 3. BATASAN LOGIKA (NO OVERLAP)
+    # 3. ATURAN HARGA MATI (BODO AMAT MAGNET!)
+    # ==========================================
+    for k in kelass:
+        k_id = k['id']
+        # Hitung total SKS kelas ini seminggu
+        total_jp_kelas = sum(int(t['jumlah_jam']) for t in raw_assignments if t['kelas_id'] == k_id)
+        
+        for h in hari_list:
+            beban_harian = durasi_per_kelas_harian[k_id][h]
+            if not beban_harian: continue
+            
+            if h in ['Senin', 'Selasa', 'Rabu', 'Kamis']:
+                # WAJIB PAS 10 JP! NGGAK BOLEH KURANG!
+                model.Add(sum(beban_harian) == 10)
+            elif h == 'Jumat':
+                # WAJIB PAS SISA JP (Total JP - 40)
+                sisa_jumat = total_jp_kelas - 40
+                if sisa_jumat < 0: sisa_jumat = 0
+                model.Add(sum(beban_harian) == sisa_jumat)
+
+    # ==========================================
+    # 4. KENDALA DASAR (TIDAK BOLEH BENTROK)
     # ==========================================
     for k_id in intervals_per_kelas:
         for h in hari_list:
-            # Pastikan 1 kelas maksimal 10 JP per hari (Tidak boleh tembus 11)
-            if durasi_per_kelas_harian[k_id][h]:
-                model.Add(sum(durasi_per_kelas_harian[k_id][h]) <= 10)
-                
-            # Pastikan tidak ada mapel tumpang tindih
             if intervals_per_kelas[k_id][h]:
                 model.AddNoOverlap(intervals_per_kelas[k_id][h])
 
@@ -129,7 +151,7 @@ def main():
         for h in hari_list:
             intervals = intervals_per_guru[g_id][h]
             
-            # Dummy Interval untuk Waktu Kosong Guru (Waka/manual)
+            # Waktu Kosong Guru (Waka/Manual)
             waktu_kosong = next((g.get('waktu_kosong', []) for g in gurus if g['id'] == g_id), [])
             for wk in waktu_kosong:
                 if wk['hari'] == h:
@@ -149,24 +171,13 @@ def main():
                     model.AddAtMostOne(daily_presence)
 
     # ==========================================
-    # 4. OBJEKTIF: "UTAMAIN SENIN-KAMIS 10 BRO!"
+    # 5. EKSEKUSI PENCARIAN
     # ==========================================
-    # Kita suruh AI memaksimalkan total SKS yang masuk di hari Senin sampai Kamis.
-    # Dengan begitu, Jumat otomatis bakal kebagian sisanya yang dikit-dikit.
-    mon_thu_terms = []
-    for k_id in durasi_per_kelas_harian:
-        for h in ['Senin', 'Selasa', 'Rabu', 'Kamis']:
-            mon_thu_terms.extend(durasi_per_kelas_harian[k_id][h])
-            
-    # Kita kombinasikan: Maksimalin jam di Senin-Kamis, DAN minimalin jam mulai (biar baloknya geser ke pagi)
-    # Ini ngasih efek Tetris rata kiri yang sempurna!
-    model.Maximize(1000 * sum(mon_thu_terms) - sum(all_start_vars))
+    if all_start_vars:
+        model.AddDecisionStrategy(all_start_vars, cp_model.CHOOSE_FIRST, cp_model.SELECT_MIN_VALUE)
 
-    # ==========================================
-    # 5. EKSEKUSI
-    # ==========================================
     solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = 180 # Kasih waktu agak panjang biar AI mikirnya maksimal
+    solver.parameters.max_time_in_seconds = 300 
     solver.parameters.num_search_workers = 8    
     
     status = solver.Solve(model)
@@ -186,14 +197,14 @@ def main():
                     break
         
         print(json.dumps({
-            "status": "OPTIMAL" if status == cp_model.OPTIMAL else "FEASIBLE",
+            "status": "OPTIMAL",
             "solution": final_solution,
-            "message": f"KEREN BANGET! Jadwal tersusun dalam {waktu_komputasi:.2f} detik (Senin-Kamis diprioritaskan Penuh, sisa lari ke Jumat)."
+            "message": f"MANTAP! Jadwal berhasil dibikin dalam {waktu_komputasi:.2f} detik. (Senin-Kamis PAS 10 JP, sisanya di Jumat)"
         }))
     else:
         print(json.dumps({
             "status": "INFEASIBLE", 
-            "message": f"Gagal menyusun (Waktu: {waktu_komputasi:.2f} detik). Pastikan tidak ada mapel yang ukurannya melebihi 10 JP."
+            "message": f"Gagal menyusun (Waktu: {waktu_komputasi:.2f} detik). Jadwal mentok, guru ada yang tabrakan gara-gara dipaksa 10 JP."
         }))
 
 if __name__ == '__main__':
