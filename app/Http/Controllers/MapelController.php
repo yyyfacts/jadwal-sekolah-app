@@ -13,10 +13,6 @@ use Illuminate\Support\Facades\DB;
 
 class MapelController extends Controller
 {
-    /**
-     * Fungsi otomatis benerin struktur DB yang kurang.
-     * Kolom batas_maksimal_jam DIHAPUS dari pengecekan.
-     */
     private function checkAndFixDatabase()
     {
         if (Schema::hasTable('jadwals') && !Schema::hasColumn('jadwals', 'tipe_jam')) {
@@ -29,6 +25,13 @@ class MapelController extends Controller
             Schema::table('kelas', function (Blueprint $table) {
                 $table->integer('limit_harian')->default(10)->after('max_jam');
                 $table->integer('limit_jumat')->default(7)->after('limit_harian');
+            });
+        }
+
+        // <--- TAMBAHAN UNTUK MIGRASI OTOMATIS BATAS MAKSIMAL JAM
+        if (Schema::hasTable('mapels') && !Schema::hasColumn('mapels', 'batas_maksimal_jam')) {
+            Schema::table('mapels', function (Blueprint $table) {
+                $table->integer('batas_maksimal_jam')->nullable()->after('kode_mapel');
             });
         }
     }
@@ -55,13 +58,13 @@ class MapelController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nama_mapel' => 'required|string',
-            'kode_mapel' => 'required|string|unique:mapels',
-            'status'     => 'nullable|string',
+            'nama_mapel'         => 'required|string',
+            'kode_mapel'         => 'required|string|unique:mapels',
+            'status'             => 'nullable|string',
+            'batas_maksimal_jam' => 'nullable|integer|min:1|max:15', // <--- DITAMBAHKAN
         ]);
         
-        // Simpan hanya field yang ada di database
-        Mapel::create($request->only(['nama_mapel', 'kode_mapel', 'status']));
+        Mapel::create($request->only(['nama_mapel', 'kode_mapel', 'status', 'batas_maksimal_jam'])); // <--- DITAMBAHKAN
         
         return redirect()->route('mapel.index')->with('success', 'Mata Pelajaran berhasil ditambahkan.');
     }
@@ -69,13 +72,14 @@ class MapelController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'nama_mapel' => 'required|string',
-            'kode_mapel' => 'required|string|unique:mapels,kode_mapel,' . $id,
-            'status'     => 'nullable|string',
+            'nama_mapel'         => 'required|string',
+            'kode_mapel'         => 'required|string|unique:mapels,kode_mapel,' . $id,
+            'status'             => 'nullable|string',
+            'batas_maksimal_jam' => 'nullable|integer|min:1|max:15', // <--- DITAMBAHKAN
         ]);
         
         $mapel = Mapel::findOrFail($id);
-        $mapel->update($request->only(['nama_mapel', 'kode_mapel', 'status']));
+        $mapel->update($request->only(['nama_mapel', 'kode_mapel', 'status', 'batas_maksimal_jam'])); // <--- DITAMBAHKAN
         
         return redirect()->route('mapel.index')->with('success', 'Data Mapel diperbarui.');
     }
@@ -83,7 +87,6 @@ class MapelController extends Controller
     public function destroy($id)
     {
         $mapel = Mapel::findOrFail($id);
-        // Hapus distribusi terkait sebelum hapus mapelnya
         $mapel->jadwals()->delete();
         $mapel->delete();
         
@@ -117,9 +120,8 @@ class MapelController extends Controller
 
             $kelas = Kelas::with('jadwals')->findOrFail($request->kelas_id);
             
-            // Validasi sisa slot fisik agar tidak over-capacity di satu kelas
             $currentTotalOffline = $kelas->jadwals->where('status', 'offline')->sum('jumlah_jam');
-            $maxJamKelas = $kelas->max_jam ?? 50; // Default 50 jika null
+            $maxJamKelas = $kelas->max_jam ?? 50; 
             
             $tambahanBeban = ($request->status == 'offline') ? $request->jumlah_jam : 0;
 
@@ -188,7 +190,6 @@ class MapelController extends Controller
             $jadwal->tipe_jam   = $request->tipe_jam;
             $jadwal->status     = $request->status; 
             
-            // Pertahankan nilai lock manual jika ada
             if($request->has('master_hari_id')) $jadwal->master_hari_id = $request->master_hari_id;
             if($request->has('jam')) $jadwal->jam = $request->jam;
 

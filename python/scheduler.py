@@ -1,10 +1,11 @@
 import sys
 import json
-import time  
+import time
+import math
 from ortools.sat.python import cp_model
 
 def main():
-    start_time = time.time()  
+    start_time = time.time()
 
     if len(sys.argv) < 2:
         print(json.dumps({"status": "ERROR", "message": "JSON path required"}))
@@ -40,9 +41,8 @@ def main():
         guru_hari_map[g['id']] = allowed_days
 
     # ==========================================
-    # LOGIKA ZEN (UPDATE): BACA LIMIT LANGSUNG DARI JSON
+    # LOGIKA: BACA LIMIT KELAS
     # ==========================================
-    # Bikin map limit dari data kelas supaya presisi sesuai JSON
     kelas_limits = {
         k['id']: {
             'harian': k.get('limit_harian', 10),
@@ -50,11 +50,35 @@ def main():
         } for k in kelass
     }
 
-    # Aturan Kapasitas Harian
     def get_max_jam(kelas_id, hari):
         if hari == 'Jumat':
             return kelas_limits[kelas_id]['jumat']
         return kelas_limits[kelas_id]['harian']
+
+    # ==========================================
+    # LOGIKA BARU: HITUNG RATA-RATA JAM GURU DINAMIS
+    # ==========================================
+    total_jam_guru = {g['id']: 0 for g in gurus}
+    for t in raw_assignments:
+        g_id = t['guru_id']
+        if g_id in total_jam_guru:
+            total_jam_guru[g_id] += int(t['jumlah_jam'])
+
+    max_jam_dinamis = {}
+    for g in gurus:
+        g_id = g['id']
+        total_jam = total_jam_guru[g_id]
+        
+        hari_aktif_guru = g.get('hari_mengajar', [])
+        jumlah_hari_aktif = len(hari_aktif_guru) if hari_aktif_guru else len(hari_list)
+        
+        if jumlah_hari_aktif > 0:
+            rata_rata = math.ceil(total_jam / jumlah_hari_aktif)
+            limit_final = rata_rata + 2 # Toleransi +2 jam agar jadwal tidak Infeasible
+        else:
+            limit_final = 0
+            
+        max_jam_dinamis[g_id] = limit_final
 
     # ==========================================
     # 2. MEMBANGUN MODEL
@@ -67,6 +91,7 @@ def main():
     intervals_per_kelas = {k['id']: {h: [] for h in hari_list} for k in kelass}
     intervals_per_guru = {g['id']: {h: [] for h in hari_list} for g in gurus}
     durasi_per_kelas_harian = {k['id']: {h: [] for h in hari_list} for k in kelass}
+    durasi_per_guru_harian = {g['id']: {h: [] for h in hari_list} for g in gurus} # Tracker Guru
     
     tasks_per_mapel_group = {} 
     tasks_metadata = []
@@ -77,6 +102,7 @@ def main():
         
         t_id, g_id, k_id = t['id'], t['guru_id'], t['kelas_id']
         m_id = t.get('mapel_id')
+        batas_maks_jam = t.get('batas_maksimal_jam') # Ambil batas jam dari JSON
         
         tasks_metadata.append({'id': t_id})
 
@@ -103,6 +129,10 @@ def main():
                 start_var, durasi, end_var, is_present, f'interval_{t_id}_{h}'
             )
 
+            # [KENDALA BARU] Batas maksimal jam mapel (contoh: PJOK)
+            if batas_maks_jam is not None:
+                model.Add(end_var <= int(batas_maks_jam) + 1).OnlyEnforceIf(is_present)
+
             starts[(t_id, h)] = start_var
             presences[(t_id, h)] = is_present
             possible_days.append(is_present)
@@ -111,6 +141,7 @@ def main():
             intervals_per_kelas[k_id][h].append(interval_var)
             intervals_per_guru[g_id][h].append(interval_var)
             durasi_per_kelas_harian[k_id][h].append(is_present * durasi)
+            durasi_per_guru_harian[g_id][h].append(is_present * durasi) # Simpan ke tracker guru
 
             # Blokir manual mapel
             if m_id in mapel_busy:
@@ -140,11 +171,21 @@ def main():
             if not beban_harian: continue
             
             if h in ['Senin', 'Selasa', 'Rabu', 'Kamis']:
-                # WAJIB PAS limit harian JSON (biasanya 10)
                 model.Add(sum(beban_harian) == batas_harian)
             elif h == 'Jumat':
-                # JUMAT WAJIB PAS limit jumat JSON (bisa 8, 7, atau 6)
                 model.Add(sum(beban_harian) == batas_jumat)
+
+    # ==========================================
+    # 3.5 KENDALA BEBAN HARIAN GURU (DINAMIS)
+    # ==========================================
+    for g in gurus:
+        g_id = g['id']
+        batas_harian_guru = max_jam_dinamis[g_id]
+        
+        for h in hari_list:
+            beban_guru = durasi_per_guru_harian[g_id][h]
+            if beban_guru:
+                model.Add(sum(beban_guru) <= batas_harian_guru)
 
     # ==========================================
     # 4. KENDALA DASAR (TIDAK BOLEH BENTROK)

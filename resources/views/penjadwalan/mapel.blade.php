@@ -156,9 +156,6 @@
 
                         <td class="px-6 py-5 text-right pr-12">
                             <div class="flex items-center justify-end gap-2.5">
-                                {{-- TOGGLE MODE OFFLINE / ONLINE (DITEMPEL DI MAPEL) --}}
-
-
                                 <button onclick="openModal('modaljadwal{{ $m->id }}')"
                                     class="flex items-center gap-2 px-4 py-2 {{ $theme['btn'] }} text-white text-xs font-bold rounded-lg shadow-sm transition-all hover:-translate-y-0.5">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -246,7 +243,6 @@
     {{-- MODALS AREA --}}
 
     {{-- 1. Modal Tambah --}}
-    {{-- 1. Modal Tambah --}}
     <div id="modaltambah"
         class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden flex items-center justify-center p-4">
         <div
@@ -324,6 +320,7 @@
             </form>
         </div>
     </div>
+
     {{-- 3. Modal Distribusi --}}
     <div id="modaljadwal{{ $m->id }}"
         class="fixed inset-0 bg-slate-900/80 z-[99] hidden flex items-center justify-center p-2 sm:p-4 transition-opacity duration-300">
@@ -365,8 +362,7 @@
                     </div>
                     <div class="flex-1 overflow-y-auto custom-scrollbar p-0 relative bg-white">
                         <table class="w-full text-xs border-collapse">
-                            <thead class="bg-slate-50 text-slate-500
-                            font-bold uppercase sticky top-0 z-10 shadow-sm">
+                            <thead class="bg-slate-50 text-slate-500 font-bold uppercase sticky top-0 z-10 shadow-sm">
                                 <tr>
                                     <th class="px-4 py-3 text-left border-b border-slate-100 w-[20%]">Kelas</th>
                                     <th class="px-4 py-3 text-left border-b border-slate-100 w-[40%]">Guru Pengampu</th>

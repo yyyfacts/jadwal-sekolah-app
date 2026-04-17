@@ -69,7 +69,6 @@ class JadwalController extends Controller
             foreach ($hariObj->waktuHaris as $waktuObj) {
                 $tipeSlot = $waktuObj->tipe;
                 
-                // DISAMAKAN DAN DILENGKAPI: Sholat masuk sini!
                 if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']) && $tipeSlot !== 'Tidak Ada') {
                     if ($waktuObj->jam_ke !== null) {
                         $belajarSlots[$namaHari][] = $waktuObj->jam_ke;
@@ -78,17 +77,13 @@ class JadwalController extends Controller
             }
         }
 
-        // --- FIX TAMPILAN KOSONG: Mapping ID (angka) ke Nama Hari (teks) ---
         $hariMap = MasterHari::pluck('nama_hari', 'id')->toArray();
 
         foreach ($rawJadwals as $row) {
             $durasi = $row->jumlah_jam;
-            
-            // Terjemahin angka hari_id dari DB jadi teks ("Senin", "Selasa", dll)
             $hari_id_angka = $row->hari_id;
             $hari = $hariMap[$hari_id_angka] ?? null; 
 
-            // Kalau harinya kosong/nggak valid, skip
             if (!$hari) continue;
 
             $jamMulaiFisik = $row->jam; 
@@ -148,7 +143,6 @@ class JadwalController extends Controller
                 foreach($hariObj->waktuHaris as $w) {
                     $tipeSlot = $w->tipe;
 
-                    // DISAMAKAN DAN DILENGKAPI: Sholat masuk sini agar AI melompatinya!
                     if ($tipeSlot !== 'Tidak Ada' && !in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
                         $slotMapping[$hariObj->nama_hari][$teachingSlotCounter] = $w->jam_ke;
                         $teachingSlotCounter++;
@@ -178,7 +172,8 @@ class JadwalController extends Controller
                         'mapel_id' => $j->mapel_id, 
                         'jumlah_jam' => $j->jumlah_jam,
                         'nama_mapel' => $j->mapel->nama_mapel ?? '',
-                        'batas_maksimal_jam' => $j->mapel->batas_maksimal_jam ?? null
+                        // <--- TAMBAHAN: Paksa ke (int) agar terbaca sempurna di Python
+                        'batas_maksimal_jam' => isset($j->mapel->batas_maksimal_jam) ? (int)$j->mapel->batas_maksimal_jam : null
                     ];
                 });
 
@@ -192,9 +187,6 @@ class JadwalController extends Controller
                 'kelass' => $kelassData, 
                 'assignments' => $assignments,
             ];
-
-            // Debug return di-comment biar bisa lanjut proses Python
-            // return response()->json($dataInput);
 
             $jsonPath = storage_path('app/input_solver.json');
             file_put_contents($jsonPath, json_encode($dataInput));
@@ -210,19 +202,16 @@ class JadwalController extends Controller
             if (isset($result['status']) && ($result['status'] === 'OPTIMAL' || $result['status'] === 'FEASIBLE')) {
                 DB::beginTransaction();
                 try {
-                    // --- FIX ERROR SQL: Bikin map buat ngubah Teks ("Jumat") jadi ID Angka (misal: 5) ---
                     $hariIdMap = MasterHari::pluck('id', 'nama_hari')->toArray();
 
                     foreach ($result['solution'] as $item) {
-                        $nama_hari = $item['hari']; // Teks dari Python (contoh: "Senin")
+                        $nama_hari = $item['hari']; 
                         $tSlot = $item['jam']; 
                         
                         $pSlot = $slotMapping[$nama_hari][$tSlot] ?? $tSlot; 
                         
-                        // Terjemahin teks nama hari jadi ID angka
                         $hari_id_angka = $hariIdMap[$nama_hari] ?? null;
 
-                        // Kalau ID-nya valid, langsung sikat update ke DB
                         if ($hari_id_angka) {
                             DB::table('jadwals')->where('id', $item['id'])->update([ 
                                 'hari_id' => $hari_id_angka, 

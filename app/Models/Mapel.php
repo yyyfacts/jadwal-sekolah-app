@@ -16,6 +16,7 @@ class Mapel extends Model
         'nama_mapel', 
         'kode_mapel',              // Wajib ditambahkan (karena ada fitur updateMode)
     'status',
+    'batas_maksimal_jam',
     ];
 
     public function jadwals()
