@@ -74,7 +74,7 @@ def main():
         
         if jumlah_hari_aktif > 0:
             rata_rata = math.ceil(total_jam / jumlah_hari_aktif)
-            limit_final = rata_rata + 1 # Toleransi +1 jam agar jadwal tidak Infeasible
+            limit_final = rata_rata + 2 # Toleransi +1 jam agar jadwal tidak Infeasible
         else:
             limit_final = 0
             
