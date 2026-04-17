@@ -7,7 +7,7 @@ use App\Models\Jadwal;
 use App\Models\Guru;
 use App\Models\Mapel;
 use App\Models\MasterHari;
-use App\Models\WaktuHari; // <-- MasterWaktu diganti ke WaktuHari
+use App\Models\WaktuHari; 
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -37,12 +37,11 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
         }])->where('is_active', true)->get();
         
         $hariList = $dataHari->pluck('nama_hari')->toArray();
-        
         $dataWaktu = WaktuHari::select('jam_ke')->distinct()->orderBy('jam_ke')->get();
-        $maxJam = WaktuHari::max('jam_ke');
 
-        $rawJadwals = Jadwal::with(['guru', 'mapel', 'kelas', 'masterHari']) 
-            ->whereNotNull('hari_id') // <--- Kembalikan ke 'hari_id' (sesuai database lu)
+        // Query persis sama kayak di index() Web Controller
+        $rawJadwals = Jadwal::with(['guru', 'mapel', 'kelas'])
+            ->whereNotNull('hari_id')
             ->whereNotNull('jam')
             ->where(function($q) {
                 $q->where('status', 'offline')->orWhereNull('status');
@@ -63,9 +62,8 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
             }
         }
 
-        // 2. MAPPING SLOT BELAJAR 
+        // 2. MAPPING SLOT BELAJAR (Persis sama kayak Web)
         $belajarSlots = [];
-
         foreach ($dataHari as $hariObj) {
             $namaHari = $hariObj->nama_hari;
             $belajarSlots[$namaHari] = [];
@@ -73,7 +71,6 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
             foreach ($hariObj->waktuHaris as $waktuObj) {
                 $tipeSlot = $waktuObj->tipe;
 
-                // --- 👇 FIX UTAMA: 'Sholat' ditambahkan biar sinkron sama Web View 👇 ---
                 if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']) && $tipeSlot !== 'Tidak Ada') {
                     if ($waktuObj->jam_ke !== null) {
                         $belajarSlots[$namaHari][] = $waktuObj->jam_ke;
@@ -82,29 +79,38 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
             }
         }
 
-        // 3. MASUKKAN JADWAL HASIL GENERATE
+        // 3. MAPPING ID HARI KE NAMA HARI (Biar nggak miss data)
+        $hariMap = MasterHari::pluck('nama_hari', 'id')->toArray();
+
+        // 4. MASUKKAN JADWAL HASIL GENERATE
         foreach ($rawJadwals as $row) {
             $durasi = $row->jumlah_jam;
-            $hari = $row->masterHari->nama_hari ?? null;
-            $jamMulaiFisik = $row->jam;
+            
+            // Pake logika mapping ID angka ke Teks, persis kayak di Web
+            $hari_id_angka = $row->hari_id;
+            $hari = $hariMap[$hari_id_angka] ?? null; 
 
+            // Kalau harinya kosong/nggak valid, skip
+            if (!$hari) continue;
+
+            $jamMulaiFisik = $row->jam; 
+            
             $slotsTersedia = $belajarSlots[$hari] ?? [];
-            $urutanMulai = array_search($jamMulaiFisik, $slotsTersedia);
-
-            if ($urutanMulai !== false) {
+            $startIndex = array_search($jamMulaiFisik, $slotsTersedia); 
+            
+            if ($startIndex !== false) {
                 for ($i = 0; $i < $durasi; $i++) {
-                    $urutanSekarang = $urutanMulai + $i;
-
-                    if (isset($slotsTersedia[$urutanSekarang])) {
-                        $jamFisikSekarang = $slotsTersedia[$urutanSekarang];
-
-                        if ($jamFisikSekarang <= $maxJam && isset($jadwals[$row->kelas_id][$hari])) {
-                            $jadwals[$row->kelas_id][$hari][$jamFisikSekarang] = [
-                                'kode_mapel' => $row->mapel->kode_mapel ?? '-',
-                                'kode_guru'  => $row->guru->kode_guru ?? '-',
-                                'color'      => $row->tipe_jam == 'double' || $row->tipe_jam == 'triple' ? 'd9e1f2' : 'ffffff'
-                            ];
-                        }
+                    if (isset($slotsTersedia[$startIndex + $i])) {
+                        $jamSekarang = $slotsTersedia[$startIndex + $i]; 
+                        
+                        if (!isset($jadwals[$row->kelas_id])) continue;
+                        
+                        // Masukin datanya ke array Excel
+                        $jadwals[$row->kelas_id][$hari][$jamSekarang] = [
+                            'kode_mapel' => $row->mapel->kode_mapel ?? '-',
+                            'kode_guru'  => $row->guru->kode_guru ?? '-',
+                            'color'      => $row->tipe_jam == 'double' || $row->tipe_jam == 'triple' ? 'd9e1f2' : 'ffffff'
+                        ];
                     }
                 }
             }
