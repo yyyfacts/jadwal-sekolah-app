@@ -42,7 +42,8 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
         $maxJam = WaktuHari::max('jam_ke');
 
         $rawJadwals = Jadwal::with(['guru', 'mapel', 'kelas'])
-            ->whereNotNull('hari')
+           ->with(['masterHari']) // <--- Pastikan bawa relasinya juga
+            ->whereNotNull('master_hari_id') // <--- Ganti 'hari' jadi 'master_hari_id'
             ->whereNotNull('jam')
             ->where(function($q) {
                 $q->where('status', 'offline')->orWhereNull('status');
@@ -84,7 +85,7 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
         // 3. MASUKKAN JADWAL HASIL GENERATE
         foreach ($rawJadwals as $row) {
             $durasi = $row->jumlah_jam;
-            $hari = $row->hari;
+           $hari = $row->masterHari->nama_hari ?? null;
             $jamMulaiFisik = $row->jam;
 
             $slotsTersedia = $belajarSlots[$hari] ?? [];
