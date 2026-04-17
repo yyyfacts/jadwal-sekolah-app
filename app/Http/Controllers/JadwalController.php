@@ -201,13 +201,26 @@ class JadwalController extends Controller
             if (isset($result['status']) && ($result['status'] === 'OPTIMAL' || $result['status'] === 'FEASIBLE')) {
                 DB::beginTransaction();
                 try {
+                    // 1. Ambil semua data master hari dan bikin map: ['Senin' => 1, 'Selasa' => 2, dst]
+                    $hariIdMap = MasterHari::pluck('id', 'nama_hari')->toArray();
+
                     foreach ($result['solution'] as $item) {
-                        $hari = $item['hari'];
+                        $nama_hari = $item['hari']; // Ini teks kayak "Jumat"
                         $tSlot = $item['jam']; 
                         
-                        $pSlot = $slotMapping[$hari][$tSlot] ?? $tSlot; 
+                        $pSlot = $slotMapping[$nama_hari][$tSlot] ?? $tSlot; 
+                        
+                        // 2. Ubah teks nama hari jadi ID angka
+                        $hari_id_angka = $hariIdMap[$nama_hari] ?? null;
 
-                        DB::table('jadwals')->where('id', $item['id'])->update([ 'hari_id' => $hari, 'jam' => $pSlot, 'updated_at' => now() ]);
+                        // 3. Update pakai $hari_id_angka
+                        if ($hari_id_angka) {
+                            DB::table('jadwals')->where('id', $item['id'])->update([ 
+                                'hari_id' => $hari_id_angka, 
+                                'jam' => $pSlot, 
+                                'updated_at' => now() 
+                            ]);
+                        }
                     }
                     DB::commit();
                     return redirect()->route('jadwal.index')->with('success', $result['message'])->with('waktu_komputasi', $result['waktu_komputasi_detik'] ?? null);
@@ -215,8 +228,6 @@ class JadwalController extends Controller
                     DB::rollBack();
                     throw $e;
                 }
-            } else {
-                return redirect()->route('jadwal.index')->with('error', 'Gagal: ' . ($result['message'] ?? 'Solusi tidak ditemukan.'));
             }
 
         } catch (\Exception $e) {
