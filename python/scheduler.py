@@ -86,13 +86,13 @@ def main():
             
             # 1. BATAS MAKSIMAL (Tetap +2 agar Balok 3-Jam tidak bikin Crash)
             # Pastikan maksimal tidak lebih kecil dari balok terbesar yang dia punya
-            limit_max = max(rata_atas + 2, max_block)
+            limit_max = max(rata_atas + 1, max_block)
             
             # 2. BATAS MINIMAL (Ini obat agar jadwal diratakan ke kanan juga)
             # Jika jamnya banyak, paksa setiap hari minimal terisi sekian jam.
             if total_jam >= jumlah_hari_aktif * 3:
                 # Dikurangi 3 dari rata-rata agar solver masih punya ruang napas
-                limit_min = max(1, rata_bawah - 3) 
+                limit_min = max(1, rata_bawah - 1) 
             else:
                 limit_min = 0 # Kalau jam mengajarnya memang sedikit, bebas
         else:
