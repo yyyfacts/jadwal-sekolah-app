@@ -1,6 +1,7 @@
 import sys
 import json
 import time  
+import math
 from ortools.sat.python import cp_model
 
 def main():
@@ -25,7 +26,6 @@ def main():
     # Sortir balok durasi besar agar masuk duluan
     raw_assignments.sort(key=lambda x: int(x['jumlah_jam']), reverse=True)
 
-    # Ambil data mapel yang di-lock manual (waktu sibuk)
     mapel_busy = {}
     for m in data.get('mapel_constraints', []):
         mapel_busy[m['id']] = m['waktu_kosong']
@@ -33,23 +33,20 @@ def main():
     hari_list = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']
 
     # ==========================================
-    # LOGIKA BARU: BACA TOTAL JAM BELAJAR DARI MASTER HARI LARAVEL!
-    # ==========================================
-    # ==========================================
-    # 1. BACA DINAMIS DARI MASTER HARI (UPDATE)
+    # 1. BACA DINAMIS DARI MASTER HARI (SINKRON LARAVEL)
     # ==========================================
     hari_aktif_data = data.get('hari_aktif', [])
     
-    # Kita pisah antara 'Penggaris' (Slot) dan 'Isi' (Kapasitas Belajar)
-    # Gunakan .get() biar kalau data lama masih ada, nggak langsung error
-    hari_max_slot = {h['nama']: int(h.get('max_slot', h.get('max_jam', 10))) for h in hari_aktif_data}
-    hari_kapasitas = {h['nama']: int(h.get('kapasitas_belajar', h.get('max_jam', 10))) for h in hari_aktif_data}
+    # Ambil Kapasitas Belajar dan Max Slot dari JSON Laravel
+    hari_max_slot = {h['nama']: int(h.get('max_slot', 10)) for h in hari_aktif_data}
+    hari_kapasitas = {h['nama']: int(h.get('kapasitas_belajar', 10)) for h in hari_aktif_data}
 
-    hari_reguler = hari_list[:-1] 
-    hari_terakhir = hari_list[-1] 
+    hari_reguler = hari_list[:-1] # Senin - Kamis
+    hari_terakhir = hari_list[-1] # Jumat
     
-    # Hitung kapasitas belajar murni (Senin-Kamis)
+    # Hitung total kapasitas belajar Senin-Kamis (buat pengurang matematika SKS)
     kapasitas_senin_kamis = sum(hari_kapasitas.get(h, 10) for h in hari_reguler)
+
     guru_hari_map = {}
     for g in gurus:
         allowed_days = g.get('hari_mengajar', [])
@@ -58,7 +55,7 @@ def main():
         guru_hari_map[g['id']] = allowed_days
 
     # ==========================================
-    # MATEMATIKA MENGHITUNG SISA SKS JUMAT
+    # 2. MATEMATIKA MENGHITUNG SISA SKS JUMAT
     # ==========================================
     kelas_total_jp = {k['id']: 0 for k in kelass}
     for t in raw_assignments:
@@ -67,23 +64,15 @@ def main():
     sisa_jumat_kelas = {}
     for k in kelass:
         k_id = k['id']
-        # MATEMATIKA: Sisa = Total SKS Kelas dikurangi kapasitas Senin-Kamis
+        # Sisa = Total SKS Kelas - Kapasitas Senin s.d Kamis
         sisa = kelas_total_jp[k_id] - kapasitas_senin_kamis
         
-        # Sisa nggak boleh minus, dan NGGAK BOLEH lebih dari jam belajar Jumat di Master Hari
-        limit_jumat_di_master = jam_belajar_master.get(hari_terakhir, 8)
+        # Ambil limit Jumat dari Master Hari (Data Laravel)
+        limit_jumat_di_master = hari_kapasitas.get(hari_terakhir, 8)
         sisa_jumat_kelas[k_id] = max(0, min(limit_jumat_di_master, sisa))
 
-    # Aturan Kapasitas Harian (Dinamis banget ngikutin Laravel)
-    def get_max_jam(kelas_id, hari):
-        if hari == hari_terakhir:
-            return sisa_jumat_kelas[kelas_id] # Jumat dipotong sesuai sisa!
-        
-        # Kalau Senin-Kamis, ambil kapasitas dari Master Hari (Misal 10)
-        return jam_belajar_master.get(hari, 10) 
-
     # ==========================================
-    # 2. MEMBANGUN MODEL
+    # 3. MEMBANGUN MODEL AI
     # ==========================================
     model = cp_model.CpModel()
 
@@ -103,22 +92,19 @@ def main():
         
         t_id, g_id, k_id = t['id'], t['guru_id'], t['kelas_id']
         m_id = t.get('mapel_id')
+        nama_mapel = str(t.get('nama_mapel', '')).upper()
         
         tasks_metadata.append({'id': t_id})
-
         group_key = (k_id, m_id if m_id else f"guru_{g_id}")
         tasks_per_mapel_group.setdefault(group_key, []).append(t_id)
-
-        possible_days = [] 
 
         for h in hari_list:
             if h not in guru_hari_map[g_id]: continue 
 
-            # KUNCINYA: Batas wadah fisik adalah MAX_SLOT (Misal 13)
+            # Batas fisik adalah MAX_SLOT (Penggaris sampai jam pulang)
             batas_wadah = hari_max_slot.get(h, 10)
             
-            # Tetap jaga aturan PJOK lu (Maksimal jam ke-8)
-            nama_mapel = str(t.get('nama_mapel', '')).upper()
+            # Aturan PJOK (Maksimal jam ke-8)
             if 'PJOK' in nama_mapel or 'PENJAS' in nama_mapel:
                 batas_wadah = min(batas_wadah, 8)
 
@@ -127,7 +113,6 @@ def main():
             max_start = batas_wadah - durasi + 1
             if max_start < 1: continue
             
-            # Start dan End sekarang mengacu ke Batas Wadah (Penggaris panjang)
             start_var = model.NewIntVar(1, max_start, f'start_{t_id}_{h}')
             end_var = model.NewIntVar(1 + durasi, batas_wadah + 1, f'end_{t_id}_{h}')
             is_present = model.NewBoolVar(f'present_{t_id}_{h}')
@@ -138,7 +123,6 @@ def main():
 
             starts[(t_id, h)] = start_var
             presences[(t_id, h)] = is_present
-            possible_days.append(is_present)
             all_start_vars.append(start_var)
 
             intervals_per_kelas[k_id][h].append(interval_var)
@@ -149,43 +133,39 @@ def main():
                 for blocked in mapel_busy[m_id]:
                     if blocked['hari'] == h:
                         jam_blok = int(blocked['jam'])
-                        if jam_blok <= batas_jam:
+                        if jam_blok <= batas_wadah:
                             blocked_interval = model.NewIntervalVar(jam_blok, 1, jam_blok + 1, f'block_{m_id}_{h}')
                             model.AddNoOverlap([interval_var, blocked_interval])
 
-        if possible_days:
-            model.AddExactlyOne(possible_days)
+        # Pastikan tiap mapel cuma muncul sekali di hari yang memungkinkan
+        possible_presences = [presences[(t_id, h)] for h in hari_list if (t_id, h) in presences]
+        if possible_presences:
+            model.AddExactlyOne(possible_presences)
         else:
-            print(json.dumps({"status": "INFEASIBLE", "message": f"Bentrok fatal! Mapel ID {t_id} tidak punya pilihan hari."}))
+            print(json.dumps({"status": "INFEASIBLE", "message": f"Bentrok! Mapel {t.get('nama_mapel')} tak muat."}))
             return
 
     # ==========================================
-    # 3. KENDALA HARGA MATI (MEMAKAI MATEMATIKA DARI MASTER HARI)
-    # ==========================================
-   # ==========================================
-    # 3. KENDALA HARGA MATI (MATEMATIKA BELAJAR)
+    # 4. KENDALA HARGA MATI (KAPASITAS BELAJAR)
     # ==========================================
     for k in kelass:
         k_id = k['id']
-        
-        # Hitung sisa Jumat berdasarkan Kapasitas Belajar Master Hari
-        limit_belajar_jumat = hari_kapasitas.get(hari_terakhir, 8)
-        sisa_jumat = max(0, min(limit_belajar_jumat, kelas_total_jp[k_id] - kapasitas_senin_kamis))
+        sisa_jumat = sisa_jumat_kelas[k_id]
         
         for h in hari_list:
             beban_harian = durasi_per_kelas_harian[k_id][h]
             if not beban_harian: continue
             
             if h in hari_reguler:
-                # Harus pas dengan KAPASITAS BELAJAR (Misal 10), bukan 13!
+                # Target beban harus sesuai KAPASITAS_BELAJAR dari Laravel
                 target = hari_kapasitas.get(h, 10)
                 model.Add(sum(beban_harian) == target)
             elif h == hari_terakhir:
-                # Jumat pas dengan sisa matematika
+                # Jumat pas dengan sisa matematika SKS
                 model.Add(sum(beban_harian) == sisa_jumat)
 
     # ==========================================
-    # 4. KENDALA DASAR (TIDAK BOLEH BENTROK)
+    # 5. KENDALA DASAR (TIDAK BOLEH BENTROK GURU/KELAS)
     # ==========================================
     for k_id in intervals_per_kelas:
         for h in hari_list:
@@ -212,13 +192,12 @@ def main():
                     model.AddAtMostOne(daily_presence)
 
     # ==========================================
-    # 5. EKSEKUSI PENCARIAN (CEPAT & AMAN RAM)
+    # 6. EKSEKUSI PENCARIAN (ANTI-ERROR 502 RENDER)
     # ==========================================
     if all_start_vars:
         model.AddDecisionStrategy(all_start_vars, cp_model.CHOOSE_FIRST, cp_model.SELECT_MIN_VALUE)
 
     solver = cp_model.CpSolver()
-    # Pekerja gue turunin 1 biar server Render lu nggak meledak lagi ya
     solver.parameters.max_time_in_seconds = 90 
     solver.parameters.num_search_workers = 1    
     
@@ -241,12 +220,12 @@ def main():
         print(json.dumps({
             "status": "OPTIMAL",
             "solution": final_solution,
-            "message": f"MANTAP! Jadwal dibikin dalam {waktu_komputasi:.2f} detik pakai Data Master Hari Asli!"
+            "message": f"JOSSS! Jadwal selesai dalam {waktu_komputasi:.2f} detik."
         }))
     else:
         print(json.dumps({
             "status": "INFEASIBLE", 
-            "message": f"Gagal menyusun (Waktu: {waktu_komputasi:.2f} detik). Pastiin data nggak bentrok."
+            "message": "Gagal menyusun. Cek kapasitas jam belajar di Master Hari."
         }))
 
 if __name__ == '__main__':
