@@ -40,12 +40,24 @@ def main():
         guru_hari_map[g['id']] = allowed_days
 
     # ==========================================
-    # 1. ATURAN KAPASITAS HARIAN (HARDCORE)
+    # LOGIKA ZEN: HITUNG SISA JAM JUMAT DARI AWAL
     # ==========================================
-    def get_max_jam(hari):
+    kelas_total_jp = {k['id']: 0 for k in kelass}
+    for t in raw_assignments:
+        kelas_total_jp[t['kelas_id']] += int(t['jumlah_jam'])
+
+    sisa_jumat_kelas = {}
+    for k in kelass:
+        k_id = k['id']
+        # Kalau total JP 46, sisa Jumat = 6. Maksimal tetap 10.
+        sisa = max(0, min(10, kelas_total_jp[k_id] - 40))
+        sisa_jumat_kelas[k_id] = sisa
+
+    # Aturan Kapasitas Harian
+    def get_max_jam(kelas_id, hari):
         if hari == 'Jumat':
-            return 8
-        return 10
+            return sisa_jumat_kelas[kelas_id] # Jumat dipotong sesuai sisa!
+        return 10 # Senin-Kamis 10 Full
 
     # ==========================================
     # 2. MEMBANGUN MODEL
@@ -79,13 +91,13 @@ def main():
         for h in hari_list:
             if h not in guru_hari_map[g_id]: continue 
 
-            batas_jam = get_max_jam(h)
+            batas_jam = get_max_jam(k_id, h)
             if durasi > batas_jam: continue
 
             max_start = batas_jam - durasi + 1
             if max_start < 1: continue
             
-            # Variabel Keputusan
+            # Variabel Keputusan (Jumat nggak akan bisa masuk ke slot 7-10 kalau sisa cuma 6)
             start_var = model.NewIntVar(1, max_start, f'start_{t_id}_{h}')
             end_var = model.NewIntVar(1 + durasi, batas_jam + 1, f'end_{t_id}_{h}')
             is_present = model.NewBoolVar(f'present_{t_id}_{h}')
@@ -119,32 +131,22 @@ def main():
             return
 
     # ==========================================
-    # 3. KENDALA HARGA MATI + DETEKTOR TOTAL JP
+    # 3. KENDALA HARGA MATI
     # ==========================================
     for k in kelass:
         k_id = k['id']
+        sisa_jumat = sisa_jumat_kelas[k_id]
         
-        # Hitung total Jam Pelajaran dari JSON untuk kelas ini
-        total_jp_kelas = sum([int(t['jumlah_jam']) for t in raw_assignments if t['kelas_id'] == k_id])
-        
-        # Validasi: Karena diwajibkan penuh 10-10-10-10-8, maka total JP WAJIB 48!
-        if total_jp_kelas != 48:
-            print(json.dumps({
-                "status": "ERROR", 
-                "message": f"GAGAL! Kelas dengan ID {k_id} memiliki total beban {total_jp_kelas} JP. Jadwal hardcore mewajibkan tepat 48 JP (Senin-Kamis 40 JP + Jumat 8 JP). Silakan sesuaikan jumlah jam mapel di database!"
-            }))
-            return
-
         for h in hari_list:
             beban_harian = durasi_per_kelas_harian[k_id][h]
             if not beban_harian: continue
             
             if h in ['Senin', 'Selasa', 'Rabu', 'Kamis']:
-                # WAJIB PAS 10 JP! NGGAK BOLEH KURANG ATAU LEBIH
+                # WAJIB PAS 10 JP! NGGAK BOLEH KURANG!
                 model.Add(sum(beban_harian) == 10)
             elif h == 'Jumat':
-                # WAJIB PAS 8 JP!
-                model.Add(sum(beban_harian) == 8)
+                # JUMAT WAJIB PAS SISA JP
+                model.Add(sum(beban_harian) == sisa_jumat)
 
     # ==========================================
     # 4. KENDALA DASAR (TIDAK BOLEH BENTROK)
@@ -174,8 +176,9 @@ def main():
                     model.AddAtMostOne(daily_presence)
 
     # ==========================================
-    # 5. EKSEKUSI PENCARIAN 
+    # 5. EKSEKUSI PENCARIAN (TANPA MAGNET!)
     # ==========================================
+    # Karena nggak ada "Minimize", loadingnya dijamin INSTAN banget!
     if all_start_vars:
         model.AddDecisionStrategy(all_start_vars, cp_model.CHOOSE_FIRST, cp_model.SELECT_MIN_VALUE)
 
@@ -202,12 +205,12 @@ def main():
         print(json.dumps({
             "status": "OPTIMAL",
             "solution": final_solution,
-            "message": f"MANTAP! Jadwal berhasil dibikin FULL PADAT (48 Jam) dalam {waktu_komputasi:.2f} detik!"
+            "message": f"MANTAP! Jadwal berhasil dibikin RATA KIRI dalam {waktu_komputasi:.2f} detik tanpa loading lama!"
         }))
     else:
         print(json.dumps({
             "status": "INFEASIBLE", 
-            "message": f"Gagal menyusun (Waktu: {waktu_komputasi:.2f} detik). Jadwal mentok. Periksa apakah ada kombinasi jam (misal 3 jam + 3 jam) yang mustahil dipaskan jadi 10/8 jam sehari."
+            "message": f"Gagal menyusun (Waktu: {waktu_komputasi:.2f} detik). Jadwal mentok."
         }))
 
 if __name__ == '__main__':
