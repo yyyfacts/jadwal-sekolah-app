@@ -126,20 +126,31 @@ class JadwalController extends Controller
             $slotMapping = [];
             $reverseSlotMapping = [];
 
-            $hariAktif = $dataHari->map(function ($hariObj) use (&$slotMapping, &$reverseSlotMapping) {
-                $teachingSlotCounter = 1;
-                foreach ($hariObj->waktuHaris as $w) {
-                    if ($w->tipe !== 'Tidak Ada' && !in_array($w->tipe, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
-                        $slotMapping[$hariObj->nama_hari][$teachingSlotCounter] = (int) $w->jam_ke;
-                        $reverseSlotMapping[$hariObj->nama_hari][(int) $w->jam_ke] = $teachingSlotCounter;
-                        $teachingSlotCounter++;
-                    }
-                }
-                return [
-                    'nama' => $hariObj->nama_hari,
-                    'max_jam' => $teachingSlotCounter - 1
-                ];
-            });
+            // ============================================================
+// GANTI BLOK INI (Sekitar Baris 113 di JadwalController lu)
+// ============================================================
+
+$hariAktif = $dataHari->map(function ($hariObj) use (&$slotMapping, &$reverseSlotMapping) {
+    $teachingSlotCounter = 1;
+    
+    // Ngitung jumlah slot yang tipenya 'Belajar' saja
+    $kapasitasBelajar = $hariObj->waktuHaris->where('tipe', 'Belajar')->count();
+
+    foreach ($hariObj->waktuHaris as $w) {
+        // Filter slot yang bisa dipakai mengajar (bukan istirahat/sholat)
+        if ($w->tipe !== 'Tidak Ada' && !in_array($w->tipe, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
+            $slotMapping[$hariObj->nama_hari][$teachingSlotCounter] = (int) $w->jam_ke;
+            $reverseSlotMapping[$hariObj->nama_hari][(int) $w->jam_ke] = $teachingSlotCounter;
+            $teachingSlotCounter++;
+        }
+    }
+
+    return [
+        'nama' => $hariObj->nama_hari,
+        'max_slot' => (int) $hariObj->max_jam, // Total slot di master hari (misal 13)
+        'kapasitas_belajar' => $kapasitasBelajar  // JUMLAH JAM BELAJAR ASLI (misal 10)
+    ];
+});
 
             $gurus = Guru::all()->map(function ($guru) {
                 return [
