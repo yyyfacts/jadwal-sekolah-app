@@ -26,7 +26,6 @@ def main():
     # Sortir balok durasi besar agar masuk duluan
     raw_assignments.sort(key=lambda x: int(x['jumlah_jam']), reverse=True)
 
-    # Ambil data mapel yang di-lock manual
     mapel_busy = {}
     for m in data.get('mapel_constraints', []):
         mapel_busy[m['id']] = m['waktu_kosong']
@@ -37,14 +36,18 @@ def main():
     hari_aktif_data = data.get('hari_aktif', [])
     
     hari_list = [h['nama'] for h in hari_aktif_data]
-    hari_max_jam = {h['nama']: int(h['max_jam']) for h in hari_aktif_data}
+    
+    # KITA PISAHKAN PENGGARIS (SLOT) DAN KAPASITAS BELAJAR (SKS)
+    # Gunakan .get() agar aman jika Laravel belum update field-nya
+    hari_max_slot = {h['nama']: int(h.get('max_slot', h.get('max_jam'))) for h in hari_aktif_data}
+    hari_kapasitas = {h['nama']: int(h.get('kapasitas_belajar', h.get('max_jam'))) for h in hari_aktif_data}
 
     # Pisahkan hari terakhir dan hari reguler
     hari_reguler = hari_list[:-1] if len(hari_list) > 1 else []
     hari_terakhir = hari_list[-1] if hari_list else None
     
-    # Total kapasitas murni dari Master Hari
-    kapasitas_reguler = sum(hari_max_jam[h] for h in hari_reguler)
+    # Kapasitas matematika SKS murni untuk Senin-Kamis
+    kapasitas_reguler = sum(hari_kapasitas[h] for h in hari_reguler)
 
     guru_hari_map = {}
     for g in gurus:
@@ -53,18 +56,21 @@ def main():
             allowed_days = hari_list
         guru_hari_map[g['id']] = allowed_days
 
-    # Hitung Total JP tiap kelas
     kelas_total_jp = {k['id']: 0 for k in kelass}
     for t in raw_assignments:
         kelas_total_jp[t['kelas_id']] += int(t['jumlah_jam'])
 
-    # Fungsi penentu batas jam yang dinamis (Matematika murni)
-    def get_max_jam_kelas(kelas_id, hari):
+    # Fungsi 1: Panjang Penggaris (Slot)
+    def get_max_slot_hari(hari):
+        return hari_max_slot[hari]
+
+    # Fungsi 2: Hitung Sisa SKS Matematika
+    def get_target_belajar_kelas(kelas_id, hari):
         if hari == hari_terakhir:
             sisa = kelas_total_jp[kelas_id] - kapasitas_reguler
             sisa = max(0, sisa)
-            return min(sisa, hari_max_jam[hari]) 
-        return hari_max_jam[hari]
+            return min(sisa, hari_kapasitas[hari]) 
+        return hari_kapasitas[hari]
 
     # ==========================================
     # 2. MEMBANGUN MODEL AI
@@ -100,20 +106,20 @@ def main():
         for h in hari_list:
             if h not in guru_hari_map[g_id]: continue 
 
-            # Ambil batas dinamis
-            batas_jam = get_max_jam_kelas(k_id, h)
+            # BATAS WADAH (PENGGARIS) ADALAH TOTAL SLOT (Misal 13)
+            batas_slot = get_max_slot_hari(h)
             
-            # --- ATURAN KHUSUS P J O K ---
+            # Khusus PJOK, penggarisnya dipotong jadi 8
             if 'PJOK' in nama_mapel or 'PENJAS' in nama_mapel or 'OLAHRAGA' in nama_mapel:
-                batas_jam = min(batas_jam, 8)
+                batas_slot = min(batas_slot, 8)
 
-            if durasi > batas_jam: continue
+            if durasi > batas_slot: continue
 
-            max_start = batas_jam - durasi + 1
+            max_start = batas_slot - durasi + 1
             if max_start < 1: continue
             
             start_var = model.NewIntVar(1, max_start, f'start_{t_id}_{h}')
-            end_var = model.NewIntVar(1 + durasi, batas_jam + 1, f'end_{t_id}_{h}')
+            end_var = model.NewIntVar(1 + durasi, batas_slot + 1, f'end_{t_id}_{h}')
             is_present = model.NewBoolVar(f'present_{t_id}_{h}')
             
             interval_var = model.NewOptionalIntervalVar(
@@ -135,7 +141,7 @@ def main():
                 for blocked in mapel_busy[m_id]:
                     if blocked['hari'] == h:
                         jam_blok = int(blocked['jam'])
-                        if jam_blok <= batas_jam:
+                        if jam_blok <= batas_slot:
                             blocked_interval = model.NewIntervalVar(jam_blok, 1, jam_blok + 1, f'block_{m_id}_{h}')
                             model.AddNoOverlap([interval_var, blocked_interval])
 
@@ -150,17 +156,13 @@ def main():
     # ==========================================
     for k in kelass:
         k_id = k['id']
-        sisa_hari_terakhir = max(0, kelas_total_jp[k_id] - kapasitas_reguler)
-        target_sisa = min(sisa_hari_terakhir, hari_max_jam[hari_terakhir]) if hari_terakhir else 0
-
         for h in hari_list:
             beban_harian = durasi_per_kelas_harian[k_id][h]
             if not beban_harian: continue
             
-            if h in hari_reguler:
-                model.Add(sum(beban_harian) == hari_max_jam[h])
-            elif h == hari_terakhir:
-                model.Add(sum(beban_harian) == target_sisa)
+            # Targetkan BEBAN BELAJAR murni (Misal 10), bukan panjang penggaris (13)
+            target_belajar = get_target_belajar_kelas(k_id, h)
+            model.Add(sum(beban_harian) == target_belajar)
 
     # ==========================================
     # 4. PEMERATAAN GURU
@@ -213,10 +215,10 @@ def main():
 
     solver = cp_model.CpSolver()
     
-    # TURUNIN PEKERJA BIAR RAM RENDER AMAN JAYA:
-    solver.parameters.num_search_workers = 1    
-    # BATASIN WAKTU BIAR GAK TIMEOUT:
-    solver.parameters.max_time_in_seconds = 90 
+    # PEKERJA 1 BIAR RAM RENDER AMAN:
+    solver.parameters.num_search_workers = 8  
+    # WAKTU 90 DETIK BIAR GAK TIMEOUT:
+    solver.parameters.max_time_in_seconds = 300
     
     status = solver.Solve(model)
     waktu_komputasi = time.time() - start_time  
@@ -237,12 +239,12 @@ def main():
         print(json.dumps({
             "status": "OPTIMAL",
             "solution": final_solution,
-            "message": f"BERHASIL! Jadwal selesai dalam {waktu_komputasi:.2f} detik. RAM Aman!"
+            "message": f"BERHASIL! Jadwal selesai dalam {waktu_komputasi:.2f} detik. Matematika Penggaris vs SKS Bekerja!"
         }))
     else:
         print(json.dumps({
             "status": "INFEASIBLE", 
-            "message": f"Gagal menyusun (Waktu: {waktu_komputasi:.2f} detik). Jadwal mentok (cek guru/PJOK)."
+            "message": f"Gagal menyusun (Waktu: {waktu_komputasi:.2f} detik). Cek kembali aturan Matematika lu."
         }))
 
 if __name__ == '__main__':
