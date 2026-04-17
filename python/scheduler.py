@@ -26,7 +26,7 @@ def main():
     # Sortir balok durasi besar agar masuk duluan
     raw_assignments.sort(key=lambda x: int(x['jumlah_jam']), reverse=True)
 
-    # Ambil data mapel yang di-lock manual (waktu sibuk)
+    # Ambil data mapel yang di-lock manual
     mapel_busy = {}
     for m in data.get('mapel_constraints', []):
         mapel_busy[m['id']] = m['waktu_kosong']
@@ -56,29 +56,51 @@ def main():
         return kelas_limits[kelas_id]['harian']
 
     # ==========================================
-    # LOGIKA BARU: HITUNG RATA-RATA JAM GURU DINAMIS
+    # LOGIKA BARU: RUMUS RENTANG MIN-MAX (ANTI NJOMPLANG)
     # ==========================================
     total_jam_guru = {g['id']: 0 for g in gurus}
+    max_block_guru = {g['id']: 0 for g in gurus}
+
     for t in raw_assignments:
         g_id = t['guru_id']
+        durasi = int(t['jumlah_jam'])
         if g_id in total_jam_guru:
-            total_jam_guru[g_id] += int(t['jumlah_jam'])
+            total_jam_guru[g_id] += durasi
+            if durasi > max_block_guru[g_id]:
+                max_block_guru[g_id] = durasi
 
     max_jam_dinamis = {}
+    min_jam_dinamis = {}
+
     for g in gurus:
         g_id = g['id']
         total_jam = total_jam_guru[g_id]
+        max_block = max_block_guru[g_id]
         
         hari_aktif_guru = g.get('hari_mengajar', [])
         jumlah_hari_aktif = len(hari_aktif_guru) if hari_aktif_guru else len(hari_list)
         
         if jumlah_hari_aktif > 0:
-            rata_rata = math.ceil(total_jam / jumlah_hari_aktif)
-            limit_final = rata_rata + 2 # Toleransi +1 jam agar jadwal tidak Infeasible
-        else:
-            limit_final = 0
+            rata_atas = math.ceil(total_jam / jumlah_hari_aktif)
+            rata_bawah = math.floor(total_jam / jumlah_hari_aktif)
             
-        max_jam_dinamis[g_id] = limit_final
+            # 1. BATAS MAKSIMAL (Tetap +2 agar Balok 3-Jam tidak bikin Crash)
+            # Pastikan maksimal tidak lebih kecil dari balok terbesar yang dia punya
+            limit_max = max(rata_atas + 2, max_block)
+            
+            # 2. BATAS MINIMAL (Ini obat agar jadwal diratakan ke kanan juga)
+            # Jika jamnya banyak, paksa setiap hari minimal terisi sekian jam.
+            if total_jam >= jumlah_hari_aktif * 3:
+                # Dikurangi 3 dari rata-rata agar solver masih punya ruang napas
+                limit_min = max(1, rata_bawah - 3) 
+            else:
+                limit_min = 0 # Kalau jam mengajarnya memang sedikit, bebas
+        else:
+            limit_max = 0
+            limit_min = 0
+            
+        max_jam_dinamis[g_id] = limit_max
+        min_jam_dinamis[g_id] = limit_min
 
     # ==========================================
     # 2. MEMBANGUN MODEL
@@ -91,7 +113,7 @@ def main():
     intervals_per_kelas = {k['id']: {h: [] for h in hari_list} for k in kelass}
     intervals_per_guru = {g['id']: {h: [] for h in hari_list} for g in gurus}
     durasi_per_kelas_harian = {k['id']: {h: [] for h in hari_list} for k in kelass}
-    durasi_per_guru_harian = {g['id']: {h: [] for h in hari_list} for g in gurus} # Tracker Guru
+    durasi_per_guru_harian = {g['id']: {h: [] for h in hari_list} for g in gurus} 
     
     tasks_per_mapel_group = {} 
     tasks_metadata = []
@@ -102,7 +124,7 @@ def main():
         
         t_id, g_id, k_id = t['id'], t['guru_id'], t['kelas_id']
         m_id = t.get('mapel_id')
-        batas_maks_jam = t.get('batas_maksimal_jam') # Ambil batas jam dari JSON
+        batas_maks_jam = t.get('batas_maksimal_jam') 
         
         tasks_metadata.append({'id': t_id})
 
@@ -120,7 +142,6 @@ def main():
             max_start = batas_jam - durasi + 1
             if max_start < 1: continue
             
-            # Variabel Keputusan
             start_var = model.NewIntVar(1, max_start, f'start_{t_id}_{h}')
             end_var = model.NewIntVar(1 + durasi, batas_jam + 1, f'end_{t_id}_{h}')
             is_present = model.NewBoolVar(f'present_{t_id}_{h}')
@@ -129,7 +150,6 @@ def main():
                 start_var, durasi, end_var, is_present, f'interval_{t_id}_{h}'
             )
 
-            # [KENDALA BARU] Batas maksimal jam mapel (contoh: PJOK)
             if batas_maks_jam is not None:
                 model.Add(end_var <= int(batas_maks_jam) + 1).OnlyEnforceIf(is_present)
 
@@ -141,9 +161,8 @@ def main():
             intervals_per_kelas[k_id][h].append(interval_var)
             intervals_per_guru[g_id][h].append(interval_var)
             durasi_per_kelas_harian[k_id][h].append(is_present * durasi)
-            durasi_per_guru_harian[g_id][h].append(is_present * durasi) # Simpan ke tracker guru
+            durasi_per_guru_harian[g_id][h].append(is_present * durasi) 
 
-            # Blokir manual mapel
             if m_id in mapel_busy:
                 for blocked in mapel_busy[m_id]:
                     if blocked['hari'] == h:
@@ -159,7 +178,7 @@ def main():
             return
 
     # ==========================================
-    # 3. KENDALA HARGA MATI
+    # 3. KENDALA HARGA MATI (KELAS)
     # ==========================================
     for k in kelass:
         k_id = k['id']
@@ -176,16 +195,28 @@ def main():
                 model.Add(sum(beban_harian) == batas_jumat)
 
     # ==========================================
-    # 3.5 KENDALA BEBAN HARIAN GURU (DINAMIS)
+    # 3.5 KENDALA RENTANG JAM GURU (ANTI NJOMPLANG)
     # ==========================================
     for g in gurus:
         g_id = g['id']
-        batas_harian_guru = max_jam_dinamis[g_id]
+        batas_atas = max_jam_dinamis[g_id]
+        batas_bawah = min_jam_dinamis[g_id]
+        
+        hari_aktif = guru_hari_map[g_id]
         
         for h in hari_list:
             beban_guru = durasi_per_guru_harian[g_id][h]
             if beban_guru:
-                model.Add(sum(beban_guru) <= batas_harian_guru)
+                # 1. Tahan atasnya agar tidak overwork
+                model.Add(sum(beban_guru) <= batas_atas)
+                
+                # 2. Tahan bawahnya agar jadwal merata
+                if h in hari_aktif and batas_bawah > 0:
+                    if h == 'Jumat':
+                        # Jumat biasanya pendek, beri diskon minimum 1 jam
+                        model.Add(sum(beban_guru) >= max(1, batas_bawah - 1))
+                    else:
+                        model.Add(sum(beban_guru) >= batas_bawah)
 
     # ==========================================
     # 4. KENDALA DASAR (TIDAK BOLEH BENTROK)
