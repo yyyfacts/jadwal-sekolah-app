@@ -56,53 +56,6 @@ def main():
         return kelas_limits[kelas_id]['harian']
 
     # ==========================================
-    # LOGIKA BARU: RUMUS RENTANG MIN-MAX (ANTI NJOMPLANG)
-    # ==========================================
-    total_jam_guru = {g['id']: 0 for g in gurus}
-    max_block_guru = {g['id']: 0 for g in gurus}
-
-    for t in raw_assignments:
-        g_id = t['guru_id']
-        durasi = int(t['jumlah_jam'])
-        if g_id in total_jam_guru:
-            total_jam_guru[g_id] += durasi
-            if durasi > max_block_guru[g_id]:
-                max_block_guru[g_id] = durasi
-
-    max_jam_dinamis = {}
-    min_jam_dinamis = {}
-
-    for g in gurus:
-        g_id = g['id']
-        total_jam = total_jam_guru[g_id]
-        max_block = max_block_guru[g_id]
-        
-        hari_aktif_guru = g.get('hari_mengajar', [])
-        jumlah_hari_aktif = len(hari_aktif_guru) if hari_aktif_guru else len(hari_list)
-        
-        if jumlah_hari_aktif > 0:
-            rata_atas = math.ceil(total_jam / jumlah_hari_aktif)
-            rata_bawah = math.floor(total_jam / jumlah_hari_aktif)
-            
-            # 1. BATAS MAKSIMAL (Tetap +2 agar Balok 3-Jam tidak bikin Crash)
-            # Pastikan maksimal tidak lebih kecil dari balok terbesar yang dia punya
-            limit_max = max(rata_atas + 1, max_block)
-            
-            # 2. BATAS MINIMAL (Ini obat agar jadwal diratakan ke kanan juga)
-            # Jika jamnya banyak, paksa setiap hari minimal terisi sekian jam.
-            if total_jam >= jumlah_hari_aktif * 3:
-                # Dikurangi 3 dari rata-rata agar solver masih punya ruang napas
-                limit_min = max(1, rata_bawah - 1) 
-            else:
-                limit_min = 0 # Kalau jam mengajarnya memang sedikit, bebas
-        else:
-            limit_max = 0
-            limit_min = 0
-            
-        max_jam_dinamis[g_id] = limit_max
-        min_jam_dinamis[g_id] = limit_min
-
-    # ==========================================
     # 2. MEMBANGUN MODEL
     # ==========================================
     model = cp_model.CpModel()
@@ -195,28 +148,40 @@ def main():
                 model.Add(sum(beban_harian) == batas_jumat)
 
     # ==========================================
-    # 3.5 KENDALA RENTANG JAM GURU (ANTI NJOMPLANG)
+    # 3.5 AUTO-BALANCING: PEMERATAAN BEBAN GURU (ANTI CRASH)
     # ==========================================
+    total_selisih_beban = []
+
     for g in gurus:
         g_id = g['id']
-        batas_atas = max_jam_dinamis[g_id]
-        batas_bawah = min_jam_dinamis[g_id]
-        
         hari_aktif = guru_hari_map[g_id]
         
-        for h in hari_list:
-            beban_guru = durasi_per_guru_harian[g_id][h]
-            if beban_guru:
-                # 1. Tahan atasnya agar tidak overwork
-                model.Add(sum(beban_guru) <= batas_atas)
-                
-                # 2. Tahan bawahnya agar jadwal merata
-                if h in hari_aktif and batas_bawah > 0:
-                    if h == 'Jumat':
-                        # Jumat biasanya pendek, beri diskon minimum 1 jam
-                        model.Add(sum(beban_guru) >= max(1, batas_bawah - 1))
-                    else:
-                        model.Add(sum(beban_guru) >= batas_bawah)
+        # Kumpulkan variabel total jam per hari untuk guru ini
+        beban_harian_vars = []
+        for h in hari_aktif:
+            beban_harian = durasi_per_guru_harian[g_id][h]
+            if beban_harian:
+                # Maksimal 15 jam diset sebagai batas aman nalar logika harian
+                total_hari_ini = model.NewIntVar(0, 15, f'total_{g_id}_{h}')
+                model.Add(total_hari_ini == sum(beban_harian))
+                beban_harian_vars.append(total_hari_ini)
+        
+        if beban_harian_vars:
+            # Cari hari paling padat dan paling santai
+            max_load_guru = model.NewIntVar(0, 15, f'max_load_{g_id}')
+            min_load_guru = model.NewIntVar(0, 15, f'min_load_{g_id}')
+            
+            model.AddMaxEquality(max_load_guru, beban_harian_vars)
+            model.AddMinEquality(min_load_guru, beban_harian_vars)
+            
+            # Hitung gap/selisih kemiringan jadwal
+            selisih = model.NewIntVar(0, 15, f'selisih_{g_id}')
+            model.Add(selisih == max_load_guru - min_load_guru)
+            total_selisih_beban.append(selisih)
+
+    # Meminta solver mencari kombinasi dengan total selisih terkecil
+    if total_selisih_beban:
+        model.Minimize(sum(total_selisih_beban))
 
     # ==========================================
     # 4. KENDALA DASAR (TIDAK BOLEH BENTROK)
@@ -274,7 +239,7 @@ def main():
         print(json.dumps({
             "status": "OPTIMAL",
             "solution": final_solution,
-            "message": f"MANTAP! Jadwal berhasil dibikin RATA KIRI dalam {waktu_komputasi:.2f} detik!"
+            "message": f"MANTAP! Jadwal otomatis diratakan dalam {waktu_komputasi:.2f} detik!"
         }))
     else:
         print(json.dumps({
