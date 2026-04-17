@@ -57,10 +57,12 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-           'options' => extension_loaded('pdo_mysql') ? [
-                // Ini ngasih tau: Kalau di Render baca /etc/ssl, kalau di laptop baca folder certs
-               PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
-            ] : [],
+           'options' => [
+        // Ini kuncinya: Paksa pakai SSL sistem Railway
+        PDO::MYSQL_ATTR_SSL_CA => '/etc/ssl/certs/ca-certificates.crt',
+        // Matikan verifikasi host kalau masih rewel
+        PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
+    ],
         ],
 
         'mariadb' => [
