@@ -90,7 +90,7 @@ def main():
             # LANTAI: Toleransi -2 (Aman dari njomplang)
             # Jika jam gurunya banyak, kita paksa minimal harinya terisi.
             if total_jam >= jumlah_hari_aktif * 2:
-                limit_min = max(1, rata_bawah - 2)
+                limit_min = max(1, rata_bawah - 1)
             else:
                 limit_min = 0 # Biarkan kosong jika jamnya memang sedikit banget
         else:
