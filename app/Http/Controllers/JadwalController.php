@@ -154,7 +154,7 @@ class JadwalController extends Controller
                 return [
                     'id' => $guru->id,
                     'nama' => $guru->nama_guru,
-                    'hari_mengajar' => $guru->hari_mengajar ? json_decode($guru->hari_mengajar, true) : [],
+                    'hari_mengajar' => $guru->hari_mengajar ?? [],
                 ];
             });
 
