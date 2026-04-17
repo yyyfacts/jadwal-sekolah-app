@@ -41,9 +41,8 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
         $dataWaktu = WaktuHari::select('jam_ke')->distinct()->orderBy('jam_ke')->get();
         $maxJam = WaktuHari::max('jam_ke');
 
-        $rawJadwals = Jadwal::with(['guru', 'mapel', 'kelas'])
-           ->with(['masterHari']) // <--- Pastikan bawa relasinya juga
-            ->whereNotNull('master_hari_id') // <--- Ganti 'hari' jadi 'master_hari_id'
+        $rawJadwals = Jadwal::with(['guru', 'mapel', 'kelas', 'masterHari']) 
+            ->whereNotNull('hari_id') // <--- Kembalikan ke 'hari_id' (sesuai database lu)
             ->whereNotNull('jam')
             ->where(function($q) {
                 $q->where('status', 'offline')->orWhereNull('status');
@@ -74,7 +73,8 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
             foreach ($hariObj->waktuHaris as $waktuObj) {
                 $tipeSlot = $waktuObj->tipe;
 
-                if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']) && $tipeSlot !== 'Tidak Ada') {
+                // --- 👇 FIX UTAMA: 'Sholat' ditambahkan biar sinkron sama Web View 👇 ---
+                if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']) && $tipeSlot !== 'Tidak Ada') {
                     if ($waktuObj->jam_ke !== null) {
                         $belajarSlots[$namaHari][] = $waktuObj->jam_ke;
                     }
@@ -85,7 +85,7 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
         // 3. MASUKKAN JADWAL HASIL GENERATE
         foreach ($rawJadwals as $row) {
             $durasi = $row->jumlah_jam;
-           $hari = $row->masterHari->nama_hari ?? null;
+            $hari = $row->masterHari->nama_hari ?? null;
             $jamMulaiFisik = $row->jam;
 
             $slotsTersedia = $belajarSlots[$hari] ?? [];
