@@ -25,15 +25,15 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
         $this->judulTahun = $judulTahun;
     }
 
-    public function view(): View
+   public function view(): View
     {
         $kelass = Kelas::with('waliKelas')->orderBy('nama_kelas')->get();
         $gurus = Guru::orderBy('kode_guru')->get();
         $mapels = Mapel::orderBy('kode_mapel')->get();
 
-        // Tarik data Hari beserta WaktuHari-nya
+        // --- 👇 FIX UTAMA: Filter 'Tidak Ada' biar baris 9 & 10 yang kosong gak ikut ke-Export 👇 ---
         $dataHari = MasterHari::with(['waktuHaris' => function($q) {
-            $q->orderBy('waktu_mulai');
+            $q->where('tipe', '!=', 'Tidak Ada')->orderBy('waktu_mulai');
         }])->where('is_active', true)->get();
         
         $hariList = $dataHari->pluck('nama_hari')->toArray();
@@ -62,7 +62,7 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
             }
         }
 
-        // 2. MAPPING SLOT BELAJAR (Persis sama kayak Web)
+        // 2. MAPPING SLOT BELAJAR 
         $belajarSlots = [];
         foreach ($dataHari as $hariObj) {
             $namaHari = $hariObj->nama_hari;
@@ -79,18 +79,16 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
             }
         }
 
-        // 3. MAPPING ID HARI KE NAMA HARI (Biar nggak miss data)
+        // 3. MAPPING ID HARI KE NAMA HARI
         $hariMap = MasterHari::pluck('nama_hari', 'id')->toArray();
 
         // 4. MASUKKAN JADWAL HASIL GENERATE
         foreach ($rawJadwals as $row) {
             $durasi = $row->jumlah_jam;
             
-            // Pake logika mapping ID angka ke Teks, persis kayak di Web
             $hari_id_angka = $row->hari_id;
             $hari = $hariMap[$hari_id_angka] ?? null; 
 
-            // Kalau harinya kosong/nggak valid, skip
             if (!$hari) continue;
 
             $jamMulaiFisik = $row->jam; 
