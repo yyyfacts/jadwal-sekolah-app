@@ -184,7 +184,7 @@ class JadwalController extends Controller
             ];
 
             // ==== TAMBAHKAN KODE INI SEMENTARA ====
-            return response()->json($dataInput);
+          //  return response()->json($dataInput);
             // ======================================
 
             $jsonPath = storage_path('app/input_solver.json');

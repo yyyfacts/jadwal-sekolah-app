@@ -40,24 +40,21 @@ def main():
         guru_hari_map[g['id']] = allowed_days
 
     # ==========================================
-    # LOGIKA ZEN: HITUNG SISA JAM JUMAT DARI AWAL
+    # LOGIKA ZEN (UPDATE): BACA LIMIT LANGSUNG DARI JSON
     # ==========================================
-    kelas_total_jp = {k['id']: 0 for k in kelass}
-    for t in raw_assignments:
-        kelas_total_jp[t['kelas_id']] += int(t['jumlah_jam'])
-
-    sisa_jumat_kelas = {}
-    for k in kelass:
-        k_id = k['id']
-        # Kalau total JP 46, sisa Jumat = 6. Maksimal tetap 10.
-        sisa = max(0, min(10, kelas_total_jp[k_id] - 40))
-        sisa_jumat_kelas[k_id] = sisa
+    # Bikin map limit dari data kelas supaya presisi sesuai JSON
+    kelas_limits = {
+        k['id']: {
+            'harian': k.get('limit_harian', 10),
+            'jumat': k.get('limit_jumat', 8)
+        } for k in kelass
+    }
 
     # Aturan Kapasitas Harian
     def get_max_jam(kelas_id, hari):
         if hari == 'Jumat':
-            return sisa_jumat_kelas[kelas_id] # Jumat dipotong sesuai sisa!
-        return 10 # Senin-Kamis 10 Full
+            return kelas_limits[kelas_id]['jumat']
+        return kelas_limits[kelas_id]['harian']
 
     # ==========================================
     # 2. MEMBANGUN MODEL
@@ -97,7 +94,7 @@ def main():
             max_start = batas_jam - durasi + 1
             if max_start < 1: continue
             
-            # Variabel Keputusan (Jumat nggak akan bisa masuk ke slot 7-10 kalau sisa cuma 6)
+            # Variabel Keputusan
             start_var = model.NewIntVar(1, max_start, f'start_{t_id}_{h}')
             end_var = model.NewIntVar(1 + durasi, batas_jam + 1, f'end_{t_id}_{h}')
             is_present = model.NewBoolVar(f'present_{t_id}_{h}')
@@ -135,18 +132,19 @@ def main():
     # ==========================================
     for k in kelass:
         k_id = k['id']
-        sisa_jumat = sisa_jumat_kelas[k_id]
+        batas_jumat = kelas_limits[k_id]['jumat']
+        batas_harian = kelas_limits[k_id]['harian']
         
         for h in hari_list:
             beban_harian = durasi_per_kelas_harian[k_id][h]
             if not beban_harian: continue
             
             if h in ['Senin', 'Selasa', 'Rabu', 'Kamis']:
-                # WAJIB PAS 10 JP! NGGAK BOLEH KURANG!
-                model.Add(sum(beban_harian) == 10)
+                # WAJIB PAS limit harian JSON (biasanya 10)
+                model.Add(sum(beban_harian) == batas_harian)
             elif h == 'Jumat':
-                # JUMAT WAJIB PAS SISA JP
-                model.Add(sum(beban_harian) == sisa_jumat)
+                # JUMAT WAJIB PAS limit jumat JSON (bisa 8, 7, atau 6)
+                model.Add(sum(beban_harian) == batas_jumat)
 
     # ==========================================
     # 4. KENDALA DASAR (TIDAK BOLEH BENTROK)
@@ -176,9 +174,8 @@ def main():
                     model.AddAtMostOne(daily_presence)
 
     # ==========================================
-    # 5. EKSEKUSI PENCARIAN (TANPA MAGNET!)
+    # 5. EKSEKUSI PENCARIAN
     # ==========================================
-    # Karena nggak ada "Minimize", loadingnya dijamin INSTAN banget!
     if all_start_vars:
         model.AddDecisionStrategy(all_start_vars, cp_model.CHOOSE_FIRST, cp_model.SELECT_MIN_VALUE)
 
@@ -205,7 +202,7 @@ def main():
         print(json.dumps({
             "status": "OPTIMAL",
             "solution": final_solution,
-            "message": f"MANTAP! Jadwal berhasil dibikin RATA KIRI dalam {waktu_komputasi:.2f} detik tanpa loading lama!"
+            "message": f"MANTAP! Jadwal berhasil dibikin RATA KIRI dalam {waktu_komputasi:.2f} detik!"
         }))
     else:
         print(json.dumps({
