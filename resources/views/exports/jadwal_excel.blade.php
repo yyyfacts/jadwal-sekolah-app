@@ -65,13 +65,14 @@
 
         @foreach($hariList as $hari)
         @php
-        $maxJam = 10;
+        // --- FIX NYA DI SINI: Kalau Jumat, mentok di jam ke-8 ---
+        $maxJam = ($hari == 'Jumat') ? 8 : 10;
         $startJam = ($hari == 'Senin' || $hari == 'Jumat') ? 0 : 1;
 
         // Hitung Rowspan: Jumlah jam + Jumlah istirahat
         $rowCount = ($maxJam - $startJam + 1);
         if($hari != 'Jumat') {
-        $rowCount += 2; // Ditambah 1 baris untuk istirahat (Senin-Kamis)
+        $rowCount += 2; // Ditambah 2 baris untuk istirahat (Senin-Kamis)
         }
         @endphp
 
@@ -139,6 +140,7 @@
                     <td style="border: none;"></td>
                     <td style="border: none;"></td>
                     @endif
+
                     @php $idxLegenda++; @endphp
                     </tr>
 
@@ -148,13 +150,16 @@
                         {{-- HARI sudah di rowspan, jadi tidak perlu TD --}}
                         <td
                             style="border: 1px solid #000000; background-color: #808080; color: #ffffff; text-align: center; vertical-align: middle;">
-                            IST</td>
+                            IST
+                        </td>
                         <td
                             style="border: 1px solid #000000; background-color: #808080; color: #ffffff; text-align: center; vertical-align: middle;">
-                            {{ $jam==4 ? '10.30-10.45' : '13.30-13.50' }}</td>
+                            {{ $jam==4 ? '10.30-10.45' : '13.30-13.50' }}
+                        </td>
                         <td colspan="{{ $kelass->count() }}"
                             style="border: 1px solid #000000; background-color: #808080; color: #ffffff; text-align: center; font-weight: bold; letter-spacing: 5px; vertical-align: middle;">
-                            ISTIRAHAT</td>
+                            ISTIRAHAT
+                        </td>
 
                         {{-- LEGENDA TETAP LANJUT DI BARIS ISTIRAHAT --}}
                         <td style="background-color: #ffffff;"></td>
@@ -176,6 +181,7 @@
                                 <td style="border: none;"></td>
                                 <td style="border: none;"></td>
                                 @endif
+
                                 @php $idxLegenda++; @endphp
                     </tr>
                     @endif
@@ -198,6 +204,7 @@
                     @while($idxLegenda < $mapelCount || $idxLegenda < $guruCount) <tr>
                         <td colspan="{{ 3 + $kelass->count() }}" style="border: none;"></td>
                         <td style="background-color: #ffffff;"></td>
+
                         @if($idxLegenda < $mapelCount) <td style="border: 1px solid #000000; text-align: center;">
                             {{ $mapels[$idxLegenda]->kode_mapel }}</td>
                             <td style="border: 1px solid #000000; text-align: left;">
@@ -208,6 +215,7 @@
                             @endif
 
                             <td style="background-color: #ffffff;"></td>
+
                             @if($idxLegenda < $guruCount) <td style="border: 1px solid #000000; text-align: center;">
                                 {{ $gurus[$idxLegenda]->kode_guru }}</td>
                                 <td style="border: 1px solid #000000; text-align: left;">
@@ -216,6 +224,7 @@
                                 <td style="border: none;"></td>
                                 <td style="border: none;"></td>
                                 @endif
+
                                 @php $idxLegenda++; @endphp
                                 </tr>
                                 @endwhile
