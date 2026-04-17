@@ -40,7 +40,7 @@ class JadwalController extends Controller
         $kelass = $reqKelas ? Kelas::with('waliKelas')->where('id', $reqKelas)->orderBy('nama_kelas')->get() : Kelas::with('waliKelas')->orderBy('nama_kelas')->get();
 
         $query = Jadwal::with(['guru', 'mapel', 'kelas'])
-            ->whereNotNull('hari')->whereNotNull('jam')
+            ->whereNotNull('hari_id')->whereNotNull('jam')
             ->where(function($q) {
                 $q->where('status', 'offline')->orWhereNull('status');
             });
@@ -80,7 +80,7 @@ class JadwalController extends Controller
 
         foreach ($rawJadwals as $row) {
             $durasi = $row->jumlah_jam;
-            $hari = $row->hari;
+            $hari = $row->hari_id;
             $jamMulaiFisik = $row->jam; 
             
             $slotsTersedia = $belajarSlots[$hari] ?? [];
@@ -207,7 +207,7 @@ class JadwalController extends Controller
                         
                         $pSlot = $slotMapping[$hari][$tSlot] ?? $tSlot; 
 
-                        DB::table('jadwals')->where('id', $item['id'])->update([ 'hari' => $hari, 'jam' => $pSlot, 'updated_at' => now() ]);
+                        DB::table('jadwals')->where('id', $item['id'])->update([ 'hari_id' => $hari, 'jam' => $pSlot, 'updated_at' => now() ]);
                     }
                     DB::commit();
                     return redirect()->route('jadwal.index')->with('success', $result['message'])->with('waktu_komputasi', $result['waktu_komputasi_detik'] ?? null);
