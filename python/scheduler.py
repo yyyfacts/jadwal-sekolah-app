@@ -191,8 +191,8 @@ def main():
         model.AddDecisionStrategy(all_start_vars, cp_model.CHOOSE_FIRST, cp_model.SELECT_MIN_VALUE)
 
     solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = 300 
-    solver.parameters.num_search_workers = 8    
+    solver.parameters.max_time_in_seconds = 200 
+    solver.parameters.num_search_workers = 1    
     
     status = solver.Solve(model)
     waktu_komputasi = time.time() - start_time  
