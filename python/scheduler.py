@@ -32,6 +32,20 @@ def main():
 
     hari_list = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']
 
+    # ==========================================
+    # LOGIKA BARU: BACA TOTAL JAM BELAJAR DARI MASTER HARI LARAVEL!
+    # ==========================================
+    hari_aktif_data = data.get('hari_aktif', [])
+    
+    # Bikin kamus (dictionary) yang isinya ngambil 'max_jam' langsung dari database lu
+    # Contoh isi: {'Senin': 10, 'Selasa': 10, 'Rabu': 10, 'Kamis': 10, 'Jumat': 8}
+    jam_belajar_master = {h['nama']: int(h['max_jam']) for h in hari_aktif_data}
+
+    # Hitung total kapasitas jam belajar Senin sampai Kamis (buat pengurang matematika)
+    hari_reguler = hari_list[:-1] # Senin - Kamis
+    hari_terakhir = hari_list[-1] # Jumat
+    kapasitas_senin_kamis = sum(jam_belajar_master.get(h, 10) for h in hari_reguler)
+
     guru_hari_map = {}
     for g in gurus:
         allowed_days = g.get('hari_mengajar', [])
@@ -40,7 +54,7 @@ def main():
         guru_hari_map[g['id']] = allowed_days
 
     # ==========================================
-    # LOGIKA ZEN: HITUNG SISA JAM JUMAT DARI AWAL
+    # MATEMATIKA MENGHITUNG SISA SKS JUMAT
     # ==========================================
     kelas_total_jp = {k['id']: 0 for k in kelass}
     for t in raw_assignments:
@@ -49,15 +63,20 @@ def main():
     sisa_jumat_kelas = {}
     for k in kelass:
         k_id = k['id']
-        # Kalau total JP 46, sisa Jumat = 6. Maksimal tetap 10.
-        sisa = max(0, min(10, kelas_total_jp[k_id] - 40))
-        sisa_jumat_kelas[k_id] = sisa
+        # MATEMATIKA: Sisa = Total SKS Kelas dikurangi kapasitas Senin-Kamis
+        sisa = kelas_total_jp[k_id] - kapasitas_senin_kamis
+        
+        # Sisa nggak boleh minus, dan NGGAK BOLEH lebih dari jam belajar Jumat di Master Hari
+        limit_jumat_di_master = jam_belajar_master.get(hari_terakhir, 8)
+        sisa_jumat_kelas[k_id] = max(0, min(limit_jumat_di_master, sisa))
 
-    # Aturan Kapasitas Harian
+    # Aturan Kapasitas Harian (Dinamis banget ngikutin Laravel)
     def get_max_jam(kelas_id, hari):
-        if hari == 'Jumat':
+        if hari == hari_terakhir:
             return sisa_jumat_kelas[kelas_id] # Jumat dipotong sesuai sisa!
-        return 10 # Senin-Kamis 10 Full
+        
+        # Kalau Senin-Kamis, ambil kapasitas dari Master Hari (Misal 10)
+        return jam_belajar_master.get(hari, 10) 
 
     # ==========================================
     # 2. MEMBANGUN MODEL
@@ -97,7 +116,6 @@ def main():
             max_start = batas_jam - durasi + 1
             if max_start < 1: continue
             
-            # Variabel Keputusan (Jumat nggak akan bisa masuk ke slot 7-10 kalau sisa cuma 6)
             start_var = model.NewIntVar(1, max_start, f'start_{t_id}_{h}')
             end_var = model.NewIntVar(1 + durasi, batas_jam + 1, f'end_{t_id}_{h}')
             is_present = model.NewBoolVar(f'present_{t_id}_{h}')
@@ -115,7 +133,6 @@ def main():
             intervals_per_guru[g_id][h].append(interval_var)
             durasi_per_kelas_harian[k_id][h].append(is_present * durasi)
 
-            # Blokir manual mapel
             if m_id in mapel_busy:
                 for blocked in mapel_busy[m_id]:
                     if blocked['hari'] == h:
@@ -131,7 +148,7 @@ def main():
             return
 
     # ==========================================
-    # 3. KENDALA HARGA MATI
+    # 3. KENDALA HARGA MATI (MEMAKAI MATEMATIKA DARI MASTER HARI)
     # ==========================================
     for k in kelass:
         k_id = k['id']
@@ -141,10 +158,11 @@ def main():
             beban_harian = durasi_per_kelas_harian[k_id][h]
             if not beban_harian: continue
             
-            if h in ['Senin', 'Selasa', 'Rabu', 'Kamis']:
-                # WAJIB PAS 10 JP! NGGAK BOLEH KURANG!
-                model.Add(sum(beban_harian) == 10)
-            elif h == 'Jumat':
+            if h in hari_reguler:
+                # WAJIB PAS DENGAN TARGET MASTER HARI! (Misal Master Hari 10, ya 10)
+                target_hari_ini = jam_belajar_master.get(h, 10)
+                model.Add(sum(beban_harian) == target_hari_ini)
+            elif h == hari_terakhir:
                 # JUMAT WAJIB PAS SISA JP
                 model.Add(sum(beban_harian) == sisa_jumat)
 
@@ -176,15 +194,15 @@ def main():
                     model.AddAtMostOne(daily_presence)
 
     # ==========================================
-    # 5. EKSEKUSI PENCARIAN (TANPA MAGNET!)
+    # 5. EKSEKUSI PENCARIAN (CEPAT & AMAN RAM)
     # ==========================================
-    # Karena nggak ada "Minimize", loadingnya dijamin INSTAN banget!
     if all_start_vars:
         model.AddDecisionStrategy(all_start_vars, cp_model.CHOOSE_FIRST, cp_model.SELECT_MIN_VALUE)
 
     solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = 300 
-    solver.parameters.num_search_workers = 8    
+    # Pekerja gue turunin 1 biar server Render lu nggak meledak lagi ya
+    solver.parameters.max_time_in_seconds = 90 
+    solver.parameters.num_search_workers = 1    
     
     status = solver.Solve(model)
     waktu_komputasi = time.time() - start_time  
@@ -205,12 +223,12 @@ def main():
         print(json.dumps({
             "status": "OPTIMAL",
             "solution": final_solution,
-            "message": f"MANTAP! Jadwal berhasil dibikin RATA KIRI dalam {waktu_komputasi:.2f} detik tanpa loading lama!"
+            "message": f"MANTAP! Jadwal dibikin dalam {waktu_komputasi:.2f} detik pakai Data Master Hari Asli!"
         }))
     else:
         print(json.dumps({
             "status": "INFEASIBLE", 
-            "message": f"Gagal menyusun (Waktu: {waktu_komputasi:.2f} detik). Jadwal mentok."
+            "message": f"Gagal menyusun (Waktu: {waktu_komputasi:.2f} detik). Pastiin data nggak bentrok."
         }))
 
 if __name__ == '__main__':
