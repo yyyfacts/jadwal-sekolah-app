@@ -110,11 +110,10 @@
             @foreach($kelass as $kelas)
             @php $data = $jadwals[$kelas->id][$hari][$jam] ?? null; @endphp
             @if($data)
-            {{-- Menggunakan Null Coalescing (??) agar tidak error jika key tidak ada --}}
+            {{-- Menggunakan Null Coalescing (??) dan format sebaris Mapel-Guru --}}
             <td
-                style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-weight: bold; font-size: 10px; background-color: #{{ isset($data['color']) && $data['color'] != 'ffffff' ? 'd9e1f2' : 'ffffff' }}">
-                {{ $data['kode_mapel'] ?? '-' }}<br>
-                <span style="font-size: 8px; color: #555;">{{ $data['kode_guru'] ?? '-' }}</span>
+                style="border: 1px solid #000000; text-align: center; vertical-align: middle; font-weight: bold; font-size: 10px; background-color: #ffffff;">
+                {{ isset($data['kode_mapel']) && isset($data['kode_guru']) ? $data['kode_mapel'] . '-' . $data['kode_guru'] : '-' }}
             </td>
             @else
             <td style="border: 1px solid #000000; background-color: #ffffff;"></td>
@@ -200,7 +199,45 @@
                     </tr>
                     @endforeach
 
-                    {{-- SISA LEGENDA JIKA MASIH ADA DATA TAPI BARIS JADWAL SUDAH HABIS --}}
+                    {{-- BARIS TAMBAHAN UNTUK WALI KELAS --}}
+                    <tr height="30">
+                        <td colspan="3"
+                            style="border: 1px solid #000000; background-color: #ffffff; color: #000000; font-weight: bold; text-align: center; vertical-align: middle; font-size: 12px;">
+                            WALI KELAS
+                        </td>
+
+                        @foreach($kelass as $kelas)
+                        <td
+                            style="border: 1px solid #000000; background-color: #ffffff; color: #000000; font-weight: bold; text-align: center; vertical-align: middle; font-size: 10px;">
+                            {{ $kelas->waliKelas->kode_guru ?? '-' }}
+                        </td>
+                        @endforeach
+
+                        {{-- LEGENDA TETAP BERJALAN JIKA ADA SISA --}}
+                        <td style="background-color: #ffffff;"></td>
+                        @if($idxLegenda < $mapelCount) <td style="border: 1px solid #000000; text-align: center;">
+                            {{ $mapels[$idxLegenda]->kode_mapel }}</td>
+                            <td style="border: 1px solid #000000; text-align: left;">
+                                {{ $mapels[$idxLegenda]->nama_mapel }}</td>
+                            @else
+                            <td style="border: none;"></td>
+                            <td style="border: none;"></td>
+                            @endif
+
+                            <td style="background-color: #ffffff;"></td>
+                            @if($idxLegenda < $guruCount) <td style="border: 1px solid #000000; text-align: center;">
+                                {{ $gurus[$idxLegenda]->kode_guru }}</td>
+                                <td style="border: 1px solid #000000; text-align: left;">
+                                    {{ $gurus[$idxLegenda]->nama_guru }}</td>
+                                @else
+                                <td style="border: none;"></td>
+                                <td style="border: none;"></td>
+                                @endif
+
+                                @php $idxLegenda++; @endphp
+                    </tr>
+
+                    {{-- SISA LEGENDA JIKA MASIH ADA DATA TAPI BARIS JADWAL & WALI KELAS SUDAH HABIS --}}
                     @while($idxLegenda < $mapelCount || $idxLegenda < $guruCount) <tr>
                         <td colspan="{{ 3 + $kelass->count() }}" style="border: none;"></td>
                         <td style="background-color: #ffffff;"></td>

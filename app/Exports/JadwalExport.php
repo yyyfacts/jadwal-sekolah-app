@@ -27,6 +27,7 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
 
     public function view(): View
     {
+        // Wali Kelas sudah ke-load di sini jadi aman dipakai di Blade
         $kelass = Kelas::with('waliKelas')->orderBy('nama_kelas')->get();
         $gurus = Guru::orderBy('kode_guru')->get();
         $mapels = Mapel::orderBy('kode_mapel')->get();
@@ -36,7 +37,7 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
             $q->orderBy('waktu_mulai');
         }])->where('is_active', true)->get();
         
-        // --- 👇 FIX FINAL: Buang jam 'Tidak Ada' murni pakai PHP Collection 👇 ---
+        // --- FIX FINAL: Buang jam 'Tidak Ada' murni pakai PHP Collection ---
         foreach ($dataHari as $hariObj) {
             $filteredWaktu = $hariObj->waktuHaris->filter(function($w) {
                 return $w->tipe !== 'Tidak Ada'; // Kalau tipe NULL/Istirahat, tetap aman masuk
@@ -112,11 +113,10 @@ class JadwalExport implements FromView, ShouldAutoSize, WithTitle, WithStyles
                         
                         if (!isset($jadwals[$row->kelas_id])) continue;
                         
-                        // Masukin datanya ke array Excel
+                        // Masukin datanya ke array Excel (Warna sekarang tidak diperlukan lagi di Blade)
                         $jadwals[$row->kelas_id][$hari][$jamSekarang] = [
                             'kode_mapel' => $row->mapel->kode_mapel ?? '-',
-                            'kode_guru'  => $row->guru->kode_guru ?? '-',
-                            'color'      => $row->tipe_jam == 'double' || $row->tipe_jam == 'triple' ? 'd9e1f2' : 'ffffff'
+                            'kode_guru'  => $row->guru->kode_guru ?? '-'
                         ];
                     }
                 }
