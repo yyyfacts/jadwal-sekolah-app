@@ -172,7 +172,6 @@ class JadwalController extends Controller
                         'mapel_id' => $j->mapel_id, 
                         'jumlah_jam' => $j->jumlah_jam,
                         'nama_mapel' => $j->mapel->nama_mapel ?? '',
-                        // <--- TAMBAHAN: Paksa ke (int) agar terbaca sempurna di Python
                         'batas_maksimal_jam' => isset($j->mapel->batas_maksimal_jam) ? (int)$j->mapel->batas_maksimal_jam : null
                     ];
                 });
@@ -221,7 +220,14 @@ class JadwalController extends Controller
                         }
                     }
                     DB::commit();
-                    return redirect()->route('jadwal.index')->with('success', $result['message'])->with('waktu_komputasi', $result['waktu_komputasi_detik'] ?? null);
+                    
+                    // --- PERUBAHAN DI SINI: Melempar semua metrik ke session ---
+                    return redirect()->route('jadwal.index')
+                        ->with('success', $result['message'])
+                        ->with('waktu_komputasi', $result['waktu_komputasi_detik'] ?? ($result['metrik']['waktu_komputasi_detik'] ?? null))
+                        ->with('csr', $result['metrik']['CSR'] ?? null)
+                        ->with('scfr', $result['metrik']['SCFR'] ?? null);
+                        
                 } catch (\Exception $e) {
                     DB::rollBack();
                     throw $e;
