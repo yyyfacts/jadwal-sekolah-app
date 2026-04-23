@@ -93,10 +93,10 @@ def hitung_batas_dinamis_guru(
             rata_bawah = math.floor(rata_exact)
 
             # PERBAIKAN: +1 lebih ketat agar solver dipaksa menyebar beban
-            limit_max = max(rata_atas + 1, max_block)
+            limit_max = max(rata_atas + 2, max_block)
 
             if total_jam >= n_hari:
-                limit_min = max(1, rata_bawah - 1)
+                limit_min = max(2, rata_bawah - 2)
             else:
                 limit_min = 0
         else:
