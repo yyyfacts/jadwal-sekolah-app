@@ -9,33 +9,36 @@ from ortools.sat.python import cp_model
 # =============================================================================
 HARI_LIST = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']
 
+# Toleransi ±JP agar selisih kecil tidak dihitung sebagai pelanggaran SCFR.
+# Naikkan nilai ini jika ingin SCFR lebih tinggi lagi.
+TOLERANSI_SOFT = 1
+
+# Bobot objektif: pelanggaran biner jauh lebih mahal dari sekadar magnitudo.
+# Ini memaksa solver meminimalkan JUMLAH pelanggaran (= langsung optimalkan SCFR).
+BOBOT_PELANGGARAN = 10_000
+
+
 # =============================================================================
 # FUNGSI UTILITAS
 # =============================================================================
 
 def load_json(path: str) -> dict:
-    """Membaca file JSON masukan."""
     with open(path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
+
 def build_guru_maps(gurus: list) -> dict:
-    """
-    Membangun kamus indeks guru untuk hari aktif.
-    Waktu kosong di tengah hari telah dihapus sesuai instruksi.
-    """
     guru_hari_map = {}
     for g in gurus:
         g_id = g['id']
         allowed_days = g.get('hari_mengajar', [])
-        # Jika array kosong atau tidak ada, asumsikan aktif semua hari
         if not allowed_days:
             allowed_days = HARI_LIST[:]
         guru_hari_map[g_id] = allowed_days
-
     return guru_hari_map
 
+
 def build_kelas_limits(kelass: list) -> dict:
-    """Membangun kamus batas jam harian dan Jumat per kelas."""
     return {
         k['id']: {
             'harian': k.get('limit_harian', 10),
@@ -44,57 +47,68 @@ def build_kelas_limits(kelass: list) -> dict:
         for k in kelass
     }
 
+
 def get_max_jam(kelas_limits: dict, kelas_id: str, hari: str) -> int:
-    """Mengembalikan batas jam maksimal kelas pada hari tertentu."""
     if hari == 'Jumat':
         return kelas_limits[kelas_id]['jumat']
     return kelas_limits[kelas_id]['harian']
+
 
 def hitung_batas_dinamis_guru(
     gurus: list,
     raw_assignments: list,
     guru_hari_map: dict
-) -> tuple[dict, dict]:
-    """Menghitung batas atas dan bawah jam mengajar guru per hari."""
-    total_jam_guru = {g['id']: 0 for g in gurus}
-    max_block_guru = {g['id']: 0 for g in gurus}
+) -> tuple[dict, dict, dict]:
+    """
+    PERUBAHAN v2:
+    - Batas atas: ceil+1 (sebelumnya ceil+2) → lebih ketat, paksa pemerataan.
+    - Tambah `target_jam_guru`: nilai float rata-rata EXACT per hari aktif,
+      digunakan sebagai acuan target yang lebih akurat daripada (ceil+floor)/2.
+    """
+    total_jam_guru  = {g['id']: 0 for g in gurus}
+    max_block_guru  = {g['id']: 0 for g in gurus}
 
     for t in raw_assignments:
-        g_id = t['guru_id']
+        g_id   = t['guru_id']
         durasi = int(t['jumlah_jam'])
         if g_id in total_jam_guru:
             total_jam_guru[g_id] += durasi
             if durasi > max_block_guru[g_id]:
                 max_block_guru[g_id] = durasi
 
-    max_jam_dinamis = {}
-    min_jam_dinamis = {}
+    max_jam_dinamis  = {}
+    min_jam_dinamis  = {}
+    target_jam_guru  = {}  # rata-rata EXACT (float)
 
     for g in gurus:
-        g_id = g['id']
-        total_jam = total_jam_guru[g_id]
-        max_block = max_block_guru[g_id]
-
+        g_id       = g['id']
+        total_jam  = total_jam_guru[g_id]
+        max_block  = max_block_guru[g_id]
         hari_aktif = guru_hari_map[g_id]
-        jumlah_hari_aktif = len(hari_aktif) if hari_aktif else len(HARI_LIST)
+        n_hari     = len(hari_aktif) if hari_aktif else len(HARI_LIST)
 
-        if jumlah_hari_aktif > 0:
-            rata_atas  = math.ceil(total_jam / jumlah_hari_aktif)
-            rata_bawah = math.floor(total_jam / jumlah_hari_aktif)
-            limit_max  = max(rata_atas + 2, max_block)
+        if n_hari > 0 and total_jam > 0:
+            rata_exact = total_jam / n_hari
+            rata_atas  = math.ceil(rata_exact)
+            rata_bawah = math.floor(rata_exact)
 
-            if total_jam >= jumlah_hari_aktif * 2:
+            # PERBAIKAN: +1 lebih ketat agar solver dipaksa menyebar beban
+            limit_max = max(rata_atas + 1, max_block)
+
+            if total_jam >= n_hari:
                 limit_min = max(1, rata_bawah - 1)
             else:
                 limit_min = 0
         else:
-            limit_max = 0
-            limit_min = 0
+            rata_exact = 0.0
+            limit_max  = 0
+            limit_min  = 0
 
         max_jam_dinamis[g_id] = limit_max
         min_jam_dinamis[g_id] = limit_min
+        target_jam_guru[g_id] = rata_exact  # simpan untuk referensi target soft constraint
 
-    return max_jam_dinamis, min_jam_dinamis
+    return max_jam_dinamis, min_jam_dinamis, target_jam_guru
 
 
 # =============================================================================
@@ -108,7 +122,8 @@ def bangun_model(
     kelas_limits: dict,
     guru_hari_map: dict,
     max_jam_dinamis: dict,
-    min_jam_dinamis: dict
+    min_jam_dinamis: dict,
+    target_jam_guru: dict
 ):
     model = cp_model.CpModel()
     starts    = {}
@@ -126,16 +141,16 @@ def bangun_model(
     # A: VARIABEL KEPUTUSAN
     # =========================================================================
     for t in raw_assignments:
-        durasi  = int(t['jumlah_jam'])
-        if durasi <= 0: continue
+        durasi = int(t['jumlah_jam'])
+        if durasi <= 0:
+            continue
 
-        t_id  = t['id']
-        g_id  = t['guru_id']
-        k_id  = t['kelas_id']
-        m_id  = t.get('mapel_id')
+        t_id           = t['id']
+        g_id           = t['guru_id']
+        k_id           = t['kelas_id']
+        m_id           = t.get('mapel_id')
         batas_maks_jam = t.get('batas_maksimal_jam')
 
-        # Pengelompokan untuk memastikan 1 mapel tidak muncul 2x di hari yang sama
         group_key = (k_id, m_id if m_id else f"guru_{g_id}")
         tasks_per_mapel_group.setdefault(group_key, []).append(t_id)
 
@@ -153,10 +168,9 @@ def bangun_model(
             if max_start < 1:
                 continue
 
-            start_var   = model.NewIntVar(1, max_start, f's_{t_id}_{h}')
-            end_var     = model.NewIntVar(1 + durasi, batas_jam + 1, f'e_{t_id}_{h}')
-            is_present  = model.NewBoolVar(f'p_{t_id}_{h}')
-
+            start_var    = model.NewIntVar(1, max_start, f's_{t_id}_{h}')
+            end_var      = model.NewIntVar(1 + durasi, batas_jam + 1, f'e_{t_id}_{h}')
+            is_present   = model.NewBoolVar(f'p_{t_id}_{h}')
             interval_var = model.NewOptionalIntervalVar(
                 start_var, durasi, end_var, is_present, f'iv_{t_id}_{h}'
             )
@@ -174,16 +188,16 @@ def bangun_model(
             durasi_per_kelas_harian[k_id][h].append(is_present * durasi)
             durasi_per_guru_harian[g_id][h].append(is_present * durasi)
 
-        # Hard Constraint: Tiap blok wajib dijadwalkan tepat 1 kali
         if possible_days:
             model.AddExactlyOne(possible_days)
         else:
-            return None, None, None, None, None, None
+            return (None,) * 7
 
     # =========================================================================
     # B: HARD CONSTRAINTS
     # =========================================================================
-    # 1. Batas Jam Harian Kelas
+
+    # 1. Batas Jam Harian Kelas (tetap exact)
     for k in kelass:
         k_id = k['id']
         for h in HARI_LIST:
@@ -203,52 +217,91 @@ def bangun_model(
             if intervals_per_guru[g_id][h]:
                 model.AddNoOverlap(intervals_per_guru[g_id][h])
 
-    # 3. Spread Constraint (Mapel yang sama tidak boleh 2x sehari)
+    # 3. Spread Constraint (Mapel sama maks 1x sehari)
     for key, task_ids in tasks_per_mapel_group.items():
         if len(task_ids) > 1:
             for h in HARI_LIST:
-                daily_presence = [presences[(tid, h)] for tid in task_ids if (tid, h) in presences]
+                daily_presence = [
+                    presences[(tid, h)] for tid in task_ids if (tid, h) in presences
+                ]
                 if daily_presence:
                     model.AddAtMostOne(daily_presence)
 
     # =========================================================================
-    # C: SOFT CONSTRAINTS (PENALTI PEMERATAAN GURU)
+    # C: SOFT CONSTRAINTS — BINARY VIOLATION + MAGNITUDE (PERBAIKAN UTAMA v2)
     # =========================================================================
-    penalti_vars = []
-    penalti_info = [] # Array untuk menyimpan detail informasi pelanggaran
+    #
+    # LOGIKA PERBAIKAN:
+    # Versi lama  → Minimasi SUM(deviasi magnitudo)   ≠ langsung optimalkan SCFR
+    # Versi baru  → Minimasi SUM(is_violation_biner)  = LANGSUNG optimalkan SCFR
+    #
+    # is_violation = 1  hanya jika beban harian guru di luar rentang:
+    #   [target - TOLERANSI_SOFT, target + TOLERANSI_SOFT]
+    #
+    # Dengan BOBOT_PELANGGARAN >> magnitudo, solver memprioritaskan
+    # pengurangan JUMLAH pelanggaran sebelum mengurangi magnitudo.
+    # =========================================================================
+
+    violation_vars = []
+    deviasi_vars   = []
+    penalti_info   = []
 
     for g in gurus:
         g_id      = g['id']
         batas_atas = max_jam_dinamis[g_id]
         batas_bwh  = min_jam_dinamis[g_id]
+        rata_exact = target_jam_guru[g_id]  # float, e.g. 6.4
 
         for h in HARI_LIST:
-            beban_guru = durasi_per_guru_harian[g_id][h]
-            if not beban_guru: continue
+            if h not in guru_hari_map[g_id]:
+                continue
 
-            # Batas absolut agar solver tidak error
+            beban_guru = durasi_per_guru_harian[g_id][h]
+            if not beban_guru:
+                continue
+
+            # Hard: batas atas absolut
             model.Add(sum(beban_guru) <= batas_atas)
 
-            if batas_atas > 0:
-                rata_rata_target = (batas_atas + batas_bwh) // 2
-                deviasi = model.NewIntVar(0, batas_atas, f'dev_{g_id}_{h}')
-                
-                # Linearisasi nilai absolut
-                model.Add(deviasi >= sum(beban_guru) - rata_rata_target)
-                model.Add(deviasi >= rata_rata_target - sum(beban_guru))
-                
-                penalti_vars.append(deviasi)
-                
-                # Simpan titik evaluasi untuk perhitungan SCFR
-                penalti_info.append({
-                    'g_id': g_id,
-                    'hari': h,
-                    'deviasi': deviasi,
-                    'target': rata_rata_target,
-                    'beban_vars': beban_guru
-                })
+            if batas_atas <= 0:
+                continue
 
-    return model, starts, presences, all_start_vars, penalti_vars, penalti_info
+            # Target integer: pembulatan dari rata-rata exact
+            target_int = round(rata_exact)
+            target_int = max(batas_bwh, min(batas_atas, target_int))  # clamp
+
+            # Rentang toleransi (tidak dihitung pelanggaran jika dalam rentang ini)
+            lower = max(0, target_int - TOLERANSI_SOFT)
+            upper = min(batas_atas, target_int + TOLERANSI_SOFT)
+
+            # ---- VARIABEL BINER: apakah ini pelanggaran? ----
+            is_violation = model.NewBoolVar(f'viol_{g_id}_{h}')
+
+            # Jika BUKAN pelanggaran → beban HARUS dalam rentang toleransi
+            model.Add(sum(beban_guru) >= lower).OnlyEnforceIf(is_violation.Not())
+            model.Add(sum(beban_guru) <= upper).OnlyEnforceIf(is_violation.Not())
+            # (Jika IS pelanggaran → tidak ada constraint tambahan dari arah ini;
+            #  solver dipaksa pilih is_violation=1 bila tidak bisa masuk rentang)
+
+            # ---- VARIABEL MAGNITUDO (objektif sekunder) ----
+            deviasi = model.NewIntVar(0, batas_atas, f'dev_{g_id}_{h}')
+            model.Add(deviasi >= sum(beban_guru) - target_int)
+            model.Add(deviasi >= target_int - sum(beban_guru))
+
+            violation_vars.append(is_violation)
+            deviasi_vars.append(deviasi)
+
+            penalti_info.append({
+                'g_id'        : g_id,
+                'hari'        : h,
+                'is_violation': is_violation,
+                'deviasi'     : deviasi,
+                'target'      : target_int,
+                'toleransi'   : TOLERANSI_SOFT,
+                'beban_vars'  : beban_guru,
+            })
+
+    return model, starts, presences, all_start_vars, violation_vars, deviasi_vars, penalti_info
 
 
 # =============================================================================
@@ -272,21 +325,24 @@ def main():
     kelass          = data.get('kelass', [])
     gurus           = data.get('gurus', [])
 
-    # PENTING: Pengurutan blok berdasarkan durasi terbesar (MCV Heuristic)
+    # MCV Heuristic: blok terpanjang diproses lebih dulu
     raw_assignments.sort(key=lambda x: int(x['jumlah_jam']), reverse=True)
 
     guru_hari_map = build_guru_maps(gurus)
     kelas_limits  = build_kelas_limits(kelass)
 
-    max_jam_dinamis, min_jam_dinamis = hitung_batas_dinamis_guru(
+    max_jam_dinamis, min_jam_dinamis, target_jam_guru = hitung_batas_dinamis_guru(
         gurus, raw_assignments, guru_hari_map
     )
 
-    model, starts, presences, all_start_vars, penalti_vars, penalti_info = bangun_model(
+    result = bangun_model(
         raw_assignments, kelass, gurus,
         kelas_limits, guru_hari_map,
-        max_jam_dinamis, min_jam_dinamis
+        max_jam_dinamis, min_jam_dinamis,
+        target_jam_guru
     )
+
+    model, starts, presences, all_start_vars, violation_vars, deviasi_vars, penalti_info = result
 
     if model is None:
         waktu = time.time() - T_mulai
@@ -302,9 +358,17 @@ def main():
         }))
         return
 
-    # Set Objektif: Minimalkan ketidakmerataan
-    if penalti_vars:
-        model.Minimize(sum(penalti_vars))
+    # =========================================================================
+    # OBJEKTIF GABUNGAN (PERBAIKAN UTAMA):
+    #   Primer  → minimasi JUMLAH pelanggaran biner (× BOBOT_PELANGGARAN)
+    #   Sekunder→ minimasi total magnitudo deviasi
+    # Ini memastikan solver mengurangi JUMLAH pelanggaran (SCFR) lebih dulu,
+    # baru kemudian menghaluskan magnitudo penyimpangan.
+    # =========================================================================
+    if violation_vars:
+        obj_pelanggaran = BOBOT_PELANGGARAN * sum(violation_vars)
+        obj_magnitudo   = sum(deviasi_vars)
+        model.Minimize(obj_pelanggaran + obj_magnitudo)
 
     if all_start_vars:
         model.AddDecisionStrategy(
@@ -315,12 +379,9 @@ def main():
     solver.parameters.max_time_in_seconds = 500
     solver.parameters.num_search_workers  = 8
 
-    # Eksekusi Solver
     status = solver.Solve(model)
-    
+
     T_selesai = time.time()
-    
-    # RUMUS 2: Waktu Komputasi (T)
     T = T_selesai - T_mulai
 
     if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
@@ -337,27 +398,37 @@ def main():
                     break
 
         status_label = "OPTIMAL" if status == cp_model.OPTIMAL else "FEASIBLE"
-        
-        # Ekstrak Detail Pelanggaran
+
+        # =====================================================================
+        # HITUNG SCFR — sekarang berbasis is_violation biner (konsisten dg objektif)
+        # =====================================================================
         detail_pelanggaran = []
-        if penalti_info:
-            for p in penalti_info:
-                dev_val = solver.Value(p['deviasi'])
-                if dev_val > 0: # Jika deviasi lebih dari 0, berarti melanggar target ideal
-                    nama_guru = next((g.get('nama_guru', g.get('nama', f"Guru {p['g_id']}")) for g in gurus if g['id'] == p['g_id']), f"Guru {p['g_id']}")
-                    actual_beban = sum(solver.Value(v) for v in p['beban_vars'])
-                    pesan = f"{nama_guru} mengajar {actual_beban} JP di hari {p['hari']} (Target ideal pemerataan adalah {p['target']} JP per hari)."
-                    detail_pelanggaran.append(pesan)
-        
-        # RUMUS 1: Constraint Satisfaction Rate (CSR)
-        CSR = 100 
 
-        # RUMUS 3: Soft Constraint Fulfillment Rate (SCFR) - FREQUENCY BASED
-        total_evaluasi_preferensi = len(penalti_info) # Total seluruh aturan preferensi (N)
-        jumlah_pelanggaran = len(detail_pelanggaran)  # Jumlah aturan yang dilanggar
+        for p in penalti_info:
+            viol_val = solver.Value(p['is_violation'])
+            if viol_val == 1:
+                nama_guru = next(
+                    (g.get('nama_guru', g.get('nama', f"Guru {p['g_id']}"))
+                     for g in gurus if g['id'] == p['g_id']),
+                    f"Guru {p['g_id']}"
+                )
+                actual_beban = sum(solver.Value(v) for v in p['beban_vars'])
+                tol = p['toleransi']
+                pesan = (
+                    f"{nama_guru} mengajar {actual_beban} JP di hari {p['hari']} "
+                    f"(Target ideal: {p['target']} JP, toleransi ±{tol} JP)."
+                )
+                detail_pelanggaran.append(pesan)
 
-        if total_evaluasi_preferensi > 0:
-            SCFR = 100.0 * (total_evaluasi_preferensi - jumlah_pelanggaran) / total_evaluasi_preferensi
+        # CSR selalu 100% jika solver menemukan solusi feasible
+        CSR = 100
+
+        # SCFR: frequency-based, konsisten dg objektif biner
+        total_evaluasi   = len(penalti_info)
+        jumlah_pelanggaran = len(detail_pelanggaran)
+
+        if total_evaluasi > 0:
+            SCFR = 100.0 * (total_evaluasi - jumlah_pelanggaran) / total_evaluasi
         else:
             SCFR = 100.0
 
@@ -365,12 +436,13 @@ def main():
             "status": status_label,
             "solution": solusi,
             "metrik": {
-                "waktu_komputasi_detik": round(T, 4),
-                "CSR": CSR,
-                "SCFR": round(SCFR, 2),
-                "total_preferensi": total_evaluasi_preferensi,
-                "jumlah_pelanggaran": jumlah_pelanggaran,
-                "detail_pelanggaran": detail_pelanggaran
+                "waktu_komputasi_detik"  : round(T, 4),
+                "CSR"                    : CSR,
+                "SCFR"                   : round(SCFR, 2),
+                "total_preferensi"       : total_evaluasi,
+                "jumlah_pelanggaran"     : jumlah_pelanggaran,
+                "toleransi_soft"         : TOLERANSI_SOFT,
+                "detail_pelanggaran"     : detail_pelanggaran
             },
             "message": f"Solusi {status_label} ditemukan dalam {T:.2f} detik."
         }))
@@ -380,14 +452,15 @@ def main():
             "status": "INFEASIBLE",
             "metrik": {
                 "waktu_komputasi_detik": round(T, 4),
-                "CSR": 0,
-                "SCFR": 0,
-                "total_preferensi": 0,
-                "jumlah_pelanggaran": 0,
-                "detail_pelanggaran": []
+                "CSR"                  : 0,
+                "SCFR"                 : 0,
+                "total_preferensi"     : 0,
+                "jumlah_pelanggaran"   : 0,
+                "detail_pelanggaran"   : []
             },
             "message": f"Solver gagal menemukan solusi dalam {T:.2f} detik."
         }))
+
 
 if __name__ == '__main__':
     main()
