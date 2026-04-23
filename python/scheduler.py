@@ -312,7 +312,7 @@ def main():
         )
 
     solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = 300
+    solver.parameters.max_time_in_seconds = 500
     solver.parameters.num_search_workers  = 8
 
     # Eksekusi Solver

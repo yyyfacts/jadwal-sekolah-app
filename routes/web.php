@@ -92,6 +92,11 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('tahun-pelajaran')->name('tahun-pelajaran.')->group(function () {
         Route::get('/', [TahunPelajaranController::class, 'index'])->name('index');
         Route::post('/', [TahunPelajaranController::class, 'store'])->name('store');
+        
+        // Tambahan Edit dan Update Tahun Pelajaran
+        Route::get('/{id}/edit', [TahunPelajaranController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [TahunPelajaranController::class, 'update'])->name('update');
+        
         Route::patch('/{id}/activate', [TahunPelajaranController::class, 'activate'])->name('activate');
         Route::delete('/{id}', [TahunPelajaranController::class, 'destroy'])->name('destroy');
     });
@@ -136,7 +141,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{id}', [MapelController::class, 'update'])->name('update');
         Route::delete('/{id}', [MapelController::class, 'destroy'])->name('destroy');
         
-        // Fitur Ganti Status (Online/Offline) - SUDAH DIPERBAIKI
+        // Fitur Ganti Status (Online/Offline)
         Route::post('/{id}/status', [MapelController::class, 'updateStatus'])->name('updateStatus');
         
         // Rute Jadwal Mapel
@@ -181,6 +186,11 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('users')->name('user.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');
         Route::post('/', [UserController::class, 'store'])->name('store');
+        
+        // Tambahan Edit dan Update User
+        Route::get('/{id}/edit', [UserController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [UserController::class, 'update'])->name('update');
+        
         Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
     });
 

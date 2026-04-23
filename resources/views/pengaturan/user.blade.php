@@ -56,6 +56,26 @@
     </div>
     @endif
 
+    @if(session('error'))
+    <div x-data="{ show: true }" x-show="show" x-transition.duration.300ms
+        class="mb-6 flex items-center justify-between p-3 bg-red-50/80 backdrop-blur-sm border border-red-100 rounded-xl shadow-sm text-red-800">
+        <div class="flex items-center gap-3">
+            <div class="p-1.5 bg-red-100 rounded-full text-red-600">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </div>
+            <span class="font-medium text-xs">{{ session('error') }}</span>
+        </div>
+        <button @click="show = false" class="text-red-400 hover:text-red-700 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    </div>
+    @endif
+
     {{-- ================================================================= --}}
     {{-- 2. TABLE CARD CONTAINER --}}
     {{-- ================================================================= --}}
@@ -73,7 +93,6 @@
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                 </div>
-                {{-- GANTI: Placeholder jadi Username --}}
                 <input type="text" id="search-user" onkeyup="searchTable()"
                     class="block w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg leading-5 bg-slate-50 placeholder-slate-400 focus:bg-white focus:outline-none focus:placeholder-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-xs transition duration-200 ease-in-out"
                     placeholder="Cari Nama atau Username...">
@@ -130,7 +149,6 @@
                                                 d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
                                             </path>
                                         </svg>
-                                        {{-- GANTI: email jadi username --}}
                                         <span class="text-slate-500 text-[11px] font-mono">{{ $u->username }}</span>
                                     </div>
                                 </div>
@@ -148,13 +166,25 @@
                         {{-- 4. AKSI --}}
                         <td class="px-4 py-3 align-middle text-center">
                             @if(Auth::id() != $u->id)
+                            {{-- Tombol Edit (BARU DITAMBAHKAN) --}}
+                            <a href="{{ route('user.edit', $u->id) }}"
+                                class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-100 rounded transition-colors hover:scale-105 inline-block mr-1"
+                                title="Edit User">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                    </path>
+                                </svg>
+                            </a>
+
+                            {{-- Tombol Hapus --}}
                             <form action="{{ route('user.destroy', $u->id) }}" method="POST"
                                 onsubmit="return confirm('Hapus user {{ $u->name }}?')" class="inline">
                                 @csrf @method('DELETE')
                                 <button type="submit"
-                                    class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-100 rounded transition-colors hover:scale-105"
-                                    title="Hapus">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-100 rounded transition-colors hover:scale-105 inline-block"
+                                    title="Hapus User">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
                                         </path>
@@ -223,7 +253,6 @@
                         placeholder="Nama User" required>
                 </div>
                 <div>
-                    {{-- GANTI: Label & Name jadi Username --}}
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Username
                         Login</label>
                     <input type="text" name="username"
@@ -268,7 +297,6 @@ function closeModal(modalID) {
     }
 }
 
-// Close modal on click outside
 window.onclick = function(event) {
     if (event.target.classList.contains('fixed')) {
         event.target.classList.add('hidden');
@@ -283,7 +311,7 @@ function searchTable() {
     const rows = tbody.getElementsByTagName('tr');
 
     for (let i = 0; i < rows.length; i++) {
-        const colName = rows[i].getElementsByTagName('td')[1]; // Kolom Identitas
+        const colName = rows[i].getElementsByTagName('td')[1];
         if (colName) {
             const txtValue = colName.textContent || colName.innerText;
             if (txtValue.toLowerCase().indexOf(filter) > -1) {

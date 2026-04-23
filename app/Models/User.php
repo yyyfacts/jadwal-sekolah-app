@@ -8,7 +8,7 @@ use Illuminate\Notifications\Notifiable;
 
 /**
  * @property string $name
- * @property string $username  <-- SUDAH GANTI JADI USERNAME
+ * @property string $username
  * @property string|null $avatar
  * @property string $password
  */
@@ -18,7 +18,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
-        'username', // Ganti email jadi username
+        'username', // Menggunakan username sebagai pengganti email
         'password',
         'avatar',
     ];
@@ -29,7 +29,6 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        // email_verified_at dihapus karena kita tidak pakai email lagi
         'password' => 'hashed',
     ];
 }

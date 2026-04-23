@@ -5,8 +5,8 @@
 
     {{-- Header Halaman --}}
     <div class="mb-6">
-        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Edit Profil Saya</h1>
-        <p class="text-slate-500 text-sm mt-1">Perbarui informasi akun, nama pengguna, dan kata sandi Anda.</p>
+        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Edit Data User</h1>
+        <p class="text-slate-500 text-sm mt-1">Perbarui informasi akun, username, dan kata sandi pengguna.</p>
     </div>
 
     {{-- Flash Message --}}
@@ -31,7 +31,8 @@
 
     {{-- Form Card --}}
     <div class="bg-white rounded-xl shadow-lg shadow-slate-200/50 border border-slate-200 overflow-hidden">
-        <form action="{{ route('profile.update') }}" method="POST" class="p-8">
+        {{-- PERUBAHAN PENTING: Action mengarah ke user.update beserta ID usernya --}}
+        <form action="{{ route('user.update', $user->id) }}" method="POST" class="p-8">
             @csrf
             @method('PUT')
 
@@ -77,10 +78,10 @@
                                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
                             </path>
                         </svg>
-                        Ganti Password
+                        Ganti Password (Opsional)
                     </h3>
-                    <p class="text-xs text-amber-700/80">Biarkan kolom password kosong jika Anda tidak ingin
-                        mengubahnya.</p>
+                    <p class="text-xs text-amber-700/80">Biarkan kolom password kosong jika Anda tidak ingin mengubah
+                        sandi pengguna ini.</p>
                 </div>
 
                 {{-- Password Baru --}}
@@ -104,7 +105,11 @@
                 </div>
 
                 {{-- Tombol Simpan --}}
-                <div class="pt-4 flex justify-end">
+                <div class="pt-4 flex justify-between">
+                    <a href="{{ route('user.index') }}"
+                        class="inline-flex items-center gap-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-bold uppercase tracking-wide rounded-lg transition-all duration-200">
+                        Batal
+                    </a>
                     <button type="submit"
                         class="inline-flex items-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold uppercase tracking-wide rounded-lg shadow-md hover:shadow-lg hover:shadow-indigo-500/30 transition-all duration-200 transform active:scale-95">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
