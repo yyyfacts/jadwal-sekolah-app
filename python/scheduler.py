@@ -178,7 +178,7 @@ def bangun_model(
         if possible_days:
             model.AddExactlyOne(possible_days)
         else:
-            return None, None, None, None, None, None, 0
+            return None, None, None, None, None, None
 
     # =========================================================================
     # B: HARD CONSTRAINTS
@@ -216,7 +216,6 @@ def bangun_model(
     # =========================================================================
     penalti_vars = []
     penalti_info = [] # Array untuk menyimpan detail informasi pelanggaran
-    max_possible_penalti = 0
 
     for g in gurus:
         g_id      = g['id']
@@ -239,7 +238,8 @@ def bangun_model(
                 model.Add(deviasi >= rata_rata_target - sum(beban_guru))
                 
                 penalti_vars.append(deviasi)
-                # Simpan referensi untuk ditarik setelah solve selesai
+                
+                # Simpan titik evaluasi untuk perhitungan SCFR
                 penalti_info.append({
                     'g_id': g_id,
                     'hari': h,
@@ -247,9 +247,8 @@ def bangun_model(
                     'target': rata_rata_target,
                     'beban_vars': beban_guru
                 })
-                max_possible_penalti += batas_atas
 
-    return model, starts, presences, all_start_vars, penalti_vars, penalti_info, max_possible_penalti
+    return model, starts, presences, all_start_vars, penalti_vars, penalti_info
 
 
 # =============================================================================
@@ -283,7 +282,7 @@ def main():
         gurus, raw_assignments, guru_hari_map
     )
 
-    model, starts, presences, all_start_vars, penalti_vars, penalti_info, max_penalti = bangun_model(
+    model, starts, presences, all_start_vars, penalti_vars, penalti_info = bangun_model(
         raw_assignments, kelass, gurus,
         kelas_limits, guru_hari_map,
         max_jam_dinamis, min_jam_dinamis
@@ -321,7 +320,7 @@ def main():
     
     T_selesai = time.time()
     
-    # 1. Waktu Komputasi (T)
+    # RUMUS 2: Waktu Komputasi (T)
     T = T_selesai - T_mulai
 
     if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
@@ -338,28 +337,29 @@ def main():
                     break
 
         status_label = "OPTIMAL" if status == cp_model.OPTIMAL else "FEASIBLE"
-        total_penalti = solver.ObjectiveValue() if penalti_vars else 0
         
-        # 2. Constraint Satisfaction Rate (CSR)
-        CSR = 100 
-
-        # 3. Soft Constraint Fulfillment Rate (SCFR)
-        if max_penalti > 0:
-            SCFR = 100 * (1 - (total_penalti / max_penalti))
-        else:
-            SCFR = 100
-
         # Ekstrak Detail Pelanggaran
         detail_pelanggaran = []
         if penalti_info:
             for p in penalti_info:
                 dev_val = solver.Value(p['deviasi'])
-                if dev_val > 0:
-                    nama_guru = next((g['nama'] for g in gurus if g['id'] == p['g_id']), f"Guru {p['g_id']}")
+                if dev_val > 0: # Jika deviasi lebih dari 0, berarti melanggar target ideal
+                    nama_guru = next((g.get('nama_guru', g.get('nama', f"Guru {p['g_id']}")) for g in gurus if g['id'] == p['g_id']), f"Guru {p['g_id']}")
                     actual_beban = sum(solver.Value(v) for v in p['beban_vars'])
-                    # Membuat kalimat informatif
                     pesan = f"{nama_guru} mengajar {actual_beban} JP di hari {p['hari']} (Target ideal pemerataan adalah {p['target']} JP per hari)."
                     detail_pelanggaran.append(pesan)
+        
+        # RUMUS 1: Constraint Satisfaction Rate (CSR)
+        CSR = 100 
+
+        # RUMUS 3: Soft Constraint Fulfillment Rate (SCFR) - FREQUENCY BASED
+        total_evaluasi_preferensi = len(penalti_info) # Total seluruh aturan preferensi (N)
+        jumlah_pelanggaran = len(detail_pelanggaran)  # Jumlah aturan yang dilanggar
+
+        if total_evaluasi_preferensi > 0:
+            SCFR = 100.0 * (total_evaluasi_preferensi - jumlah_pelanggaran) / total_evaluasi_preferensi
+        else:
+            SCFR = 100.0
 
         print(json.dumps({
             "status": status_label,
@@ -368,6 +368,8 @@ def main():
                 "waktu_komputasi_detik": round(T, 4),
                 "CSR": CSR,
                 "SCFR": round(SCFR, 2),
+                "total_preferensi": total_evaluasi_preferensi,
+                "jumlah_pelanggaran": jumlah_pelanggaran,
                 "detail_pelanggaran": detail_pelanggaran
             },
             "message": f"Solusi {status_label} ditemukan dalam {T:.2f} detik."
@@ -380,6 +382,8 @@ def main():
                 "waktu_komputasi_detik": round(T, 4),
                 "CSR": 0,
                 "SCFR": 0,
+                "total_preferensi": 0,
+                "jumlah_pelanggaran": 0,
                 "detail_pelanggaran": []
             },
             "message": f"Solver gagal menemukan solusi dalam {T:.2f} detik."
