@@ -109,8 +109,7 @@ def bangun_model(
     guru_hari_map: dict,
     max_jam_dinamis: dict,
     min_jam_dinamis: dict
-) -> tuple[cp_model.CpModel, dict, dict, list, list, int]:
-    
+):
     model = cp_model.CpModel()
     starts    = {}
     presences = {}
@@ -179,7 +178,7 @@ def bangun_model(
         if possible_days:
             model.AddExactlyOne(possible_days)
         else:
-            return None, None, None, None, None, 0
+            return None, None, None, None, None, None, 0
 
     # =========================================================================
     # B: HARD CONSTRAINTS
@@ -216,6 +215,7 @@ def bangun_model(
     # C: SOFT CONSTRAINTS (PENALTI PEMERATAAN GURU)
     # =========================================================================
     penalti_vars = []
+    penalti_info = [] # Array untuk menyimpan detail informasi pelanggaran
     max_possible_penalti = 0
 
     for g in gurus:
@@ -239,9 +239,17 @@ def bangun_model(
                 model.Add(deviasi >= rata_rata_target - sum(beban_guru))
                 
                 penalti_vars.append(deviasi)
+                # Simpan referensi untuk ditarik setelah solve selesai
+                penalti_info.append({
+                    'g_id': g_id,
+                    'hari': h,
+                    'deviasi': deviasi,
+                    'target': rata_rata_target,
+                    'beban_vars': beban_guru
+                })
                 max_possible_penalti += batas_atas
 
-    return model, starts, presences, all_start_vars, penalti_vars, max_possible_penalti
+    return model, starts, presences, all_start_vars, penalti_vars, penalti_info, max_possible_penalti
 
 
 # =============================================================================
@@ -275,7 +283,7 @@ def main():
         gurus, raw_assignments, guru_hari_map
     )
 
-    model, starts, presences, all_start_vars, penalti_vars, max_penalti = bangun_model(
+    model, starts, presences, all_start_vars, penalti_vars, penalti_info, max_penalti = bangun_model(
         raw_assignments, kelass, gurus,
         kelas_limits, guru_hari_map,
         max_jam_dinamis, min_jam_dinamis
@@ -289,7 +297,8 @@ def main():
             "metrik": {
                 "waktu_komputasi_detik": round(waktu, 4),
                 "CSR": 0,
-                "SCFR": 0
+                "SCFR": 0,
+                "detail_pelanggaran": []
             }
         }))
         return
@@ -309,6 +318,7 @@ def main():
 
     # Eksekusi Solver
     status = solver.Solve(model)
+    
     T_selesai = time.time()
     
     # 1. Waktu Komputasi (T)
@@ -331,7 +341,6 @@ def main():
         total_penalti = solver.ObjectiveValue() if penalti_vars else 0
         
         # 2. Constraint Satisfaction Rate (CSR)
-        # Jika CP-SAT menghasilkan solusi, berarti 100% hard constraint terpenuhi.
         CSR = 100 
 
         # 3. Soft Constraint Fulfillment Rate (SCFR)
@@ -340,13 +349,26 @@ def main():
         else:
             SCFR = 100
 
+        # Ekstrak Detail Pelanggaran
+        detail_pelanggaran = []
+        if penalti_info:
+            for p in penalti_info:
+                dev_val = solver.Value(p['deviasi'])
+                if dev_val > 0:
+                    nama_guru = next((g['nama'] for g in gurus if g['id'] == p['g_id']), f"Guru {p['g_id']}")
+                    actual_beban = sum(solver.Value(v) for v in p['beban_vars'])
+                    # Membuat kalimat informatif
+                    pesan = f"{nama_guru} mengajar {actual_beban} JP di hari {p['hari']} (Target ideal pemerataan adalah {p['target']} JP per hari)."
+                    detail_pelanggaran.append(pesan)
+
         print(json.dumps({
             "status": status_label,
             "solution": solusi,
             "metrik": {
                 "waktu_komputasi_detik": round(T, 4),
                 "CSR": CSR,
-                "SCFR": round(SCFR, 2)
+                "SCFR": round(SCFR, 2),
+                "detail_pelanggaran": detail_pelanggaran
             },
             "message": f"Solusi {status_label} ditemukan dalam {T:.2f} detik."
         }))
@@ -357,7 +379,8 @@ def main():
             "metrik": {
                 "waktu_komputasi_detik": round(T, 4),
                 "CSR": 0,
-                "SCFR": 0
+                "SCFR": 0,
+                "detail_pelanggaran": []
             },
             "message": f"Solver gagal menemukan solusi dalam {T:.2f} detik."
         }))

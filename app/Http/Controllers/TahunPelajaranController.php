@@ -46,6 +46,32 @@ class TahunPelajaranController extends Controller
     }
 
     /**
+     * Memperbarui Data Tahun Pelajaran (Edit)
+     */
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'tahun' => 'required|string',
+            'semester' => 'required|in:Ganjil,Genap',
+        ]);
+
+        try {
+            $tahunPelajaran = TahunPelajaran::findOrFail($id);
+            $tahunPelajaran->update([
+                'tahun' => $request->tahun,
+                'semester' => $request->semester,
+            ]);
+
+            return redirect()->route('tahun-pelajaran.index')
+                             ->with('success', 'Data Tahun Pelajaran berhasil diperbarui.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                             ->with('error', 'Gagal memperbarui data: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Mengaktifkan Tahun Pelajaran (Set Active)
      */
     public function activate($id)
@@ -80,7 +106,7 @@ class TahunPelajaranController extends Controller
         try {
             $tahun = TahunPelajaran::findOrFail($id);
 
-            // Opsional: Cegah penghapusan jika tahun sedang aktif
+            // Cegah penghapusan jika tahun sedang aktif
             if ($tahun->is_active) {
                 return redirect()->back()->with('error', 'Tidak dapat menghapus Tahun Pelajaran yang sedang AKTIF.');
             }

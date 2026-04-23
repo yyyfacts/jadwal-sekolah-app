@@ -221,12 +221,12 @@ class JadwalController extends Controller
                     }
                     DB::commit();
                     
-                    // --- PERUBAHAN DI SINI: Melempar semua metrik ke session ---
                     return redirect()->route('jadwal.index')
                         ->with('success', $result['message'])
                         ->with('waktu_komputasi', $result['waktu_komputasi_detik'] ?? ($result['metrik']['waktu_komputasi_detik'] ?? null))
                         ->with('csr', $result['metrik']['CSR'] ?? null)
-                        ->with('scfr', $result['metrik']['SCFR'] ?? null);
+                        ->with('scfr', $result['metrik']['SCFR'] ?? null)
+                        ->with('pelanggaran', $result['metrik']['detail_pelanggaran'] ?? []);
                         
                 } catch (\Exception $e) {
                     DB::rollBack();

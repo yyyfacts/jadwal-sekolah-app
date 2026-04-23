@@ -1,7 +1,19 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+{{-- Wrapper AlpineJS untuk state Modal Edit --}}
+<div x-data="{ 
+        editModalOpen: false, 
+        editId: '', 
+        editTahun: '', 
+        editSemester: '',
+        openEditModal(id, tahun, semester) {
+            this.editId = id;
+            this.editTahun = tahun;
+            this.editSemester = semester;
+            this.editModalOpen = true;
+        }
+    }" class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
     {{-- Header Halaman --}}
     <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -53,7 +65,7 @@
     </div>
     @endif
 
-    {{-- CARD 1: FORM TAMBAH (Desain mirip Edit Profil) --}}
+    {{-- CARD 1: FORM TAMBAH --}}
     <div class="bg-white rounded-xl shadow-lg shadow-slate-200/50 border border-slate-200 overflow-hidden mb-8">
         <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
             <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
@@ -163,7 +175,7 @@
                         <td class="px-6 py-4 text-center">
                             @if($t->is_active)
                             <div
-                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
+                                class="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
                                 <span class="relative flex h-2 w-2">
                                     <span
                                         class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -178,9 +190,23 @@
                         </td>
 
                         <td class="px-6 py-4 text-right">
-                            <div class="flex items-center justify-end gap-3">
+                            <div class="flex items-center justify-end gap-2">
+
+                                {{-- Tombol Edit (Bisa edit yang aktif maupun tidak) --}}
+                                <button type="button"
+                                    @click="openEditModal({{ $t->id }}, '{{ $t->tahun }}', '{{ $t->semester }}')"
+                                    class="text-xs font-bold text-amber-500 hover:text-amber-700 hover:bg-amber-50 px-2 py-1.5 rounded transition"
+                                    title="Edit Data">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                        </path>
+                                    </svg>
+                                </button>
+
                                 @if(!$t->is_active)
-                                <form action="{{ route('tahun-pelajaran.activate', $t->id) }}" method="POST">
+                                <form action="{{ route('tahun-pelajaran.activate', $t->id) }}" method="POST"
+                                    class="m-0 p-0">
                                     @csrf @method('PATCH')
                                     <button type="submit"
                                         class="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 px-3 py-1.5 rounded transition border border-transparent hover:border-indigo-100">
@@ -188,9 +214,10 @@
                                     </button>
                                 </form>
 
-                                <div class="w-px h-4 bg-slate-300"></div>
+                                <div class="w-px h-4 bg-slate-300 mx-1"></div>
 
                                 <form action="{{ route('tahun-pelajaran.destroy', $t->id) }}" method="POST"
+                                    class="m-0 p-0"
                                     onsubmit="return confirm('Hapus tahun {{ $t->tahun }} {{ $t->semester }}?')">
                                     @csrf @method('DELETE')
                                     <button type="submit"
@@ -205,7 +232,7 @@
                                 </form>
                                 @else
                                 <span
-                                    class="text-[10px] font-bold text-slate-300 italic uppercase tracking-wider">Sedang
+                                    class="text-[10px] font-bold text-slate-400 italic uppercase tracking-wider ml-2 bg-white px-2 py-1 rounded border border-slate-200">Sedang
                                     Digunakan</span>
                                 @endif
                             </div>
@@ -230,5 +257,62 @@
             </table>
         </div>
     </div>
+
+    {{-- MODAL EDIT (AlpineJS) --}}
+    <div x-show="editModalOpen" style="display: none;" class="fixed inset-0 z-[100] flex items-center justify-center">
+        <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" @click="editModalOpen = false"
+            x-show="editModalOpen" x-transition.opacity.duration.300ms></div>
+
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden relative z-10 transform transition-all"
+            x-show="editModalOpen" x-transition:enter="ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200"
+            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider">Edit Tahun Pelajaran</h3>
+                <button @click="editModalOpen = false" class="text-slate-400 hover:text-slate-600 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+
+            <form :action="`{{ route('tahun-pelajaran.index') }}/${editId}`" method="POST" class="p-6">
+                @csrf
+                @method('PUT')
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tahun
+                            Ajaran</label>
+                        <input type="text" name="tahun" x-model="editTahun" required
+                            class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition bg-slate-50 focus:bg-white text-sm font-medium text-slate-700">
+                    </div>
+
+                    <div>
+                        <label
+                            class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Semester</label>
+                        <select name="semester" x-model="editSemester" required
+                            class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition bg-slate-50 focus:bg-white text-sm font-medium text-slate-700">
+                            <option value="Ganjil">Ganjil</option>
+                            <option value="Genap">Genap</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" @click="editModalOpen = false"
+                        class="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition">Batal</button>
+                    <button type="submit"
+                        class="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-lg shadow-md hover:shadow-lg transition transform active:scale-95">Update
+                        Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </div>
 @endsection

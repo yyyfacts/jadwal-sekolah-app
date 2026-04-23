@@ -45,6 +45,35 @@
     </div>
     @endif
 
+    {{-- UI DETAIL PELANGGARAN SOFT CONSTRAINT --}}
+    @if(session('pelanggaran') && count(session('pelanggaran')) > 0)
+    <div x-data="{ bukaDetail: false }"
+        class="mb-4 mt-[-4px] bg-indigo-50/50 border border-indigo-100 rounded-lg shadow-sm text-sm overflow-hidden transition-all duration-300">
+        <button @click="bukaDetail = !bukaDetail"
+            class="w-full flex items-center justify-between p-3 text-indigo-700 font-medium hover:bg-indigo-50 transition-colors">
+            <div class="flex items-center gap-2">
+                <span>⚠️ Terdapat {{ count(session('pelanggaran')) }} Penyesuaian Jadwal (Soft Constraint)</span>
+            </div>
+            <svg :class="{'rotate-180': bukaDetail}" class="w-4 h-4 transition-transform" fill="none"
+                stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+        </button>
+
+        <div x-show="bukaDetail" style="display: none;">
+            <ul class="px-5 pb-4 pt-1 list-disc list-inside text-indigo-600/80 text-xs space-y-1">
+                @foreach(session('pelanggaran') as $info)
+                <li>{{ $info }}</li>
+                @endforeach
+            </ul>
+            <div class="px-5 pb-3 pt-2 border-t border-indigo-100 text-[10px] text-indigo-400 italic">
+                *Catatan: Penyesuaian jadwal guru ini terpaksa diizinkan oleh sistem agar jadwal utama tetap bisa
+                terbentuk 100% tanpa ada kelas atau guru yang bentrok.
+            </div>
+        </div>
+    </div>
+    @endif
+
     @if(session('error'))
     <div x-data="{ show: true }" x-show="show" x-transition
         class="mb-2 flex items-center justify-between p-3 bg-rose-50 border border-rose-100 rounded-lg shadow-sm text-rose-800 shrink-0">
