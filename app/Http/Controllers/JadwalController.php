@@ -226,6 +226,8 @@ class JadwalController extends Controller
                         ->with('waktu_komputasi', $result['waktu_komputasi_detik'] ?? ($result['metrik']['waktu_komputasi_detik'] ?? null))
                         ->with('csr', $result['metrik']['CSR'] ?? null)
                         ->with('scfr', $result['metrik']['SCFR'] ?? null)
+                        ->with('total_preferensi', $result['metrik']['total_preferensi'] ?? null) // TAMBAHAN BARU
+                        ->with('jumlah_pelanggaran', $result['metrik']['jumlah_pelanggaran'] ?? null) // TAMBAHAN BARU
                         ->with('pelanggaran', $result['metrik']['detail_pelanggaran'] ?? []);
                         
                 } catch (\Exception $e) {

@@ -8,40 +8,56 @@
     {{-- FLASH MESSAGES & METRIK --}}
     @if(session('success'))
     <div x-data="{ show: true }" x-show="show" x-transition
-        class="mb-2 flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-lg shadow-sm text-emerald-800 shrink-0">
+        class="mb-2 flex flex-col p-3 bg-emerald-50 border border-emerald-100 rounded-lg shadow-sm text-emerald-800 shrink-0">
 
-        <div class="flex flex-wrap items-center gap-2">
-            <span class="font-bold text-xs">✅ {{ session('success') }}</span>
+        <div class="flex items-center justify-between">
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="font-bold text-xs">✅ {{ session('success') }}</span>
 
-            {{-- Badge Waktu Komputasi --}}
-            @if(session('waktu_komputasi'))
-            <span
-                class="px-2 py-0.5 rounded bg-emerald-200/50 text-emerald-700 text-[9px] font-bold uppercase border border-emerald-200"
-                title="Waktu proses pencarian solusi">
-                ⏱️ {{ session('waktu_komputasi') }} Dtk
-            </span>
-            @endif
+                {{-- Badge Waktu Komputasi --}}
+                @if(session('waktu_komputasi'))
+                <span
+                    class="px-2 py-0.5 rounded bg-emerald-200/50 text-emerald-700 text-[9px] font-bold uppercase border border-emerald-200"
+                    title="Waktu proses pencarian solusi">
+                    ⏱️ {{ session('waktu_komputasi') }} Dtk
+                </span>
+                @endif
 
-            {{-- Badge Metrik CSR (Constraint Satisfaction Rate) --}}
-            @if(session('csr'))
-            <span
-                class="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[9px] font-bold uppercase border border-blue-200"
-                title="Tingkat Pemenuhan Aturan Mutlak (Hard Constraint)">
-                🎯 CSR: {{ session('csr') }}%
-            </span>
-            @endif
+                {{-- Badge Metrik CSR (Constraint Satisfaction Rate) --}}
+                @if(session('csr') !== null)
+                <span
+                    class="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[9px] font-bold uppercase border border-blue-200"
+                    title="Tingkat Pemenuhan Aturan Mutlak (Hard Constraint)">
+                    🎯 CSR: {{ session('csr') }}%
+                </span>
+                @endif
 
-            {{-- Badge Metrik SCFR (Soft Constraint Fulfillment Rate) --}}
-            @if(session('scfr'))
-            <span
-                class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 text-[9px] font-bold uppercase border border-indigo-200"
-                title="Tingkat Pemerataan Jadwal Guru (Soft Constraint)">
-                ⚖️ SCFR: {{ session('scfr') }}%
-            </span>
-            @endif
+                {{-- Badge Metrik SCFR (Soft Constraint Fulfillment Rate) --}}
+                @if(session('scfr') !== null)
+                <span
+                    class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 text-[9px] font-bold uppercase border border-indigo-200"
+                    title="Tingkat Pemerataan Jadwal Guru (Soft Constraint)">
+                    ⚖️ SCFR: {{ session('scfr') }}%
+                </span>
+                @endif
+            </div>
+
+            <button @click="show = false" class="text-emerald-400 hover:text-emerald-700 ml-4">&times;</button>
         </div>
 
-        <button @click="show = false" class="text-emerald-400 hover:text-emerald-700 ml-4">&times;</button>
+        {{-- DETAIL PERHITUNGAN SCFR --}}
+        @if(session('total_preferensi') !== null && session('jumlah_pelanggaran') !== null)
+        <div
+            class="mt-3 p-3 bg-white/60 border border-emerald-200/50 rounded-md text-[11px] text-emerald-900 font-mono flex flex-col gap-1">
+            <strong class="text-emerald-700">💡 Detail Perhitungan SCFR (Berdasarkan Frequency-based
+                Constraint):</strong>
+            <span>Rumus : ((Total Evaluasi Preferensi - Jumlah Pelanggaran) / Total Evaluasi Preferensi) x 100%</span>
+            <span>Hitung : (({{ session('total_preferensi') }} - {{ session('jumlah_pelanggaran') }}) /
+                {{ session('total_preferensi') }}) x 100%</span>
+            <span>Hasil : <strong>{{ session('scfr') }}%</strong></span>
+        </div>
+        @endif
+
     </div>
     @endif
 
