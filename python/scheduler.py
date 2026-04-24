@@ -143,14 +143,11 @@ def bangun_model(
         batas_maks  = t.get('batas_maksimal_jam')
         nama_mapel  = str(t.get('nama_mapel', ''))
 
-        # ---------------------------------------------------------------------
-        # PERBAIKAN: Deteksi PJOK lebih robust (Case-insensitive, anti spasi)
-        # Jika mapel PJOK, maka batas_maks bersifat WAJIB (HARD CONSTRAINT)
-        # ---------------------------------------------------------------------
         mapel_clean = nama_mapel.upper().replace(' ', '').replace('.', '')
         is_pjok     = 'PJOK' in mapel_clean or 'OLAHRAGA' in mapel_clean or 'PENJAS' in mapel_clean
         batas_wajib = is_pjok or bool(t.get('batas_wajib', False))
 
+        # Mengelompokkan assignment berdasarkan Kelas dan Mapel untuk aturan Spread
         group_key = (k_id, m_id if m_id else f"guru_{g_id}")
         tasks_per_mapel_group.setdefault(group_key, []).append(t_id)
 
@@ -162,12 +159,10 @@ def bangun_model(
 
             batas_jam = get_max_jam(kelas_limits, k_id, h)
             
-            # --- POTONG DOMAIN LANGSUNG UNTUK HARD CONSTRAINT (PJOK) ---
             batas_aktual_hari = batas_jam
             if batas_maks is not None and batas_wajib:
                 batas_aktual_hari = min(batas_jam, int(batas_maks))
 
-            # Jika durasi mapel lebih panjang dari batas waktu yang tersedia
             if durasi > batas_aktual_hari:
                 continue
 
@@ -182,18 +177,11 @@ def bangun_model(
                 start_var, durasi, end_var, is_present, f'iv_{t_id}_{h}'
             )
 
-            # --- SOFT CONSTRAINT UNTUK NON-PJOK ---
-            # Jika mapel ada batasan namun BUKAN PJOK, boleh dilanggar dengan penalti
             if batas_maks is not None and not batas_wajib:
                 batas_int = int(batas_maks)
-                # SOFT: is_over = 1  ↔  (present=1 AND end > batas+1)
                 is_over = model.NewBoolVar(f'overbatas_{t_id}_{h}')
-
-                # present & NOT over  →  end ≤ batas+1
                 model.Add(end_var <= batas_int + 1).OnlyEnforceIf([is_present, is_over.Not()])
-                # present & IS over   →  end ≥ batas+2
                 model.Add(end_var >= batas_int + 2).OnlyEnforceIf([is_present, is_over])
-                # NOT present         →  tidak mungkin over
                 model.Add(is_over == 0).OnlyEnforceIf(is_present.Not())
 
                 soft_batas_violation_vars.append(is_over)
@@ -223,7 +211,6 @@ def bangun_model(
         if possible_days:
             model.AddExactlyOne(possible_days)
         else:
-            # Mengembalikan Infeasible jika PJOK butuh slot melebihi batas jam di SEMUA hari aktif
             return (None,) * 11
 
     # =========================================================================
@@ -248,6 +235,16 @@ def bangun_model(
         for h in HARI_LIST:
             if intervals_per_guru[g_id][h]:
                 model.AddNoOverlap(intervals_per_guru[g_id][h])
+
+    # -------------------------------------------------------------------------
+    # HC-6: Spread Mapel (Maksimal 1 kali per hari) -> DIMASUKKAN SEBAGAI HARD
+    # -------------------------------------------------------------------------
+    for group_key, task_ids in tasks_per_mapel_group.items():
+        if len(task_ids) > 1:
+            for h in HARI_LIST:
+                presences_for_h = [presences[(t, h)] for t in task_ids if (t, h) in presences]
+                if len(presences_for_h) > 1:
+                    model.Add(sum(presences_for_h) <= 1)
 
     # =========================================================================
     # C: SOFT CONSTRAINTS (SF-1): Penyebaran Beban Guru
@@ -307,11 +304,10 @@ def bangun_model(
 # =============================================================================
 
 def hitung_csr(solver, raw_assignments, kelass, gurus,
-               kelas_limits, guru_hari_map, presences, starts):
+               kelas_limits, guru_hari_map, presences, starts, tasks_per_mapel_group):
     detail = []
     total  = 0
 
-    # Bangun peta solusi
     solusi_map = {}
     for t in raw_assignments:
         t_id   = t['id']
@@ -333,10 +329,7 @@ def hitung_csr(solver, raw_assignments, kelass, gurus,
                 if t['kelas_id'] == k_id and solusi_map.get(t['id'], (None,))[0] == h
             )
             if aktual != target:
-                detail.append(
-                    f"[HC-1] Kelas {k_id} hari {h}: "
-                    f"terisi {aktual} JP, seharusnya tepat {target} JP."
-                )
+                detail.append(f"[HC-1] Kelas {k_id} hari {h}: terisi {aktual} JP, seharusnya tepat {target} JP.")
 
     # HC-2 Anti tabrakan guru
     for g in gurus:
@@ -380,12 +373,9 @@ def hitung_csr(solver, raw_assignments, kelass, gurus,
             hari_terjadwal = solusi_map[t_id][0]
             if hari_terjadwal not in guru_hari_map[g_id]:
                 nama = get_nama_guru(gurus, g_id)
-                detail.append(
-                    f"[HC-4] {nama} dijadwalkan di hari {hari_terjadwal} "
-                    f"(bukan hari mengajarnya)."
-                )
+                detail.append(f"[HC-4] {nama} dijadwalkan di hari {hari_terjadwal} (bukan hari mengajarnya).")
 
-    # HC-5 PJOK batas_maksimal_jam (Pastikan terbaca di perhitungan laporan CSR)
+    # HC-5 PJOK batas_maksimal_jam
     for t in raw_assignments:
         nama_mapel  = str(t.get('nama_mapel', ''))
         mapel_clean = nama_mapel.upper().replace(' ', '').replace('.', '')
@@ -403,13 +393,22 @@ def hitung_csr(solver, raw_assignments, kelass, gurus,
         total += 1
         if t_id in solusi_map:
             h, jam_mulai, durasi = solusi_map[t_id]
-            slot_terakhir = jam_mulai + durasi - 1     # inklusif
+            slot_terakhir = jam_mulai + durasi - 1
             if slot_terakhir > int(batas_maks):
-                detail.append(
-                    f"[HC-5] {t.get('nama_mapel','PJOK')} kelas {t['kelas_id']} "
-                    f"hari {h}: selesai slot {slot_terakhir}, "
-                    f"batas maksimal {int(batas_maks)}."
-                )
+                detail.append(f"[HC-5] {t.get('nama_mapel','PJOK')} kelas {t['kelas_id']} hari {h}: selesai slot {slot_terakhir}, batas maksimal {int(batas_maks)}.")
+
+    # HC-6 Spread Mapel (Maksimal 1 per hari)
+    for group_key, task_ids in tasks_per_mapel_group.items():
+        if len(task_ids) > 1:
+            k_id = group_key[0]
+            contoh_t = next((t for t in raw_assignments if t['id'] == task_ids[0]), None)
+            nama_mapel = contoh_t.get('nama_mapel', group_key[1]) if contoh_t else group_key[1]
+            
+            for h in HARI_LIST:
+                total += 1
+                count_h = sum(1 for t_id in task_ids if t_id in solusi_map and solusi_map[t_id][0] == h)
+                if count_h > 1:
+                    detail.append(f"[HC-6] Mapel {nama_mapel} kelas {k_id} muncul {count_h} kali di hari {h} (AtMostOne violated).")
 
     jml = len(detail)
     CSR = 100.0 * (total - jml) / total if total > 0 else 100.0
@@ -474,17 +473,11 @@ def main():
     if model is None:
         print(json.dumps({
             "status" : "INFEASIBLE",
-            "message": "Bentrok fatal terdeteksi sebelum solver dijalankan. Cek apakah ada mapel PJOK dengan durasi yang tidak muat di batas jam maksimal.",
+            "message": "Bentrok fatal terdeteksi sebelum solver dijalankan. Cek batas hari aktif vs pemecahan mapel.",
             "metrik" : _empty_metrik(time.time() - T_mulai),
         }))
         return
 
-    # =========================================================================
-    # OBJEKTIF
-    #   Primer  : minimasi jumlah pelanggaran penyebaran guru (SF-1)
-    #   Sekunder: minimasi jumlah pelanggaran batas_maks non-PJOK (SF-2)
-    #   Tersier : minimasi magnitudo deviasi penyebaran
-    # =========================================================================
     obj_terms = []
     if violation_vars:
         obj_terms.append(BOBOT_PELANGGARAN * sum(violation_vars))
@@ -518,37 +511,27 @@ def main():
 
         status_label = "OPTIMAL" if status == cp_model.OPTIMAL else "FEASIBLE"
 
-        # CSR — verifikasi HC-1 s/d HC-5
+        # Memasukkan argumen tambahan tasks_per_mapel_group untuk evaluasi CSR Spread
         CSR, total_hard, jml_hard, detail_hard = hitung_csr(
             solver, raw_assignments, kelass, gurus,
-            kelas_limits, guru_hari_map, presences, starts,
+            kelas_limits, guru_hari_map, presences, starts, tasks_per_mapel_group
         )
 
-        # SCFR — SF-1 (penyebaran) + SF-2 (batas_maks non-PJOK)
         detail_soft = []
 
-        # SF-1: Penyebaran beban guru
+        # SF-1
         for p in penalti_info:
             if solver.Value(p['is_violation']) == 1:
                 nama         = get_nama_guru(gurus, p['g_id'])
                 actual_beban = sum(solver.Value(v) for v in p['beban_vars'])
-                detail_soft.append(
-                    f"[SF-1] {nama} mengajar {actual_beban} JP hari {p['hari']} "
-                    f"(target: {p['target']} JP, toleransi ±{p['toleransi']} JP)."
-                )
+                detail_soft.append(f"[SF-1] {nama} mengajar {actual_beban} JP hari {p['hari']} (target: {p['target']} JP, toleransi ±{p['toleransi']} JP).")
 
-        # SF-2: Batas_maks non-PJOK
+        # SF-2
         for sb in soft_batas_info:
-            if (solver.Value(sb['is_present']) == 1
-                    and solver.Value(sb['is_over']) == 1):
-                slot_akhir = solver.Value(sb['end_var']) - 1   # inklusif
-                detail_soft.append(
-                    f"[SF-2] {sb['nama_mapel']} kelas {sb['kelas_id']} "
-                    f"hari {sb['h']}: selesai slot {slot_akhir}, "
-                    f"batas preferensi {sb['batas_maks']}."
-                )
+            if solver.Value(sb['is_present']) == 1 and solver.Value(sb['is_over']) == 1:
+                slot_akhir = solver.Value(sb['end_var']) - 1
+                detail_soft.append(f"[SF-2] {sb['nama_mapel']} kelas {sb['kelas_id']} hari {sb['h']}: selesai slot {slot_akhir}, batas preferensi {sb['batas_maks']}.")
 
-        # Total preferensi = SF-1 + SF-2 per-task
         tasks_sf2 = len({sb['t_id'] for sb in soft_batas_info})
         total_soft = len(penalti_info) + tasks_sf2
         jml_soft   = len(detail_soft)
@@ -559,12 +542,10 @@ def main():
             "solution": solusi,
             "metrik"  : {
                 "waktu_komputasi_detik"  : round(T, 4),
-                # ── Hard Constraints (CSR) ─────────────────────────
                 "CSR"                    : round(CSR, 2),
                 "total_hard_constraints" : total_hard,
                 "jumlah_pelanggaran_hard": jml_hard,
                 "detail_pelanggaran_hard": detail_hard,
-                # ── Soft Constraints (SCFR) ────────────────────────
                 "SCFR"                   : round(SCFR, 2),
                 "total_preferensi"       : total_soft,
                 "jumlah_pelanggaran_soft": jml_soft,
