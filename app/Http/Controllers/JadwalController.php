@@ -165,8 +165,6 @@ class JadwalController extends Controller
             $assignments = Jadwal::with('mapel')->where(function($q) {
                     $q->where('status', 'offline')->orWhereNull('status');
                 })->get()->map(function ($j) {
-                    
-                    // --- UBAHAN DI SINI UNTUK BATAS WAJIB ---
                     $namaMapel = $j->mapel->nama_mapel ?? '';
                     $isPjok = (stripos($namaMapel, 'PJOK') !== false); 
                     
@@ -178,7 +176,7 @@ class JadwalController extends Controller
                         'jumlah_jam' => $j->jumlah_jam,
                         'nama_mapel' => $namaMapel,
                         'batas_maksimal_jam' => isset($j->mapel->batas_maksimal_jam) ? (int)$j->mapel->batas_maksimal_jam : null,
-                        'batas_wajib' => $isPjok // Menentukan Hard/Soft constraint di solver
+                        'batas_wajib' => $isPjok 
                     ];
                 });
 
@@ -229,12 +227,11 @@ class JadwalController extends Controller
                     
                     return redirect()->route('jadwal.index')
                         ->with('success', $result['message'])
-                        ->with('waktu_komputasi', $result['waktu_komputasi_detik'] ?? ($result['metrik']['waktu_komputasi_detik'] ?? null))
+                        ->with('waktu_komputasi', $result['metrik']['waktu_komputasi_detik'] ?? null)
                         ->with('csr', $result['metrik']['CSR'] ?? null)
-                        ->with('scfr', $result['metrik']['SCFR'] ?? null)
-                        ->with('total_preferensi', $result['metrik']['total_preferensi'] ?? null) 
-                        ->with('jumlah_pelanggaran', $result['metrik']['jumlah_pelanggaran'] ?? null) 
-                        ->with('pelanggaran', $result['metrik']['detail_pelanggaran'] ?? []);
+                        ->with('scfr_gabungan', $result['metrik']['SCFR_gabungan'] ?? null)
+                        ->with('detail_csr', $result['metrik']['detail_csr'] ?? []) // <-- TAMBAHAN DATA CSR
+                        ->with('detail_metrik', $result['metrik']['detail'] ?? []); 
                         
                 } catch (\Exception $e) {
                     DB::rollBack();
