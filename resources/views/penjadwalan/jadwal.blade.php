@@ -20,7 +20,7 @@
                     <span
                         class="px-2 py-0.5 rounded bg-emerald-200/50 text-emerald-700 text-[9px] font-bold uppercase border border-emerald-200"
                         title="Waktu proses pencarian solusi">
-                        ⏱️ {{ session('waktu_komputasi') }} Dtk
+                        ⏱️ {{ session('waktu_komputasi') }} DTK
                     </span>
                     @endif
 
@@ -33,12 +33,12 @@
                     </span>
                     @endif
 
-                    {{-- Badge Metrik SCFR Gabungan (Soft Constraint Fulfillment Rate) --}}
-                    @if(session('scfr_gabungan') !== null)
+                    {{-- Badge Metrik SCFR (Soft Constraint Fulfillment Rate) --}}
+                    @if(session('scfr') !== null)
                     <span
                         class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 text-[9px] font-bold uppercase border border-indigo-200"
                         title="Tingkat Pemenuhan Preferensi (Soft Constraint)">
-                        ⚖️ SCFR: {{ session('scfr_gabungan') }}%
+                        ⚖️ SCFR: {{ session('scfr') }}%
                     </span>
                     @endif
                 </div>
@@ -48,60 +48,74 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                 {{-- DETAIL PERHITUNGAN CSR (HARD CONSTRAINT) --}}
-                @if(session('detail_csr'))
+                @if(session('csr') !== null)
                 <div
                     class="p-3 bg-white/60 border border-blue-200/50 rounded-md text-[11px] text-blue-900 font-mono flex flex-col gap-1">
                     <strong class="text-blue-700">🛡️ Detail Perhitungan CSR (Aturan Mutlak / Hard Constraint):</strong>
-                    <span>Rumus : ((Total Evaluasi Aturan - Pelanggaran) / Total Evaluasi) x 100%</span>
-                    <span>Hitung : (({{ session('detail_csr')['total_evaluasi'] }} - 0) /
-                        {{ session('detail_csr')['total_evaluasi'] }}) x 100%</span>
-                    <span>Hasil : <strong>100% (Solusi Feasible)</strong></span>
-                    <div class="mt-1 border-t border-blue-200/50 pt-1 text-[10px] text-blue-700/80 leading-tight">
-                        Rincian Aturan: Tepat 1 Hari ({{ session('detail_csr')['rincian']['hc1_assignments'] }}), Beban
-                        Kelas ({{ session('detail_csr')['rincian']['hc2_load'] }}), Anti-Bentrok
-                        ({{ session('detail_csr')['rincian']['hc3_overlap'] }}), Distribusi Mapel
-                        ({{ session('detail_csr')['rincian']['hc4_spread'] }}), Regulasi Wajib Batas Jam
-                        ({{ session('detail_csr')['rincian']['hc6_pjok'] }}).
+                    <span>Rumus : ((Total Evaluasi Aturan - Jumlah Pelanggaran) / Total Evaluasi Aturan) x 100%</span>
+                    <span>Hitung : (({{ session('total_hard_constraints') }} - {{ session('jumlah_pelanggaran_hard') }})
+                        / {{ session('total_hard_constraints') ?: 1 }}) x 100%</span>
+                    <span>Hasil : <strong>{{ session('csr') }}%</strong></span>
+
+                    @if(session('jumlah_pelanggaran_hard') > 0)
+                    <div
+                        class="mt-1 border-t border-blue-200/50 pt-1 text-[10px] text-rose-600 leading-tight font-bold">
+                        Terdapat {{ session('jumlah_pelanggaran_hard') }} pelanggaran aturan mutlak (Hard Constraint).
                     </div>
+                    @endif
                 </div>
                 @endif
 
                 {{-- DETAIL PERHITUNGAN SCFR (SOFT CONSTRAINT) --}}
-                @if(session('detail_metrik'))
-                @php
-                $sc1 = session('detail_metrik')['sc1_distribusi_guru'] ?? ['total_evaluasi' => 0, 'jumlah_pelanggaran'
-                => 0, 'pelanggaran' => []];
-                $sc2 = session('detail_metrik')['sc2_batas_jam_mapel'] ?? ['total_evaluasi' => 0, 'jumlah_pelanggaran'
-                => 0, 'pelanggaran' => []];
-
-                $totalEvaluasi = $sc1['total_evaluasi'] + $sc2['total_evaluasi'];
-                $totalPelanggaran = $sc1['jumlah_pelanggaran'] + $sc2['jumlah_pelanggaran'];
-                @endphp
-
+                @if(session('scfr') !== null)
                 <div
                     class="p-3 bg-white/60 border border-emerald-200/50 rounded-md text-[11px] text-emerald-900 font-mono flex flex-col gap-1">
-                    <strong class="text-emerald-700">💡 Detail Perhitungan SCFR (Preferensi / Soft Constraint):</strong>
-                    <span>Rumus : ((Total Evaluasi Preferensi - Jumlah Pelanggaran) / Total Evaluasi) x 100%</span>
-                    <span>Hitung : (({{ $totalEvaluasi }} - {{ $totalPelanggaran }}) /
-                        {{ $totalEvaluasi > 0 ? $totalEvaluasi : 1 }}) x 100%</span>
-                    <span>Hasil : <strong>{{ session('scfr_gabungan') }}%</strong></span>
-                    <div class="mt-1 border-t border-emerald-200/50 pt-1 text-[10px] text-emerald-700/80 leading-tight">
-                        Rincian Evaluasi: Distribusi Jam Mengajar Guru ({{ $sc1['total_evaluasi'] }}), Preferensi Batas
-                        Maksimal Jam Mapel ({{ $sc2['total_evaluasi'] }}).
-                    </div>
+                    <strong class="text-emerald-700">💡 Detail Perhitungan SCFR (Berdasarkan Frequency-based
+                        Constraint):</strong>
+                    <span>Rumus : ((Total Evaluasi Preferensi - Jumlah Pelanggaran) / Total Evaluasi Preferensi) x
+                        100%</span>
+                    <span>Hitung : (({{ session('total_preferensi') }} - {{ session('jumlah_pelanggaran_soft') }}) /
+                        {{ session('total_preferensi') ?: 1 }}) x 100%</span>
+                    <span>Hasil : <strong>{{ session('scfr') }}%</strong></span>
                 </div>
                 @endif
             </div>
         </div>
 
+        {{-- UI DETAIL PELANGGARAN HARD CONSTRAINT --}}
+        @if(session('jumlah_pelanggaran_hard') > 0)
+        <div x-data="{ bukaDetailHard: true }"
+            class="bg-rose-50 border border-rose-200 rounded-lg shadow-sm text-sm overflow-hidden transition-all duration-300">
+            <button @click="bukaDetailHard = !bukaDetailHard"
+                class="w-full flex items-center justify-between p-3 text-rose-700 font-bold hover:bg-rose-100 transition-colors">
+                <div class="flex items-center gap-2">
+                    <span>❌ Terdapat {{ session('jumlah_pelanggaran_hard') }} Pelanggaran Aturan Mutlak (Hard
+                        Constraint)</span>
+                </div>
+                <svg :class="{'rotate-180': bukaDetailHard}" class="w-4 h-4 transition-transform" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+            <div x-show="bukaDetailHard" class="px-5 pb-4 pt-1">
+                <ul class="list-disc list-inside text-rose-600 text-xs space-y-1">
+                    @foreach(session('detail_pelanggaran_hard') as $ph)
+                    <li>{{ $ph }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+        @endif
+
         {{-- UI DETAIL PELANGGARAN SOFT CONSTRAINT --}}
-        @if(isset($totalPelanggaran) && $totalPelanggaran > 0)
+        @if(session('jumlah_pelanggaran_soft') > 0)
         <div x-data="{ bukaDetail: false }"
             class="bg-indigo-50/50 border border-indigo-100 rounded-lg shadow-sm text-sm overflow-hidden transition-all duration-300">
             <button @click="bukaDetail = !bukaDetail"
                 class="w-full flex items-center justify-between p-3 text-indigo-700 font-medium hover:bg-indigo-50 transition-colors">
                 <div class="flex items-center gap-2">
-                    <span>⚠️ Terdapat {{ $totalPelanggaran }} Penyesuaian Preferensi (Soft Constraint)</span>
+                    <span>⚠️ Terdapat {{ session('jumlah_pelanggaran_soft') }} Penyesuaian Jadwal (Soft
+                        Constraint)</span>
                 </div>
                 <svg :class="{'rotate-180': bukaDetail}" class="w-4 h-4 transition-transform" fill="none"
                     stroke="currentColor" viewBox="0 0 24 24">
@@ -110,45 +124,15 @@
             </button>
 
             <div x-show="bukaDetail" style="display: none;" class="px-5 pb-4 pt-1">
-
-                {{-- LIST SC-1: DISTRIBUSI GURU --}}
-                @if($sc1['jumlah_pelanggaran'] > 0)
-                <div class="mb-3">
-                    <p
-                        class="font-bold text-[11px] text-indigo-700 uppercase tracking-wider mb-1.5 border-b border-indigo-200 pb-1">
-                        1. Penyesuaian Beban Harian Guru ({{ $sc1['jumlah_pelanggaran'] }} Kasus)</p>
-                    <ul class="list-disc list-inside text-indigo-600/80 text-xs space-y-1">
-                        @foreach($sc1['pelanggaran'] as $p)
-                        <li>
-                            <span class="font-medium text-indigo-800">{{ $p['guru'] }}</span> mengajar
-                            <strong class="text-rose-500">{{ $p['jp_aktual'] }} JP</strong> di hari {{ $p['hari'] }}
-                            <span class="text-[10px] text-indigo-400/80">(Target ideal: {{ $p['target'] }} JP, toleransi
-                                ±{{ $sc1['toleransi_jp'] ?? 1 }} JP)</span>.
-                        </li>
-                        @endforeach
-                    </ul>
-                </div>
-                @endif
-
-                {{-- LIST SC-2: BATAS JAM MAPEL --}}
-                @if($sc2['jumlah_pelanggaran'] > 0)
-                <div>
-                    <p
-                        class="font-bold text-[11px] text-indigo-700 uppercase tracking-wider mb-1.5 border-b border-indigo-200 pb-1">
-                        2. Penyesuaian Batas Jam Mapel Non-PJOK ({{ $sc2['jumlah_pelanggaran'] }} Kasus)</p>
-                    <ul class="list-disc list-inside text-indigo-600/80 text-xs space-y-1">
-                        @foreach($sc2['pelanggaran'] as $p)
-                        <li>
-                            <span class="font-medium text-indigo-800">{{ $p['pesan'] }}</span>
-                        </li>
-                        @endforeach
-                    </ul>
-                </div>
-                @endif
+                <ul class="list-disc list-inside text-indigo-600/80 text-xs space-y-1">
+                    @foreach(session('detail_pelanggaran_soft') as $p)
+                    <li>{{ $p }}</li>
+                    @endforeach
+                </ul>
 
                 <div class="mt-3 pt-2 border-t border-indigo-100 text-[10px] text-indigo-400 italic">
-                    *Catatan: Penyesuaian preferensi ini terpaksa diizinkan oleh sistem agar jadwal utama tetap bisa
-                    terbentuk 100% tanpa ada jadwal yang bentrok (Infeasible).
+                    *Catatan: Penyesuaian jadwal ini terpaksa diizinkan oleh sistem agar jadwal utama tetap bisa
+                    terbentuk 100% tanpa ada kelas atau guru yang bentrok.
                 </div>
             </div>
         </div>
@@ -269,9 +253,7 @@
                         @foreach($dataHari as $hariItem)
                         @php
                         $namaHari = $hariItem->nama_hari;
-
                         // Filter hanya slot jam yang terisi (Abaikan tipe "Tidak Ada")
-                        // Filter dan PAKSA URUTKAN berdasarkan jam dinding (waktu_mulai)
                         $waktuAktif = $hariItem->waktuHaris->filter(function($w) {
                         return $w->tipe !== 'Tidak Ada';
                         })->sortBy('waktu_mulai');
@@ -314,7 +296,6 @@
                                 {{ $waktuTampil }}
                             </td>
 
-                            {{-- PERBAIKAN: SEMUA TIPE NON-BELAJAR DIBUAT MENYATU --}}
                             @if(in_array($tipeTampil, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat
                             Bersih', 'Pramuka']))
                             <td colspan="{{ $kelass->count() }}"
@@ -335,7 +316,6 @@
                             <td class="h-[45px] p-1 border-r border-b border-slate-200 text-center align-middle min-w-[140px] max-w-[140px] w-[140px] bg-white transition-all jadwal-cell"
                                 data-search="{{ $data ? strtolower($data['mapel'].' '.$data['guru'].' '.$kelas->nama_kelas) : '' }}"
                                 data-kelas="{{ strtolower($kelas->nama_kelas) }}">
-
                                 @if($data)
                                 <div
                                     class="w-full h-full flex flex-col justify-center items-center px-1 {{ $data['color'] }} group sel-content rounded-md border border-slate-100">
@@ -356,7 +336,7 @@
                         </tr>
                         @endforeach
 
-                        {{-- BARIS WALI KELAS DI BAWAH JADWAL FISIK (PER HARI) --}}
+                        {{-- BARIS WALI KELAS --}}
                         <tr class="bg-indigo-50/50">
                             <td colspan="3"
                                 class="px-4 py-3 text-right font-extrabold text-indigo-800 text-[10px] tracking-widest uppercase border-b border-indigo-100">
