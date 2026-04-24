@@ -128,8 +128,20 @@
                                 </div>
                                 <div>
                                     <div
-                                        class="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors">
-                                        {{ $g->nama_guru }}</div>
+                                        class="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors flex items-center gap-2">
+                                        {{ $g->nama_guru }}
+                                        @if(!empty($g->hari_array))
+                                        @if($g->jenis_hari == 'hard')
+                                        <span
+                                            class="px-1.5 py-0.5 bg-rose-100 text-rose-600 text-[9px] rounded font-bold uppercase"
+                                            title="Hard Constraint">Hari: Strict</span>
+                                        @else
+                                        <span
+                                            class="px-1.5 py-0.5 bg-emerald-100 text-emerald-600 text-[9px] rounded font-bold uppercase"
+                                            title="Soft Constraint">Hari: Soft</span>
+                                        @endif
+                                        @endif
+                                    </div>
                                     <div
                                         class="inline-block px-2 py-0.5 mt-1 rounded bg-slate-100 border border-slate-200 text-slate-500 font-bold text-[10px] tracking-wide">
                                         {{ $g->kode_guru }}</div>
@@ -255,9 +267,8 @@
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Hari Bersedia Mengajar <span
-                        class="text-[10px] font-normal italic lowercase">(Kosongkan jika bisa setiap
-                        hari)</span></label>
-                <div class="flex flex-wrap gap-3">
+                        class="text-[10px] font-normal italic lowercase">(Kosongkan jika bebas)</span></label>
+                <div class="flex flex-wrap gap-3 mb-3">
                     @foreach(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'] as $hari)
                     <label
                         class="inline-flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-indigo-50 transition">
@@ -268,6 +279,17 @@
                     @endforeach
                 </div>
             </div>
+
+            {{-- PERUBAHAN: Tambahan Input Hard/Soft Constraint --}}
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Sifat Hari Mengajar</label>
+                <select name="jenis_hari"
+                    class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition">
+                    <option value="hard">Hard Constraint (Wajib / Tidak Boleh Hari Lain)</option>
+                    <option value="soft">Soft Constraint (Prioritas Utama, Tapi Boleh Hari Lain Jika Terpaksa)</option>
+                </select>
+            </div>
+
             <button type="submit"
                 class="w-full bg-slate-900 hover:bg-indigo-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">SIMPAN
                 DATA</button>
@@ -302,12 +324,11 @@
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Hari Bersedia Mengajar <span
-                        class="text-[10px] font-normal italic lowercase">(Kosongkan jika bisa setiap
-                        hari)</span></label>
-                <div class="flex flex-wrap gap-3">
+                        class="text-[10px] font-normal italic lowercase">(Kosongkan jika bebas)</span></label>
+                <div class="flex flex-wrap gap-2 mb-3">
                     @foreach(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'] as $hari)
                     <label
-                        class="inline-flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-amber-50 transition">
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-amber-50 transition">
                         <input type="checkbox" name="hari_mengajar[]" value="{{ $hari }}"
                             {{ in_array($hari, $g->hari_array) ? 'checked' : '' }}
                             class="rounded text-amber-500 focus:ring-amber-500">
@@ -316,6 +337,19 @@
                     @endforeach
                 </div>
             </div>
+
+            {{-- PERUBAHAN: Tambahan Input Hard/Soft Constraint --}}
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Sifat Hari Mengajar</label>
+                <select name="jenis_hari"
+                    class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition">
+                    <option value="hard" {{ $g->jenis_hari == 'hard' ? 'selected' : '' }}>Hard (Wajib / Tidak Boleh Hari
+                        Lain)</option>
+                    <option value="soft" {{ $g->jenis_hari == 'soft' ? 'selected' : '' }}>Soft (Prioritas Utama, Tapi
+                        Boleh Hari Lain)</option>
+                </select>
+            </div>
+
             <button type="submit"
                 class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">UPDATE</button>
         </form>

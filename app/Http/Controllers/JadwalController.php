@@ -145,7 +145,6 @@ class JadwalController extends Controller
                 $q->orderBy('waktu_mulai');
             }])->where('is_active', true)->get();
 
-            // slotMapping[namaHari][teachingSlot] = jam_ke fisik
             $slotMapping = [];
 
             $hariAktif = $dataHari->map(function ($hariObj) use (&$slotMapping) {
@@ -166,12 +165,15 @@ class JadwalController extends Controller
                 ];
             });
 
+            // PERBAIKAN: Masukkan preferensi 'jenis_hari' ke solver
             $gurus = Guru::all()->map(fn ($guru) => [
                 'id'            => $guru->id,
                 'nama'          => $guru->nama_guru,
                 'hari_mengajar' => $guru->hari_mengajar ?? [],
+                'jenis_hari'    => $guru->jenis_hari ?? 'hard', // Mengambil data dari database
             ]);
 
+            // PERBAIKAN: Hapus Hardcode PJOK, ganti dengan data dari database mapel
             $assignments = Jadwal::with('mapel')
                 ->where(function ($q) {
                     $q->where('status', 'offline')->orWhereNull('status');
@@ -179,22 +181,16 @@ class JadwalController extends Controller
                 ->get()
                 ->map(function ($j) {
                     $namaMapel = $j->mapel->nama_mapel ?? '';
-                    $isPjok    = stripos($namaMapel, 'PJOK') !== false;
 
                     return [
-                        'id'               => $j->id,
-                        'guru_id'          => $j->guru_id,
-                        'kelas_id'         => $j->kelas_id,
-                        'mapel_id'         => $j->mapel_id,
-                        'jumlah_jam'       => $j->jumlah_jam,
-                        'nama_mapel'       => $namaMapel,
-                        // batas_maksimal_jam: HARD jika PJOK, SOFT jika bukan
-                        'batas_maksimal_jam' => isset($j->mapel->batas_maksimal_jam)
-                            ? (int) $j->mapel->batas_maksimal_jam
-                            : null,
-                        // batas_wajib = true  → PJOK → HC-5 (hard)
-                        // batas_wajib = false → lainnya → SF-2 (soft)
-                        'batas_wajib'      => $isPjok,
+                        'id'                 => $j->id,
+                        'guru_id'            => $j->guru_id,
+                        'kelas_id'           => $j->kelas_id,
+                        'mapel_id'           => $j->mapel_id,
+                        'jumlah_jam'         => $j->jumlah_jam,
+                        'nama_mapel'         => $namaMapel,
+                        'batas_maksimal_jam' => isset($j->mapel->batas_maksimal_jam) ? (int) $j->mapel->batas_maksimal_jam : null,
+                        'jenis_batas'        => $j->mapel->jenis_batas ?? 'soft', // Default soft jika null
                     ];
                 });
 
@@ -238,7 +234,6 @@ class JadwalController extends Controller
                         $nama_hari = $item['hari'];
                         $tSlot     = $item['jam'];
 
-                        // Konversi teaching-slot solver → jam_ke fisik
                         $pSlot       = $slotMapping[$nama_hari][$tSlot] ?? $tSlot;
                         $hari_id_int = $hariIdMap[$nama_hari] ?? null;
 
@@ -257,14 +252,11 @@ class JadwalController extends Controller
 
                     return redirect()->route('jadwal.index')
                         ->with('success', $result['message'])
-                        // ── Waktu & ringkasan ──────────────────────────────
                         ->with('waktu_komputasi',          $metrik['waktu_komputasi_detik']   ?? null)
-                        // ── Hard Constraints (CSR) ─────────────────────────
                         ->with('csr',                      $metrik['CSR']                     ?? null)
                         ->with('total_hard_constraints',   $metrik['total_hard_constraints']  ?? 0)
                         ->with('jumlah_pelanggaran_hard',  $metrik['jumlah_pelanggaran_hard'] ?? 0)
                         ->with('detail_pelanggaran_hard',  $metrik['detail_pelanggaran_hard'] ?? [])
-                        // ── Soft Constraints (SCFR) ────────────────────────
                         ->with('scfr',                     $metrik['SCFR']                    ?? null)
                         ->with('total_preferensi',         $metrik['total_preferensi']        ?? 0)
                         ->with('jumlah_pelanggaran_soft',  $metrik['jumlah_pelanggaran_soft'] ?? 0)

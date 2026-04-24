@@ -129,8 +129,20 @@
                                 </div>
                                 <div>
                                     <div
-                                        class="font-bold text-slate-800 text-[15px] group-hover:text-blue-600 transition-colors">
-                                        {{ $m->nama_mapel }}</div>
+                                        class="font-bold text-slate-800 text-[15px] group-hover:text-blue-600 transition-colors flex items-center gap-2">
+                                        {{ $m->nama_mapel }}
+                                        @if($m->batas_maksimal_jam)
+                                        @if($m->jenis_batas == 'hard')
+                                        <span
+                                            class="px-1.5 py-0.5 bg-rose-100 text-rose-600 text-[9px] rounded font-bold uppercase"
+                                            title="Hard Constraint">Max: {{ $m->batas_maksimal_jam }} JP (Strict)</span>
+                                        @else
+                                        <span
+                                            class="px-1.5 py-0.5 bg-emerald-100 text-emerald-600 text-[9px] rounded font-bold uppercase"
+                                            title="Soft Constraint">Max: {{ $m->batas_maksimal_jam }} JP (Soft)</span>
+                                        @endif
+                                        @endif
+                                    </div>
                                     <div
                                         class="inline-block px-2 py-0.5 mt-1 rounded-md bg-slate-100 text-slate-500 font-bold text-[10px] tracking-wide uppercase">
                                         {{ $m->kode_mapel }}</div>
@@ -244,7 +256,7 @@
 
     {{-- 1. Modal Tambah --}}
     <div id="modaltambah"
-        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden flex items-center justify-center p-4">
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
         <div
             class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-scale-in border border-white/20">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -267,17 +279,29 @@
                         class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none font-mono uppercase text-sm transition"
                         placeholder="MTK" required>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Batas Maksimal Jam <span
-                            class="text-slate-400 lowercase font-normal">(Opsional)</span></label>
-                    <input type="number" name="batas_maksimal_jam" min="1" max="15"
-                        class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none text-sm transition"
-                        placeholder="Contoh: 6 (Kosongkan jika bebas)">
-                    <p class="text-[10px] text-slate-400 mt-1">Isi dengan angka (misal: 6). Jika diisi, mapel tidak akan
-                        dijadwalkan melewati jam tersebut.</p>
+
+                {{-- PERUBAHAN: Tambahan Input Hard/Soft Constraint --}}
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Maksimal Jam</label>
+                        <input type="number" name="batas_maksimal_jam" min="1" max="15"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none text-sm transition"
+                            placeholder="Opsional">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Sifat Batasan</label>
+                        <select name="jenis_batas"
+                            class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none text-sm transition">
+                            <option value="soft">Soft Constraint (Disarankan)</option>
+                            <option value="hard">Hard Constraint (Wajib / Strict)</option>
+                        </select>
+                    </div>
                 </div>
+                <p class="text-[10px] text-slate-400">Jika diisi dan diset <b>Hard</b>, mapel dilarang keras melanggar
+                    batas jam. Jika <b>Soft</b>, solver boleh melanggar demi prioritas jadwal.</p>
+
                 <button type="submit"
-                    class="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">SIMPAN
+                    class="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs mt-2">SIMPAN
                     DATA</button>
             </form>
         </div>
@@ -286,7 +310,7 @@
     @foreach($mapels as $m)
     {{-- 2. Modal Edit --}}
     <div id="edit{{ $m->id }}"
-        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden flex items-center justify-center p-4">
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
             <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
                 <h3 class="font-bold text-amber-800 flex items-center gap-2"><span
@@ -308,13 +332,28 @@
                         class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none font-mono uppercase text-sm transition"
                         required>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Batas Maksimal Jam <span
-                            class="text-slate-400 lowercase font-normal">(Opsional)</span></label>
-                    <input type="number" name="batas_maksimal_jam" value="{{ $m->batas_maksimal_jam }}" min="1" max="15"
-                        class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition"
-                        placeholder="Contoh: 6 (Kosongkan jika bebas)">
+
+                {{-- PERUBAHAN: Tambahan Input Hard/Soft Constraint --}}
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-2">Maksimal Jam</label>
+                        <input type="number" name="batas_maksimal_jam" value="{{ $m->batas_maksimal_jam }}" min="1"
+                            max="15"
+                            class="w-full border border-slate-300 rounded-xl px-3 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition"
+                            placeholder="Opsional">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-2">Sifat Batasan</label>
+                        <select name="jenis_batas"
+                            class="w-full border border-slate-300 rounded-xl px-2 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-xs transition">
+                            <option value="soft" {{ $m->jenis_batas == 'soft' ? 'selected' : '' }}>Soft (Disarankan)
+                            </option>
+                            <option value="hard" {{ $m->jenis_batas == 'hard' ? 'selected' : '' }}>Hard (Strict)
+                            </option>
+                        </select>
+                    </div>
                 </div>
+
                 <button type="submit"
                     class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">UPDATE</button>
             </form>
@@ -323,7 +362,7 @@
 
     {{-- 3. Modal Distribusi --}}
     <div id="modaljadwal{{ $m->id }}"
-        class="fixed inset-0 bg-slate-900/80 z-[99] hidden flex items-center justify-center p-2 sm:p-4 transition-opacity duration-300">
+        class="fixed inset-0 bg-slate-900/80 z-[99] hidden items-center justify-center p-2 sm:p-4 transition-opacity duration-300">
         <div
             class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-200 overflow-hidden animate-scale-in">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">

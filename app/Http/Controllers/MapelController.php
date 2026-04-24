@@ -9,7 +9,6 @@ use App\Models\Jadwal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 
 class MapelController extends Controller
 {
@@ -28,10 +27,11 @@ class MapelController extends Controller
             });
         }
 
-        // <--- TAMBAHAN UNTUK MIGRASI OTOMATIS BATAS MAKSIMAL JAM
         if (Schema::hasTable('mapels') && !Schema::hasColumn('mapels', 'batas_maksimal_jam')) {
             Schema::table('mapels', function (Blueprint $table) {
                 $table->integer('batas_maksimal_jam')->nullable()->after('kode_mapel');
+                // TAMBAHAN: Kolom untuk menyimpan status Hard/Soft constraint mapel
+                $table->enum('jenis_batas', ['hard', 'soft'])->default('soft')->after('batas_maksimal_jam');
             });
         }
     }
@@ -61,10 +61,11 @@ class MapelController extends Controller
             'nama_mapel'         => 'required|string',
             'kode_mapel'         => 'required|string|unique:mapels',
             'status'             => 'nullable|string',
-            'batas_maksimal_jam' => 'nullable|integer|min:1|max:15', // <--- DITAMBAHKAN
+            'batas_maksimal_jam' => 'nullable|integer|min:1|max:15',
+            'jenis_batas'        => 'nullable|in:hard,soft', // Validasi input baru
         ]);
         
-        Mapel::create($request->only(['nama_mapel', 'kode_mapel', 'status', 'batas_maksimal_jam'])); // <--- DITAMBAHKAN
+        Mapel::create($request->only(['nama_mapel', 'kode_mapel', 'status', 'batas_maksimal_jam', 'jenis_batas'])); 
         
         return redirect()->route('mapel.index')->with('success', 'Mata Pelajaran berhasil ditambahkan.');
     }
@@ -75,11 +76,12 @@ class MapelController extends Controller
             'nama_mapel'         => 'required|string',
             'kode_mapel'         => 'required|string|unique:mapels,kode_mapel,' . $id,
             'status'             => 'nullable|string',
-            'batas_maksimal_jam' => 'nullable|integer|min:1|max:15', // <--- DITAMBAHKAN
+            'batas_maksimal_jam' => 'nullable|integer|min:1|max:15',
+            'jenis_batas'        => 'nullable|in:hard,soft', // Validasi input baru
         ]);
         
         $mapel = Mapel::findOrFail($id);
-        $mapel->update($request->only(['nama_mapel', 'kode_mapel', 'status', 'batas_maksimal_jam'])); // <--- DITAMBAHKAN
+        $mapel->update($request->only(['nama_mapel', 'kode_mapel', 'status', 'batas_maksimal_jam', 'jenis_batas']));
         
         return redirect()->route('mapel.index')->with('success', 'Data Mapel diperbarui.');
     }
@@ -119,10 +121,8 @@ class MapelController extends Controller
             ]);
 
             $kelas = Kelas::with('jadwals')->findOrFail($request->kelas_id);
-            
             $currentTotalOffline = $kelas->jadwals->where('status', 'offline')->sum('jumlah_jam');
             $maxJamKelas = $kelas->max_jam ?? 50; 
-            
             $tambahanBeban = ($request->status == 'offline') ? $request->jumlah_jam : 0;
 
             if (($currentTotalOffline + $tambahanBeban) > $maxJamKelas) {
@@ -160,7 +160,6 @@ class MapelController extends Controller
     {
         try {
             $jadwal = Jadwal::findOrFail($id);
-
             $request->validate([
                 'kelas_id'   => 'required|exists:kelas,id',
                 'guru_id'    => 'required|exists:gurus,id',
@@ -170,10 +169,8 @@ class MapelController extends Controller
             ]);
 
             $kelas = Kelas::with('jadwals')->findOrFail($request->kelas_id);
-            
             $currentTotalOthersOffline = $kelas->jadwals->where('id', '!=', $id)->where('status', 'offline')->sum('jumlah_jam');
             $maxJamKelas = $kelas->max_jam ?? 50;
-            
             $tambahanBeban = ($request->status == 'offline') ? $request->jumlah_jam : 0;
             $newTotal = $currentTotalOthersOffline + $tambahanBeban;
 
