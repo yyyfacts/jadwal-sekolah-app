@@ -165,14 +165,20 @@ class JadwalController extends Controller
             $assignments = Jadwal::with('mapel')->where(function($q) {
                     $q->where('status', 'offline')->orWhereNull('status');
                 })->get()->map(function ($j) {
+                    
+                    // --- UBAHAN DI SINI UNTUK BATAS WAJIB ---
+                    $namaMapel = $j->mapel->nama_mapel ?? '';
+                    $isPjok = (stripos($namaMapel, 'PJOK') !== false); 
+                    
                     return [ 
                         'id' => $j->id, 
                         'guru_id' => $j->guru_id, 
                         'kelas_id' => $j->kelas_id, 
                         'mapel_id' => $j->mapel_id, 
                         'jumlah_jam' => $j->jumlah_jam,
-                        'nama_mapel' => $j->mapel->nama_mapel ?? '',
-                        'batas_maksimal_jam' => isset($j->mapel->batas_maksimal_jam) ? (int)$j->mapel->batas_maksimal_jam : null
+                        'nama_mapel' => $namaMapel,
+                        'batas_maksimal_jam' => isset($j->mapel->batas_maksimal_jam) ? (int)$j->mapel->batas_maksimal_jam : null,
+                        'batas_wajib' => $isPjok // Menentukan Hard/Soft constraint di solver
                     ];
                 });
 
@@ -226,8 +232,8 @@ class JadwalController extends Controller
                         ->with('waktu_komputasi', $result['waktu_komputasi_detik'] ?? ($result['metrik']['waktu_komputasi_detik'] ?? null))
                         ->with('csr', $result['metrik']['CSR'] ?? null)
                         ->with('scfr', $result['metrik']['SCFR'] ?? null)
-                        ->with('total_preferensi', $result['metrik']['total_preferensi'] ?? null) // TAMBAHAN BARU
-                        ->with('jumlah_pelanggaran', $result['metrik']['jumlah_pelanggaran'] ?? null) // TAMBAHAN BARU
+                        ->with('total_preferensi', $result['metrik']['total_preferensi'] ?? null) 
+                        ->with('jumlah_pelanggaran', $result['metrik']['jumlah_pelanggaran'] ?? null) 
                         ->with('pelanggaran', $result['metrik']['detail_pelanggaran'] ?? []);
                         
                 } catch (\Exception $e) {
