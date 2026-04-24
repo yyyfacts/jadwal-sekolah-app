@@ -14,10 +14,10 @@ class Guru extends Model
     protected $fillable = [
         'nama_guru',
         'kode_guru',
-        'hari_mengajar'
+        'hari_mengajar',
+        'jenis_hari', // <--- INI JUGA DITAMBAHKAN SUPAYA BISA NYIMPEN
     ];
 
-    // --- TAMBAHAN: Casting agar hari_mengajar otomatis jadi Array ---
     protected $casts = [
         'hari_mengajar' => 'array',
     ];

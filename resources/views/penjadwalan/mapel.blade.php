@@ -292,8 +292,10 @@
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Sifat Batasan</label>
                         <select name="jenis_batas"
                             class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none text-sm transition">
-                            <option value="soft">Soft Constraint (Disarankan)</option>
-                            <option value="hard">Hard Constraint (Wajib / Strict)</option>
+                            <option value="soft" {{ $m->jenis_batas == 'soft' ? 'selected' : '' }}>Fleksibel (Disarankan
+                                / Boleh Dilanggar)</option>
+                            <option value="hard" {{ $m->jenis_batas == 'hard' ? 'selected' : '' }}>Mutlak (Wajib / Tidak
+                                Boleh Dilanggar)</option>
                         </select>
                     </div>
                 </div>
@@ -345,11 +347,11 @@
                     <div>
                         <label class="block text-[11px] font-bold text-slate-500 uppercase mb-2">Sifat Batasan</label>
                         <select name="jenis_batas"
-                            class="w-full border border-slate-300 rounded-xl px-2 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-xs transition">
-                            <option value="soft" {{ $m->jenis_batas == 'soft' ? 'selected' : '' }}>Soft (Disarankan)
-                            </option>
-                            <option value="hard" {{ $m->jenis_batas == 'hard' ? 'selected' : '' }}>Hard (Strict)
-                            </option>
+                            class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none text-sm transition">
+                            <option value="soft" {{ $m->jenis_batas == 'soft' ? 'selected' : '' }}>Fleksibel (Disarankan
+                                / Boleh Dilanggar)</option>
+                            <option value="hard" {{ $m->jenis_batas == 'hard' ? 'selected' : '' }}>Mutlak (Wajib / Tidak
+                                Boleh Dilanggar)</option>
                         </select>
                     </div>
                 </div>

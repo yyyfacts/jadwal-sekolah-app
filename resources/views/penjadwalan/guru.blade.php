@@ -284,9 +284,11 @@
             <div>
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Sifat Hari Mengajar</label>
                 <select name="jenis_hari"
-                    class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition">
-                    <option value="hard">Hard Constraint (Wajib / Tidak Boleh Hari Lain)</option>
-                    <option value="soft">Soft Constraint (Prioritas Utama, Tapi Boleh Hari Lain Jika Terpaksa)</option>
+                    class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition">
+                    <option value="soft" {{ $g->jenis_hari == 'soft' ? 'selected' : '' }}>Fleksibel (Prioritas, Tapi
+                        Boleh Digeser)</option>
+                    <option value="hard" {{ $g->jenis_hari == 'hard' ? 'selected' : '' }}>Mutlak (Wajib / Tidak Boleh
+                        Hari Lain)</option>
                 </select>
             </div>
 
@@ -343,15 +345,14 @@
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Sifat Hari Mengajar</label>
                 <select name="jenis_hari"
                     class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition">
-                    <option value="hard" {{ $g->jenis_hari == 'hard' ? 'selected' : '' }}>Hard (Wajib / Tidak Boleh Hari
-                        Lain)</option>
-                    <option value="soft" {{ $g->jenis_hari == 'soft' ? 'selected' : '' }}>Soft (Prioritas Utama, Tapi
-                        Boleh Hari Lain)</option>
+                    <option value="soft" {{ $g->jenis_hari == 'soft' ? 'selected' : '' }}>Fleksibel (Prioritas, Tapi
+                        Boleh Digeser)</option>
+                    <option value="hard" {{ $g->jenis_hari == 'hard' ? 'selected' : '' }}>Mutlak (Wajib / Tidak Boleh
+                        Hari Lain)</option>
                 </select>
-            </div>
 
-            <button type="submit"
-                class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">UPDATE</button>
+                <button type="submit"
+                    class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">UPDATE</button>
         </form>
     </div>
 </div>

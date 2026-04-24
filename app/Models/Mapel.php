@@ -11,12 +11,12 @@ class Mapel extends Model
 
     protected $table = 'mapels';
 
-    // <--- KOREKSI: Hapus 'kelompok' karena tidak ada di tabel database
     protected $fillable = [
-        'nama_mapel', 
-        'kode_mapel',              // Wajib ditambahkan (karena ada fitur updateMode)
-    'status',
-    'batas_maksimal_jam',
+        'nama_mapel',
+        'kode_mapel',
+        'status',
+        'batas_maksimal_jam',
+        'jenis_batas', // <--- INI BIANG KEROKNYA, SEKARANG SUDAH DITAMBAHKAN
     ];
 
     public function jadwals()
