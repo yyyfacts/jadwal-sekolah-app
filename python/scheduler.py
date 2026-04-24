@@ -141,8 +141,15 @@ def bangun_model(
         k_id        = t['kelas_id']
         m_id        = t.get('mapel_id')
         batas_maks  = t.get('batas_maksimal_jam')
-        batas_wajib = bool(t.get('batas_wajib', False))   # True = PJOK → HARD
-        nama_mapel  = t.get('nama_mapel', '')
+        nama_mapel  = str(t.get('nama_mapel', ''))
+
+        # ---------------------------------------------------------------------
+        # PERBAIKAN: Deteksi PJOK lebih robust (Case-insensitive, anti spasi)
+        # Jika mapel PJOK, maka batas_maks bersifat WAJIB (HARD CONSTRAINT)
+        # ---------------------------------------------------------------------
+        mapel_clean = nama_mapel.upper().replace(' ', '').replace('.', '')
+        is_pjok     = 'PJOK' in mapel_clean or 'OLAHRAGA' in mapel_clean or 'PENJAS' in mapel_clean
+        batas_wajib = is_pjok or bool(t.get('batas_wajib', False))
 
         group_key = (k_id, m_id if m_id else f"guru_{g_id}")
         tasks_per_mapel_group.setdefault(group_key, []).append(t_id)
@@ -154,59 +161,53 @@ def bangun_model(
                 continue
 
             batas_jam = get_max_jam(kelas_limits, k_id, h)
-            if durasi > batas_jam:
+            
+            # --- POTONG DOMAIN LANGSUNG UNTUK HARD CONSTRAINT (PJOK) ---
+            batas_aktual_hari = batas_jam
+            if batas_maks is not None and batas_wajib:
+                batas_aktual_hari = min(batas_jam, int(batas_maks))
+
+            # Jika durasi mapel lebih panjang dari batas waktu yang tersedia
+            if durasi > batas_aktual_hari:
                 continue
 
-            max_start = batas_jam - durasi + 1
+            max_start = batas_aktual_hari - durasi + 1
             if max_start < 1:
                 continue
 
-            start_var    = model.NewIntVar(1, max_start,        f's_{t_id}_{h}')
-            end_var      = model.NewIntVar(1 + durasi, batas_jam + 1, f'e_{t_id}_{h}')
+            start_var    = model.NewIntVar(1, max_start, f's_{t_id}_{h}')
+            end_var      = model.NewIntVar(1 + durasi, batas_aktual_hari + 1, f'e_{t_id}_{h}')
             is_present   = model.NewBoolVar(f'p_{t_id}_{h}')
             interval_var = model.NewOptionalIntervalVar(
                 start_var, durasi, end_var, is_present, f'iv_{t_id}_{h}'
             )
 
-            # -----------------------------------------------------------------
-            # BATAS MAKSIMAL JAM
-            #   PJOK  (batas_wajib=True)  → HC-5 (HARD)
-            #   Lainnya                   → SF-2 (SOFT, penalti jika melewati)
-            # -----------------------------------------------------------------
-            if batas_maks is not None:
+            # --- SOFT CONSTRAINT UNTUK NON-PJOK ---
+            # Jika mapel ada batasan namun BUKAN PJOK, boleh dilanggar dengan penalti
+            if batas_maks is not None and not batas_wajib:
                 batas_int = int(batas_maks)
+                # SOFT: is_over = 1  ↔  (present=1 AND end > batas+1)
+                is_over = model.NewBoolVar(f'overbatas_{t_id}_{h}')
 
-                if batas_wajib:
-                    # HARD: end (eksklusif) ≤ batas + 1
-                    model.Add(end_var <= batas_int + 1).OnlyEnforceIf(is_present)
+                # present & NOT over  →  end ≤ batas+1
+                model.Add(end_var <= batas_int + 1).OnlyEnforceIf([is_present, is_over.Not()])
+                # present & IS over   →  end ≥ batas+2
+                model.Add(end_var >= batas_int + 2).OnlyEnforceIf([is_present, is_over])
+                # NOT present         →  tidak mungkin over
+                model.Add(is_over == 0).OnlyEnforceIf(is_present.Not())
 
-                else:
-                    # SOFT: is_over = 1  ↔  (present=1 AND end > batas+1)
-                    is_over = model.NewBoolVar(f'overbatas_{t_id}_{h}')
-
-                    # present & NOT over  →  end ≤ batas+1
-                    model.Add(end_var <= batas_int + 1).OnlyEnforceIf(
-                        [is_present, is_over.Not()]
-                    )
-                    # present & IS over   →  end ≥ batas+2
-                    model.Add(end_var >= batas_int + 2).OnlyEnforceIf(
-                        [is_present, is_over]
-                    )
-                    # NOT present         →  tidak mungkin over
-                    model.Add(is_over == 0).OnlyEnforceIf(is_present.Not())
-
-                    soft_batas_violation_vars.append(is_over)
-                    soft_batas_info.append({
-                        't_id'      : t_id,
-                        'h'         : h,
-                        'is_over'   : is_over,
-                        'is_present': is_present,
-                        'end_var'   : end_var,
-                        'batas_maks': batas_int,
-                        'nama_mapel': nama_mapel,
-                        'kelas_id'  : k_id,
-                        'mapel_id'  : m_id,
-                    })
+                soft_batas_violation_vars.append(is_over)
+                soft_batas_info.append({
+                    't_id'      : t_id,
+                    'h'         : h,
+                    'is_over'   : is_over,
+                    'is_present': is_present,
+                    'end_var'   : end_var,
+                    'batas_maks': batas_int,
+                    'nama_mapel': nama_mapel,
+                    'kelas_id'  : k_id,
+                    'mapel_id'  : m_id,
+                })
 
             starts[(t_id, h)]    = start_var
             end_vars[(t_id, h)]  = end_var
@@ -222,6 +223,7 @@ def bangun_model(
         if possible_days:
             model.AddExactlyOne(possible_days)
         else:
+            # Mengembalikan Infeasible jika PJOK butuh slot melebihi batas jam di SEMUA hari aktif
             return (None,) * 11
 
     # =========================================================================
@@ -246,10 +248,6 @@ def bangun_model(
         for h in HARI_LIST:
             if intervals_per_guru[g_id][h]:
                 model.AddNoOverlap(intervals_per_guru[g_id][h])
-
-    # HC-4: Ketersediaan hari guru  → implisit (hari non-aktif tidak dibuat variabel)
-    # HC-5: PJOK batas_maksimal_jam → sudah di-enforce di section A (batas_wajib=True)
-    # Spread constraint (mapel sama maks 1x sehari) → BUKAN hard constraint
 
     # =========================================================================
     # C: SOFT CONSTRAINTS (SF-1): Penyebaran Beban Guru
@@ -310,13 +308,6 @@ def bangun_model(
 
 def hitung_csr(solver, raw_assignments, kelass, gurus,
                kelas_limits, guru_hari_map, presences, starts):
-    """
-    HC-1  Jam harian kelas tepat sama dengan target
-    HC-2  Jadwal guru tidak overlap
-    HC-3  Jadwal kelas tidak overlap
-    HC-4  Guru mengajar di hari yang diizinkan
-    HC-5  PJOK tidak melewati batas_maksimal_jam
-    """
     detail = []
     total  = 0
 
@@ -394,13 +385,20 @@ def hitung_csr(solver, raw_assignments, kelass, gurus,
                     f"(bukan hari mengajarnya)."
                 )
 
-    # HC-5 PJOK batas_maksimal_jam
+    # HC-5 PJOK batas_maksimal_jam (Pastikan terbaca di perhitungan laporan CSR)
     for t in raw_assignments:
-        if not t.get('batas_wajib', False):
+        nama_mapel  = str(t.get('nama_mapel', ''))
+        mapel_clean = nama_mapel.upper().replace(' ', '').replace('.', '')
+        is_pjok     = 'PJOK' in mapel_clean or 'OLAHRAGA' in mapel_clean or 'PENJAS' in mapel_clean
+        batas_wajib = is_pjok or bool(t.get('batas_wajib', False))
+        
+        if not batas_wajib:
             continue
+            
         batas_maks = t.get('batas_maksimal_jam')
         if batas_maks is None:
             continue
+            
         t_id  = t['id']
         total += 1
         if t_id in solusi_map:
@@ -476,7 +474,7 @@ def main():
     if model is None:
         print(json.dumps({
             "status" : "INFEASIBLE",
-            "message": "Bentrok fatal terdeteksi sebelum solver dijalankan.",
+            "message": "Bentrok fatal terdeteksi sebelum solver dijalankan. Cek apakah ada mapel PJOK dengan durasi yang tidak muat di batas jam maksimal.",
             "metrik" : _empty_metrik(time.time() - T_mulai),
         }))
         return
@@ -550,7 +548,7 @@ def main():
                     f"batas preferensi {sb['batas_maks']}."
                 )
 
-        # Total preferensi = SF-1 + SF-2 per-task (hitung sekali per task, bukan per hari)
+        # Total preferensi = SF-1 + SF-2 per-task
         tasks_sf2 = len({sb['t_id'] for sb in soft_batas_info})
         total_soft = len(penalti_info) + tasks_sf2
         jml_soft   = len(detail_soft)
