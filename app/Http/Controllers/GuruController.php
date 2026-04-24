@@ -29,7 +29,6 @@ class GuruController extends Controller
 
         if (Schema::hasTable('gurus') && !Schema::hasColumn('gurus', 'jenis_hari')) {
             Schema::table('gurus', function (Blueprint $table) {
-                // TAMBAHAN: Kolom untuk preferensi hari mengajar (Hard / Soft)
                 $table->enum('jenis_hari', ['hard', 'soft'])->default('hard')->after('hari_mengajar');
             });
         }
@@ -56,11 +55,13 @@ class GuruController extends Controller
 
     public function store(Request $request)
     {
+        $this->checkAndFixDatabase(); // Panggil fungsi cek DB
+
         $request->validate([
             'nama_guru'     => 'required|string',
             'kode_guru'     => 'required|string|unique:gurus',
             'hari_mengajar' => 'nullable|array',
-            'jenis_hari'    => 'nullable|in:hard,soft' // Validasi input baru
+            'jenis_hari'    => 'nullable|in:hard,soft' 
         ]);
 
         $data = $request->only('nama_guru', 'kode_guru', 'jenis_hari');
@@ -72,11 +73,13 @@ class GuruController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->checkAndFixDatabase(); // Panggil fungsi cek DB
+
         $request->validate([
             'nama_guru'     => 'required|string',
             'kode_guru'     => 'required|string|unique:gurus,kode_guru,' . $id,
             'hari_mengajar' => 'nullable|array',
-            'jenis_hari'    => 'nullable|in:hard,soft' // Validasi input baru
+            'jenis_hari'    => 'nullable|in:hard,soft' 
         ]);
 
         $data = $request->only('nama_guru', 'kode_guru', 'jenis_hari');

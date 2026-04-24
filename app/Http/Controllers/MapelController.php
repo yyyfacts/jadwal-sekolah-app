@@ -30,7 +30,11 @@ class MapelController extends Controller
         if (Schema::hasTable('mapels') && !Schema::hasColumn('mapels', 'batas_maksimal_jam')) {
             Schema::table('mapels', function (Blueprint $table) {
                 $table->integer('batas_maksimal_jam')->nullable()->after('kode_mapel');
-                // TAMBAHAN: Kolom untuk menyimpan status Hard/Soft constraint mapel
+                $table->enum('jenis_batas', ['hard', 'soft'])->default('soft')->after('batas_maksimal_jam');
+            });
+        } elseif (Schema::hasTable('mapels') && !Schema::hasColumn('mapels', 'jenis_batas')) {
+             // Jaga-jaga kalau batas_maksimal_jam udah ada tapi jenis_batas belum ada
+            Schema::table('mapels', function (Blueprint $table) {
                 $table->enum('jenis_batas', ['hard', 'soft'])->default('soft')->after('batas_maksimal_jam');
             });
         }
@@ -57,12 +61,14 @@ class MapelController extends Controller
 
     public function store(Request $request)
     {
+        $this->checkAndFixDatabase(); // Panggil fungsi cek DB
+
         $request->validate([
             'nama_mapel'         => 'required|string',
             'kode_mapel'         => 'required|string|unique:mapels',
             'status'             => 'nullable|string',
             'batas_maksimal_jam' => 'nullable|integer|min:1|max:15',
-            'jenis_batas'        => 'nullable|in:hard,soft', // Validasi input baru
+            'jenis_batas'        => 'nullable|in:hard,soft', 
         ]);
         
         Mapel::create($request->only(['nama_mapel', 'kode_mapel', 'status', 'batas_maksimal_jam', 'jenis_batas'])); 
@@ -72,12 +78,14 @@ class MapelController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->checkAndFixDatabase(); // Panggil fungsi cek DB
+
         $request->validate([
             'nama_mapel'         => 'required|string',
             'kode_mapel'         => 'required|string|unique:mapels,kode_mapel,' . $id,
             'status'             => 'nullable|string',
             'batas_maksimal_jam' => 'nullable|integer|min:1|max:15',
-            'jenis_batas'        => 'nullable|in:hard,soft', // Validasi input baru
+            'jenis_batas'        => 'nullable|in:hard,soft', 
         ]);
         
         $mapel = Mapel::findOrFail($id);
@@ -112,6 +120,8 @@ class MapelController extends Controller
     public function simpanJadwal(Request $request, $id)
     {
         try {
+            $this->checkAndFixDatabase(); // Panggil fungsi cek DB
+            
             $request->validate([
                 'kelas_id'   => 'required|exists:kelas,id',
                 'guru_id'    => 'required|exists:gurus,id',
@@ -159,7 +169,9 @@ class MapelController extends Controller
     public function updateJadwal(Request $request, $id)
     {
         try {
+            $this->checkAndFixDatabase(); // Panggil fungsi cek DB
             $jadwal = Jadwal::findOrFail($id);
+            
             $request->validate([
                 'kelas_id'   => 'required|exists:kelas,id',
                 'guru_id'    => 'required|exists:gurus,id',
