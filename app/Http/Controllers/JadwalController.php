@@ -33,9 +33,6 @@ class JadwalController extends Controller
         $hariList  = $dataHari->pluck('nama_hari')->toArray();
         $dataWaktu = WaktuHari::select('jam_ke')->distinct()->orderBy('jam_ke')->get();
 
-        $minJam = WaktuHari::min('jam_ke') ?? 0;
-        $maxJam = WaktuHari::max('jam_ke') ?? 15;
-
         $kelass = $reqKelas
             ? Kelas::with('waliKelas')->where('id', $reqKelas)->orderBy('nama_kelas')->get()
             : Kelas::with('waliKelas')->orderBy('nama_kelas')->get();
@@ -179,7 +176,6 @@ class JadwalController extends Controller
                 ->get()
                 ->map(function ($j) {
                     $namaMapel = $j->mapel->nama_mapel ?? '';
-
                     return [
                         'id'                 => $j->id,
                         'guru_id'            => $j->guru_id,
@@ -220,9 +216,10 @@ class JadwalController extends Controller
             $result = json_decode($process->getOutput(), true);
             $metrik = $result['metrik'] ?? [];
 
+            // PERBAIKAN: Tambahkan NEAR-OPTIMAL agar tidak terlempar ke block else (Gagal)
             if (
                 isset($result['status'])
-                && in_array($result['status'], ['OPTIMAL', 'FEASIBLE'])
+                && in_array($result['status'], ['OPTIMAL', 'NEAR-OPTIMAL', 'FEASIBLE'])
             ) {
                 DB::beginTransaction();
                 try {
@@ -245,23 +242,23 @@ class JadwalController extends Controller
                                 ]);
                         }
                     }
-
                     DB::commit();
 
                     return redirect()->route('jadwal.index')
                         ->with('success', $result['message'])
+                        ->with('status_solver',            $result['status'])
                         ->with('waktu_komputasi',          $metrik['waktu_komputasi_detik']   ?? null)
                         ->with('csr',                      $metrik['CSR']                     ?? null)
                         ->with('total_hard_constraints',   $metrik['total_hard_constraints']  ?? 0)
                         ->with('jumlah_pelanggaran_hard',  $metrik['jumlah_pelanggaran_hard'] ?? 0)
                         ->with('detail_pelanggaran_hard',  $metrik['detail_pelanggaran_hard'] ?? [])
-                        ->with('breakdown_csr',            $metrik['breakdown_csr']           ?? []) // PENAMBAHAN DATA BREAKDOWN
+                        ->with('breakdown_csr',            $metrik['breakdown_csr']           ?? [])
                         ->with('scfr',                     $metrik['SCFR']                    ?? null)
                         ->with('total_preferensi',         $metrik['total_preferensi']        ?? 0)
                         ->with('jumlah_pelanggaran_soft',  $metrik['jumlah_pelanggaran_soft'] ?? 0)
                         ->with('toleransi_soft',           $metrik['toleransi_soft']          ?? 1)
                         ->with('detail_pelanggaran_soft',  $metrik['detail_pelanggaran_soft'] ?? [])
-                        ->with('breakdown_scfr',           $metrik['breakdown_scfr']          ?? []); // PENAMBAHAN DATA BREAKDOWN
+                        ->with('breakdown_scfr',           $metrik['breakdown_scfr']          ?? []);
 
                 } catch (\Exception $e) {
                     DB::rollBack();
@@ -281,10 +278,7 @@ class JadwalController extends Controller
     public function export()
     {
         $tahunAktif = TahunPelajaran::getActive();
-        $judulTahun = $tahunAktif
-            ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}"
-            : date('Y');
-
+        $judulTahun = $tahunAktif ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}" : date('Y');
         return Excel::download(new JadwalExport($judulTahun), 'Jadwal_Pelajaran.xlsx');
     }
 }
