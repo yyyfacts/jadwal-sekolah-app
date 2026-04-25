@@ -1,124 +1,104 @@
 @extends('layouts.app')
 
 @section('content')
-{{-- Diubah ke FULL WIDTH agar proporsional secara penuh --}}
-<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+<div class="fixed inset-0 -z-10 pointer-events-none bg-[#f4f7fb]"></div>
+
+<div class="w-full max-w-4xl mx-auto px-2 sm:px-4 pt-4 pb-2 flex flex-col">
 
     {{-- Header Halaman --}}
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Ubah Data Pengguna</h1>
-        <p class="text-slate-500 text-sm mt-1">Perbarui informasi akun, nama pengguna, dan kata sandi pengguna.</p>
+    <div class="mb-3">
+        <h1 class="text-lg font-extrabold text-slate-800 leading-none">Ubah Data Pengguna</h1>
+        <p class="text-slate-500 text-[10px] mt-1 font-medium">Perbarui informasi akun, nama pengguna, dan kata sandi.
+        </p>
     </div>
 
-    {{-- Flash Message --}}
+    {{-- Pesan Berhasil --}}
     @if(session('success'))
-    <div x-data="{ show: true }" x-show="show" x-transition.duration.300ms
-        class="mb-6 flex items-center justify-between p-4 bg-emerald-50 border border-emerald-100 rounded-xl shadow-sm text-emerald-800">
-        <div class="flex items-center gap-3">
-            <div class="p-1.5 bg-emerald-100 rounded-full text-emerald-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-            </div>
-            <span class="font-medium text-sm">{{ session('success') }}</span>
-        </div>
-        <button @click="show = false" class="text-emerald-400 hover:text-emerald-700 transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-        </button>
+    <div x-data="{ show: true }" x-show="show" x-transition
+        class="mb-3 flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-100 rounded-lg shadow-sm text-emerald-800">
+        <span class="font-bold text-[11px]">✅ {{ session('success') }}</span>
+        <button @click="show = false" class="text-emerald-400 hover:text-emerald-700">&times;</button>
     </div>
     @endif
 
-    {{-- Form Card --}}
-    <div class="bg-white rounded-xl shadow-lg shadow-slate-200/50 border border-slate-200 overflow-hidden">
-        <form action="{{ route('user.update', $user->id) }}" method="POST" class="p-8">
+    {{-- Kartu Form --}}
+    <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+        <form action="{{ route('user.update', $user->id) }}" method="POST" class="p-4 sm:p-5 space-y-4">
             @csrf
             @method('PUT')
 
-            <div class="space-y-6">
-                {{-- Nama Lengkap --}}
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nama
-                        Lengkap</label>
-                    <input type="text" name="name" value="{{ old('name', $user->name) }}"
-                        class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm font-medium text-slate-700"
-                        autocomplete="name" required>
-                    @error('name') <span class="text-xs text-red-500 block mt-1">{{ $message }}</span> @enderror
-                </div>
+            {{-- Nama Lengkap --}}
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nama
+                    Lengkap</label>
+                <input type="text" name="name" value="{{ old('name', $user->name) }}"
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-xs font-medium text-slate-700"
+                    autocomplete="name" required>
+                @error('name') <span class="text-[10px] text-red-500 block mt-1">{{ $message }}</span> @enderror
+            </div>
 
-                {{-- Username --}}
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Pengguna
-                        (Login)</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
-                                </path>
-                            </svg>
-                        </div>
-                        <input type="text" name="username" value="{{ old('username', $user->username) }}"
-                            class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm font-mono text-slate-700"
-                            required>
-                    </div>
-                    @error('username') <span class="text-xs text-red-500 block mt-1">{{ $message }}</span> @enderror
-                </div>
-
-                <div class="pt-2">
-                    <div class="border-t border-slate-100"></div>
-                </div>
-
-                {{-- Alert Ganti Kata Sandi --}}
-                <div class="bg-amber-50 border border-amber-100 rounded-lg p-4">
-                    <h3 class="text-sm font-bold text-amber-800 mb-1 flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {{-- Nama Pengguna (Username) --}}
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nama Pengguna
+                    (Login)</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                        <svg class="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
-                            </path>
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                         </svg>
-                        Ubah Kata Sandi (Opsional)
-                    </h3>
-                    <p class="text-xs text-amber-700/80">Biarkan kolom kata sandi kosong jika Anda tidak ingin mengubah
-                        sandi pengguna ini.</p>
-                </div>
-
-                {{-- Kata Sandi Baru --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kata Sandi
-                            Baru</label>
-                        <input type="password" name="password"
-                            class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm"
-                            placeholder="Minimal 8 karakter" autocomplete="new-password">
-                        @error('password') <span class="text-xs text-red-500 block mt-1">{{ $message }}</span> @enderror
                     </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Konfirmasi
-                            Kata Sandi</label>
-                        <input type="password" name="password_confirmation"
-                            class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm"
-                            placeholder="Ulangi kata sandi baru" autocomplete="new-password">
-                    </div>
+                    <input type="text" name="username" value="{{ old('username', $user->username) }}"
+                        class="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-xs font-mono text-slate-700"
+                        required>
                 </div>
+                @error('username') <span class="text-[10px] text-red-500 block mt-1">{{ $message }}</span> @enderror
+            </div>
 
-                {{-- Tombol Simpan --}}
-                <div class="pt-4 flex justify-between">
-                    <a href="{{ route('user.index') }}"
-                        class="inline-flex items-center gap-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-bold uppercase tracking-wide rounded-lg transition-all duration-200">
-                        Batal
-                    </a>
-                    <button type="submit"
-                        class="inline-flex items-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold uppercase tracking-wide rounded-lg shadow-md hover:shadow-lg hover:shadow-indigo-500/30 transition-all duration-200 transform active:scale-95">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
-                            </path>
-                        </svg>
-                        Simpan Perubahan
-                    </button>
+            <div class="border-t border-slate-100 my-2"></div>
+
+            {{-- Info Ubah Kata Sandi --}}
+            <div class="bg-amber-50 border border-amber-100 rounded-lg p-2.5">
+                <h3 class="text-[11px] font-bold text-amber-800 flex items-center gap-1.5 mb-0.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                        </path>
+                    </svg>
+                    Ubah Kata Sandi (Opsional)
+                </h3>
+                <p class="text-[9px] text-amber-700/80">Biarkan kosong jika Anda tidak ingin mengubah sandi.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Sandi
+                        Baru</label>
+                    <input type="password" name="password"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-xs"
+                        placeholder="Minimal 8 karakter" autocomplete="new-password">
+                    @error('password') <span class="text-[10px] text-red-500 block mt-1">{{ $message }}</span> @enderror
                 </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Konfirmasi
+                        Sandi</label>
+                    <input type="password" name="password_confirmation"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-xs"
+                        placeholder="Ulangi sandi baru" autocomplete="new-password">
+                </div>
+            </div>
+
+            {{-- Tombol Aksi --}}
+            <div class="pt-3 flex justify-between items-center">
+                <a href="{{ route('user.index') }}"
+                    class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-lg transition">Batal</a>
+                <button type="submit"
+                    class="flex items-center gap-1.5 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-sm transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Simpan Perubahan
+                </button>
             </div>
         </form>
     </div>
