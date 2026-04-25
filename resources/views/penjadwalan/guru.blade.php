@@ -9,7 +9,7 @@
 </div>
 
 {{-- CONTAINER UTAMA --}}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-6rem)] pb-4 pt-6 flex flex-col">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-6rem)] pb-4 pt-6 flex flex-col relative z-0">
 
     {{-- FLASH MESSAGE --}}
     @if(session('success'))
@@ -166,7 +166,7 @@
                         <td class="px-6 py-5">
                             <div class="flex items-center justify-center gap-2">
                                 <button type="button" onclick="openModal('modaljadwal{{ $g->id }}')"
-                                    class="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 hover:border-indigo-400 hover:text-indigo-600 text-xs font-bold rounded-full transition-colors bg-white">
+                                    class="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 hover:border-indigo-400 hover:text-indigo-600 text-xs font-bold rounded-full transition-colors bg-white shadow-sm hover:-translate-y-0.5">
                                     <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -233,17 +233,26 @@
 
         <div class="bg-white border-t border-slate-100 px-8 py-4 flex justify-between items-center shrink-0">
             <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Sistem Penjadwalan</span>
-            <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Secure Data</span>
+            <span class="text-[11px] font-bold text-emerald-500 flex items-center gap-1.5 uppercase tracking-wider">
+                <svg class="w-4 h-4 bg-emerald-500 text-white rounded-full p-0.5" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+                Secure Data
+            </span>
         </div>
     </div>
 </div>
+@endsection
 
-{{-- MODALS AREA --}}
+
+{{-- AREA MODALS: Dipindahkan ke sini (luar section content) agar terbebas dari jeratan tag Main --}}
+@push('modals')
 
 {{-- 1. Modal Tambah Guru --}}
 <div id="modaltambah"
-    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-scale-in">
+    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-scale-in border border-white/20">
         <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
             <h3 class="font-bold text-slate-800 flex items-center gap-2">
                 <span class="w-1.5 h-5 bg-indigo-600 rounded-full"></span> Tambah Guru
@@ -280,15 +289,12 @@
                 </div>
             </div>
 
-            {{-- PERUBAHAN: Tambahan Input Hard/Soft Constraint --}}
             <div>
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Sifat Hari Mengajar</label>
                 <select name="jenis_hari"
                     class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-sm transition">
-                    <option value="soft" {{ $g->jenis_hari == 'soft' ? 'selected' : '' }}>Fleksibel (Prioritas, Tapi
-                        Boleh Digeser)</option>
-                    <option value="hard" {{ $g->jenis_hari == 'hard' ? 'selected' : '' }}>Mutlak (Wajib / Tidak Boleh
-                        Hari Lain)</option>
+                    <option value="soft">Fleksibel (Prioritas, Tapi Boleh Digeser)</option>
+                    <option value="hard">Mutlak (Wajib / Tidak Boleh Hari Lain)</option>
                 </select>
             </div>
 
@@ -302,7 +308,7 @@
 @foreach($gurus as $g)
 {{-- 2. Modal Edit Guru --}}
 <div id="edit{{ $g->id }}"
-    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
+    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
         <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
             <h3 class="font-bold text-amber-800 flex items-center gap-2"><span
@@ -332,7 +338,7 @@
                     <label
                         class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-amber-50 transition">
                         <input type="checkbox" name="hari_mengajar[]" value="{{ $hari }}"
-                            {{ in_array($hari, $g->hari_array) ? 'checked' : '' }}
+                            {{ in_array($hari, $g->hari_array ?? []) ? 'checked' : '' }}
                             class="rounded text-amber-500 focus:ring-amber-500">
                         <span class="text-xs font-bold text-slate-600">{{ $hari }}</span>
                     </label>
@@ -340,7 +346,6 @@
                 </div>
             </div>
 
-            {{-- PERUBAHAN: Tambahan Input Hard/Soft Constraint --}}
             <div>
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Sifat Hari Mengajar</label>
                 <select name="jenis_hari"
@@ -350,18 +355,19 @@
                     <option value="hard" {{ $g->jenis_hari == 'hard' ? 'selected' : '' }}>Mutlak (Wajib / Tidak Boleh
                         Hari Lain)</option>
                 </select>
+            </div>
 
-                <button type="submit"
-                    class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">UPDATE</button>
+            <button type="submit"
+                class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">UPDATE</button>
         </form>
     </div>
 </div>
 
 {{-- 3. Modal Jadwal Mengajar (Distribusi/Plotting) --}}
 <div id="modaljadwal{{ $g->id }}"
-    class="fixed inset-0 bg-slate-900/80 z-[99] hidden items-center justify-center p-2 sm:p-4 transition-opacity duration-300">
+    class="fixed inset-0 bg-slate-900/80 z-[9999] hidden items-center justify-center p-2 sm:p-4 transition-opacity duration-300">
     <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-200 overflow-hidden animate-scale-in">
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-200 overflow-hidden animate-scale-in relative">
         <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
             <div class="flex items-center gap-3">
                 <div class="p-2 bg-indigo-600 text-white rounded-lg shadow-sm">
@@ -392,7 +398,7 @@
                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </span>
-                        <input type="text" id="search-{{ $g->id }}" oninput="searchTable({{ $g->id }})"
+                        <input type="text" id="search-{{ $g->id }}" oninput="searchTable('{{ $g->id }}')"
                             placeholder="Cari Mapel atau Kelas..."
                             class="w-full border border-slate-200 bg-slate-50/50 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500/50 focus:bg-white focus:border-indigo-500 outline-none transition-all">
                     </div>
@@ -617,7 +623,7 @@
 </div>
 @endforeach
 
-@endsection
+@endpush
 
 @push('scripts')
 <script>
@@ -663,16 +669,17 @@ function closeModal(modalID) {
     }
 }
 
-document.addEventListener('click', function(event) {
-    if (event.target.classList.contains('fixed') && event.target.id) {
-        closeModal(event.target.id);
+// Logic Window Onclick disamakan persis dengan mapel untuk kestabilan
+window.onclick = function(event) {
+    if (event.target.classList.contains('fixed')) {
+        event.target.classList.add('hidden');
+        event.target.classList.remove('flex');
     }
-
     if (!event.target.closest('.custom-select-wrapper')) {
         document.querySelectorAll('[id^="dropdown-"]').forEach(el => el.classList.add('hidden'));
         document.querySelectorAll('.custom-select-wrapper').forEach(el => el.style.zIndex = "0");
     }
-});
+}
 
 function searchTable(guruId) {
     const filter = document.getElementById('search-' + guruId).value.toLowerCase();
