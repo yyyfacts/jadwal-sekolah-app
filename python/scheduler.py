@@ -566,8 +566,13 @@ def main():
 
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = MAX_WAKTU_SOLVER
-    solver.parameters.num_search_workers  = 8
+    # Turunkan worker: 8 → 4 untuk hemat RAM (tiap worker ~= 1 salinan model di RAM)
+    # Jika masih OOM, coba 2 atau 1
+    solver.parameters.num_search_workers  = 4
     solver.parameters.interleave_search   = True
+    # Batasi RAM maksimal yang boleh dipakai solver (dalam MB)
+    # Sesuaikan dengan RAM server Anda; default: 0 (tidak terbatas) → penyebab OOM
+    solver.parameters.max_memory_in_mb    = 2048   # 2 GB; turunkan ke 1024 jika perlu
 
     status = solver.Solve(model)
     T = time.time() - T_mulai
