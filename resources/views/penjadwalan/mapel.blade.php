@@ -8,8 +8,8 @@
     <div class="absolute top-20 left-10 w-72 h-72 bg-cyan-300/10 rounded-full blur-3xl opacity-70"></div>
 </div>
 
-{{-- CONTAINER UTAMA --}}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-6rem)] pb-4 pt-6 flex flex-col relative z-0">
+{{-- CONTAINER UTAMA (FULL WIDTH) --}}
+<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-6rem)] pb-4 pt-6 flex flex-col relative z-0">
 
     {{-- FLASH MESSAGE --}}
     @if(session('success'))
@@ -37,7 +37,7 @@
                 <div class="flex gap-3 items-start">
                     <div class="w-2.5 h-8 bg-blue-600 rounded-full mt-0.5"></div>
                     <div>
-                        <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Bank Mata Pelajaran</h1>
+                        <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Data Mata Pelajaran</h1>
                         <p class="text-slate-500 text-sm mt-1 font-medium">Manajemen kurikulum dan distribusi pengajar.
                         </p>
                     </div>
@@ -76,7 +76,7 @@
             </div>
         </div>
 
-        {{-- 2. TABLE SECTION --}}
+        {{-- 2. TABEL DATA --}}
         <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white px-2">
             <table class="w-full text-left border-collapse min-w-[800px]">
                 <thead class="bg-white sticky top-0 z-10">
@@ -92,7 +92,7 @@
                             Status Distribusi</th>
                         <th
                             class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right w-[35%] pr-12 border-b-2 border-slate-100">
-                            Aksi & Mode</th>
+                            Aksi & Distribusi</th>
                     </tr>
                 </thead>
 
@@ -135,11 +135,12 @@
                                         @if($m->jenis_batas == 'hard')
                                         <span
                                             class="px-1.5 py-0.5 bg-rose-100 text-rose-600 text-[9px] rounded font-bold uppercase"
-                                            title="Hard Constraint">Max: {{ $m->batas_maksimal_jam }} JP (Strict)</span>
+                                            title="Aturan Mutlak">Maks: {{ $m->batas_maksimal_jam }} Jam (Ketat)</span>
                                         @else
                                         <span
                                             class="px-1.5 py-0.5 bg-emerald-100 text-emerald-600 text-[9px] rounded font-bold uppercase"
-                                            title="Soft Constraint">Max: {{ $m->batas_maksimal_jam }} JP (Soft)</span>
+                                            title="Aturan Fleksibel">Maks: {{ $m->batas_maksimal_jam }} Jam
+                                            (Bebas)</span>
                                         @endif
                                         @endif
                                     </div>
@@ -162,7 +163,7 @@
                                     @endif
                                 </svg>
                                 <span
-                                    class="font-bold text-sm text-slate-800">{{ $m->total_jam_terdistribusi > 0 ? $m->total_jam_terdistribusi . ' JP Total' : '0 JP Total' }}</span>
+                                    class="font-bold text-sm text-slate-800">{{ $m->total_jam_terdistribusi > 0 ? $m->total_jam_terdistribusi . ' Jam Total' : '0 Jam Total' }}</span>
                             </div>
                         </td>
 
@@ -180,7 +181,7 @@
 
                                 <button onclick="openModal('edit{{ $m->id }}')"
                                     class="p-2 text-slate-400 bg-white border-2 border-slate-200 hover:border-slate-400 hover:text-slate-600 rounded-lg transition"
-                                    title="Edit">
+                                    title="Ubah">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
@@ -235,27 +236,10 @@
                 </tbody>
             </table>
         </div>
-
-        <div class="bg-white border-t border-slate-100 px-8 py-4 flex justify-between items-center shrink-0">
-            <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Sistem Penjadwalan</span>
-            <span class="text-[11px] font-bold text-emerald-500 flex items-center gap-1.5 uppercase tracking-wider">
-                <svg class="w-4 h-4 bg-emerald-500 text-white rounded-full p-0.5" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                </svg>
-                Secure Data
-            </span>
-        </div>
     </div>
-
-    <div class="text-center mt-6 text-slate-500 text-[11px] font-medium tracking-wide">
-        &copy; 2026 SMAN 1 SAMPANG. Sistem Penjadwalan Terintegrasi.
-    </div>
-
-</div> {{-- END OF CONTAINER UTAMA --}}
+</div>
 @endsection
 
-{{-- AREA MODALS: Dipindahkan ke sini (luar section content) agar terbebas dari jeratan tag Main --}}
 @push('modals')
 {{-- 1. Modal Tambah --}}
 <div id="modaltambah"
@@ -298,8 +282,9 @@
                     </select>
                 </div>
             </div>
-            <p class="text-[10px] text-slate-400">Jika diisi dan diset <b>Hard</b>, mapel dilarang keras melanggar batas
-                jam. Jika <b>Soft</b>, solver boleh melanggar demi prioritas jadwal.</p>
+            <p class="text-[10px] text-slate-400">Jika diisi dan diset <b>Ketat</b>, mapel dilarang keras melanggar
+                batas
+                jam. Jika <b>Bebas</b>, solver boleh melanggar demi prioritas jadwal.</p>
 
             <button type="submit"
                 class="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs mt-2">SIMPAN
@@ -315,7 +300,7 @@
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
         <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
             <h3 class="font-bold text-amber-800 flex items-center gap-2"><span
-                    class="w-1.5 h-5 bg-amber-500 rounded-full"></span> Edit Mapel</h3>
+                    class="w-1.5 h-5 bg-amber-500 rounded-full"></span> Ubah Mapel</h3>
             <button onclick="closeModal('edit{{ $m->id }}')"
                 class="text-amber-400 hover:text-amber-600 text-2xl leading-none">&times;</button>
         </div>
@@ -354,7 +339,7 @@
             </div>
 
             <button type="submit"
-                class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">UPDATE</button>
+                class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">PERBARUI</button>
         </form>
     </div>
 </div>
@@ -420,16 +405,21 @@
                                     <div class="flex flex-col items-center">
                                         <span
                                             class="bg-white text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-blue-100 shadow-sm"
-                                            data-jam="{{ $jadwal->jumlah_jam }}">{{ $jadwal->jumlah_jam }} JP</span>
+                                            data-jam="{{ $jadwal->jumlah_jam }}">{{ $jadwal->jumlah_jam }} Jam</span>
                                         @if($jadwal->status == 'online')
                                         <span
-                                            class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">ONLINE</span>
+                                            class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">DARING</span>
                                         @else
                                         <span
-                                            class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">OFFLINE</span>
+                                            class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">LURING</span>
                                         @endif
                                         <span
-                                            class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">{{ $jadwal->tipe_jam }}</span>
+                                            class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">
+                                            @if($jadwal->tipe_jam == 'single') Satu (1x)
+                                            @elseif($jadwal->tipe_jam == 'double') Dua (2x)
+                                            @elseif($jadwal->tipe_jam == 'triple') Tiga (3x)
+                                            @else {{ $jadwal->tipe_jam }} @endif
+                                        </span>
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 text-right align-middle">
@@ -438,7 +428,7 @@
                                         <button
                                             onclick="editJadwalInline({{ $m->id }}, {{ $jadwal->id }}, {{ $jadwal->kelas_id }}, {{ $jadwal->guru_id }}, {{ $jadwal->jumlah_jam }}, '{{ $jadwal->tipe_jam }}', '{{ $jadwal->status ?? 'offline' }}')"
                                             class="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition"
-                                            title="Edit">
+                                            title="Ubah">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
@@ -566,7 +556,7 @@
                                                 class="w-full pl-4 pr-8 py-3 bg-slate-50 border border-slate-200 rounded-xl text-center font-bold text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
                                                 min="1" max="10" required>
                                             <span
-                                                class="absolute right-3 top-3.5 text-[10px] text-slate-400 font-bold">JP</span>
+                                                class="absolute right-3 top-3.5 text-[10px] text-slate-400 font-bold">Jam</span>
                                         </div>
                                     </div>
                                     <div>
@@ -575,9 +565,9 @@
                                         <div class="relative">
                                             <select name="tipe_jam" id="select-tipe-{{ $m->id }}"
                                                 class="w-full pl-3 pr-8 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none appearance-none cursor-pointer transition">
-                                                <option value="single">Single (1x)</option>
-                                                <option value="double">Double (2x)</option>
-                                                <option value="triple">Triple (3x)</option>
+                                                <option value="single">Satu (1x)</option>
+                                                <option value="double">Dua (2x)</option>
+                                                <option value="triple">Tiga (3x)</option>
                                             </select>
                                             <div
                                                 class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
@@ -591,7 +581,7 @@
                                     </div>
                                 </div>
 
-                                {{-- Status Online/Offline --}}
+                                {{-- Status Daring/Luring --}}
                                 <div>
                                     <label
                                         class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Pelaksanaan
@@ -599,8 +589,8 @@
                                     <div class="relative">
                                         <select name="status" id="select-status-{{ $m->id }}"
                                             class="w-full pl-3 pr-8 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none appearance-none cursor-pointer transition shadow-sm">
-                                            <option value="offline">🏫 OFFLINE (Masuk Jadwal Besar)</option>
-                                            <option value="online">💻 ONLINE (Bebas Penjadwalan)</option>
+                                            <option value="offline">🏫 LURING (Masuk Jadwal Besar)</option>
+                                            <option value="online">💻 DARING (Bebas Penjadwalan)</option>
                                         </select>
                                         <div
                                             class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
@@ -755,12 +745,12 @@ function editJadwalInline(mapelId, jadwalId, kelasId, guruId, jam, tipe, status)
     const btnSubmit = document.getElementById(`btn-submit-${mapelId}`);
 
     container.classList.add('ring-2', 'ring-amber-200');
-    title.innerHTML = `<span class="text-amber-600">EDIT DISTRIBUSI</span>`;
+    title.innerHTML = `<span class="text-amber-600">UBAH DISTRIBUSI</span>`;
     document.getElementById(`btn-batal-${mapelId}`).classList.remove('hidden');
 
     btnSubmit.className =
         "w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold shadow-lg transition mt-2";
-    btnSubmit.innerHTML = "UPDATE";
+    btnSubmit.innerHTML = "PERBARUI";
 
     setCustomDropdownValue('kelas', mapelId, kelasId);
     setCustomDropdownValue('guru', mapelId, guruId);
@@ -804,7 +794,7 @@ async function handleFormJadwal(e, form, mapelId) {
     const btn = form.querySelector('button[type="submit"]');
     const oldText = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = "Loading...";
+    btn.innerHTML = "Memuat...";
 
     try {
         const res = await fetch(form.action, {
@@ -837,8 +827,13 @@ function updateTableUI(mapelId, jadwal, isEdit) {
     const namaGuru = jadwal.guru?.nama_guru || '-';
 
     const badgeHTML = jadwal.status === 'online' ?
-        '<span class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">ONLINE</span>' :
-        '<span class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">OFFLINE</span>';
+        '<span class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">DARING</span>' :
+        '<span class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">LURING</span>';
+
+    let tipeTranslate = jadwal.tipe_jam;
+    if (tipeTranslate === 'single') tipeTranslate = 'Satu (1x)';
+    if (tipeTranslate === 'double') tipeTranslate = 'Dua (2x)';
+    if (tipeTranslate === 'triple') tipeTranslate = 'Tiga (3x)';
 
     if (isEdit) {
         const row = document.getElementById(`row-jadwal-${jadwal.id}`);
@@ -847,10 +842,10 @@ function updateTableUI(mapelId, jadwal, isEdit) {
             row.querySelector('.guru-text').innerText = namaGuru;
 
             const jamSpan = row.querySelector('.jam-text');
-            jamSpan.innerText = jadwal.jumlah_jam + ' JP';
+            jamSpan.innerText = jadwal.jumlah_jam + ' Jam';
             jamSpan.setAttribute('data-jam', jadwal.jumlah_jam);
 
-            row.querySelector('.tipe-text').innerText = jadwal.tipe_jam;
+            row.querySelector('.tipe-text').innerText = tipeTranslate;
 
             const oldBadge = row.querySelector('.status-badge');
             if (oldBadge) oldBadge.outerHTML = badgeHTML;
@@ -872,14 +867,14 @@ function updateTableUI(mapelId, jadwal, isEdit) {
                 <td class="px-4 py-3 text-slate-600 align-middle guru-text">${namaGuru}</td>
                 <td class="px-4 py-3 text-center align-middle">
                     <div class="flex flex-col items-center">
-                        <span class="bg-white text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-blue-100 shadow-sm" data-jam="${jadwal.jumlah_jam}">${jadwal.jumlah_jam} JP</span>
+                        <span class="bg-white text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-blue-100 shadow-sm" data-jam="${jadwal.jumlah_jam}">${jadwal.jumlah_jam} Jam</span>
                         ${badgeHTML}
-                        <span class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">${jadwal.tipe_jam}</span>
+                        <span class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">${tipeTranslate}</span>
                     </div>
                 </td>
                 <td class="px-4 py-3 text-right align-middle">
                     <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onclick="editJadwalInline(${mapelId}, ${jadwal.id}, ${jadwal.kelas_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}', '${jadwal.status}')" class="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition" title="Edit">
+                        <button onclick="editJadwalInline(${mapelId}, ${jadwal.id}, ${jadwal.kelas_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}', '${jadwal.status}')" class="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition" title="Ubah">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                         </button>
                         <button onclick="hapusJadwal(${jadwal.id}, this)" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition" title="Hapus">

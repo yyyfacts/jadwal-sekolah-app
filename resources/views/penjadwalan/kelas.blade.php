@@ -8,8 +8,8 @@
     <div class="absolute top-20 left-10 w-72 h-72 bg-purple-300/10 rounded-full blur-3xl opacity-70"></div>
 </div>
 
-{{-- CONTAINER UTAMA --}}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-6rem)] pb-4 pt-6 flex flex-col">
+{{-- CONTAINER UTAMA (FULL WIDTH) --}}
+<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-6rem)] pb-4 pt-6 flex flex-col">
 
     {{-- FLASH MESSAGE --}}
     @if(session('success'))
@@ -39,7 +39,7 @@
                     <div>
                         <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Data Kelas & Ruang</h1>
                         <p class="text-slate-500 text-sm mt-1 font-medium">Manajemen kapasitas, target kurikulum, dan
-                            plotting pengajar.</p>
+                            distribusi pengajar.</p>
                     </div>
                 </div>
 
@@ -55,7 +55,7 @@
                     <form action="{{ route('kelas.sinkronisasi') }}" method="POST" class="inline">
                         @csrf
                         <button type="submit"
-                            onclick="return confirm('Sistem akan menghitung ulang kapasitas (Max JP) dan Limit Jumat berdasarkan data OFFLINE yang ada. Lanjutkan?')"
+                            onclick="return confirm('Sistem akan menghitung ulang kapasitas (Maksimal Jam) dan Limit Jumat berdasarkan data LURING yang ada. Lanjutkan?')"
                             class="hidden lg:flex items-center gap-2 px-5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl transition-all duration-300 shadow-sm group">
                             <svg class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" fill="none"
                                 stroke="currentColor" viewBox="0 0 24 24">
@@ -63,7 +63,7 @@
                                     d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
                                 </path>
                             </svg>
-                            <span class="text-xs font-bold uppercase tracking-wider">Sinkronisasi Limit</span>
+                            <span class="text-xs font-bold uppercase tracking-wider">Sinkronisasi Batas</span>
                         </button>
                     </form>
                     <button onclick="openModal('modaltambah')"
@@ -77,7 +77,7 @@
                 </div>
             </div>
 
-            {{-- Search Bar --}}
+            {{-- Kolom Cari --}}
             <div class="relative group">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <svg class="h-5 w-5 text-slate-400 group-focus-within:text-purple-500 transition-colors" fill="none"
@@ -92,7 +92,7 @@
             </div>
         </div>
 
-        {{-- 2. TABLE SECTION --}}
+        {{-- 2. TABEL DATA --}}
         <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white px-2">
             <table class="w-full text-left border-collapse min-w-[800px]">
                 <thead class="bg-white sticky top-0 z-10">
@@ -108,7 +108,7 @@
                             Beban & Kapasitas</th>
                         <th
                             class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right w-[35%] pr-12 border-b-2 border-slate-100">
-                            Aksi & Plotting</th>
+                            Aksi & Distribusi</th>
                     </tr>
                 </thead>
 
@@ -155,11 +155,11 @@
                         <td class="px-6 py-5 text-center align-middle">
                             <div class="flex flex-col items-center gap-1.5">
                                 <span class="text-[12px] font-bold text-emerald-600">
-                                    {{ $totalJamOffline }} / {{ $maxJam }} JP (Fisik)
+                                    {{ $totalJamOffline }} / {{ $maxJam }} Jam (Luring)
                                 </span>
                                 @if($totalJamOnline > 0)
                                 <span class="block text-[10px] text-slate-400 font-medium">
-                                    Online: {{ $totalJamOnline }} JP
+                                    Daring: {{ $totalJamOnline }} Jam
                                 </span>
                                 @endif
                                 <div class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -175,11 +175,11 @@
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 4v16m8-8H4"></path>
-                                    </svg> Plotting
+                                    </svg> Distribusi
                                 </button>
                                 <button onclick="openModal('edit{{ $k->id }}')"
                                     class="h-8 w-8 flex items-center justify-center text-slate-400 bg-white border-2 border-slate-200 hover:border-slate-400 hover:text-slate-600 rounded-full transition"
-                                    title="Edit">
+                                    title="Ubah">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
@@ -281,7 +281,7 @@
                             placeholder="X-I1" required>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kapasitas (JP)</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kapasitas (Jam)</label>
                         <input type="number" name="max_jam" value="48"
                             class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-purple-500 outline-none text-center font-bold text-sm"
                             required>
@@ -290,13 +290,13 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Limit Harian (JP)</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Batas Harian (Jam)</label>
                         <input type="number" name="limit_harian" value="10"
                             class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-purple-500 outline-none text-center font-bold text-sm"
                             required>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Limit Jumat (JP)</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Batas Jumat (Jam)</label>
                         <input type="number" name="limit_jumat" value="7"
                             class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-purple-500 outline-none text-center font-bold text-sm"
                             required>
@@ -311,13 +311,13 @@
     </div>
 
     @foreach($kelass as $k)
-    {{-- 2. Modal Edit Kelas --}}
+    {{-- 2. Modal Ubah Kelas --}}
     <div id="edit{{ $k->id }}"
         class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-scale-in">
             <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
                 <h3 class="font-bold text-amber-800 flex items-center gap-2"><span
-                        class="w-1.5 h-5 bg-amber-500 rounded-full"></span> Edit Kelas</h3>
+                        class="w-1.5 h-5 bg-amber-500 rounded-full"></span> Ubah Kelas</h3>
                 <button onclick="closeModal('edit{{ $k->id }}')"
                     class="text-amber-400 hover:text-amber-600 text-2xl leading-none">&times;</button>
             </div>
@@ -377,7 +377,7 @@
                             required>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Max JP</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Maksimal Jam</label>
                         <input type="number" name="max_jam" value="{{ $k->max_jam ?? 48 }}"
                             class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-center font-bold text-sm"
                             required>
@@ -386,13 +386,13 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Limit Harian (JP)</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Batas Harian (Jam)</label>
                         <input type="number" name="limit_harian" value="{{ $k->limit_harian ?? 10 }}"
                             class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-center font-bold text-sm"
                             required>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Limit Jumat (JP)</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Batas Jumat (Jam)</label>
                         <input type="number" name="limit_jumat" value="{{ $k->limit_jumat ?? 7 }}"
                             class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none text-center font-bold text-sm"
                             required>
@@ -400,7 +400,7 @@
                 </div>
 
                 <button type="submit"
-                    class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs mt-2">Update
+                    class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs mt-2">Perbarui
                     Data Kelas</button>
             </form>
         </div>
@@ -423,7 +423,7 @@
                     <div>
                         <h3 class="font-bold text-lg text-slate-800">{{ $k->nama_kelas }}</h3>
                         <p class="text-xs text-slate-500">Terisi: <span
-                                id="total-jam-{{ $k->id }}">{{ $k->jadwals->sum('jumlah_jam') }}</span> JP</p>
+                                id="total-jam-{{ $k->id }}">{{ $k->jadwals->sum('jumlah_jam') }}</span> Jam</p>
                     </div>
                 </div>
                 <button onclick="closeModal('modaljadwal{{ $k->id }}')"
@@ -470,18 +470,24 @@
                                         <div class="flex flex-col items-center">
                                             <span
                                                 class="bg-white text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-purple-100 shadow-sm"
-                                                data-jam="{{ $jadwal->jumlah_jam }}">{{ $jadwal->jumlah_jam }} JP</span>
+                                                data-jam="{{ $jadwal->jumlah_jam }}">{{ $jadwal->jumlah_jam }}
+                                                Jam</span>
 
                                             @if($jadwal->status == 'online')
                                             <span
-                                                class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">ONLINE</span>
+                                                class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">DARING</span>
                                             @else
                                             <span
-                                                class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">OFFLINE</span>
+                                                class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">LURING</span>
                                             @endif
 
                                             <span
-                                                class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">{{ $jadwal->tipe_jam }}</span>
+                                                class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">
+                                                @if($jadwal->tipe_jam == 'single') Satu (1x)
+                                                @elseif($jadwal->tipe_jam == 'double') Dua (2x)
+                                                @elseif($jadwal->tipe_jam == 'triple') Tiga (3x)
+                                                @else {{ $jadwal->tipe_jam }} @endif
+                                            </span>
                                         </div>
                                     </td>
                                     <td class="px-4 py-3 text-right align-middle">
@@ -490,7 +496,7 @@
                                             <button
                                                 onclick="editJadwalInline({{ $k->id }}, {{ $jadwal->id }}, {{ $jadwal->mapel_id }}, {{ $jadwal->guru_id }}, {{ $jadwal->jumlah_jam }}, '{{ $jadwal->tipe_jam }}', '{{ $jadwal->status ?? 'offline' }}')"
                                                 class="p-1.5 text-purple-600 hover:bg-purple-100 rounded-lg transition"
-                                                title="Edit">
+                                                title="Ubah">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -528,7 +534,7 @@
                             <div class="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
                                 <h4 id="form-title-{{ $k->id }}"
                                     class="font-extrabold text-slate-700 text-xs uppercase tracking-widest flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full bg-purple-500"></span> Input Plotting
+                                    <span class="w-2 h-2 rounded-full bg-purple-500"></span> Input Distribusi
                                 </h4>
                                 <button id="btn-batal-{{ $k->id }}" type="button"
                                     onclick="resetFormJadwal({{ $k->id }})"
@@ -622,9 +628,9 @@
                                                 class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Tipe</label>
                                             <select name="tipe_jam" id="select-tipe-{{ $k->id }}"
                                                 class="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 outline-none appearance-none cursor-pointer transition">
-                                                <option value="single">Single (1x)</option>
-                                                <option value="double">Double (2x)</option>
-                                                <option value="triple">Triple (3x)</option>
+                                                <option value="single">Satu (1x)</option>
+                                                <option value="double">Dua (2x)</option>
+                                                <option value="triple">Tiga (3x)</option>
                                             </select>
                                         </div>
                                     </div>
@@ -636,8 +642,8 @@
                                         <div class="relative">
                                             <select name="status" id="select-status-{{ $k->id }}"
                                                 class="w-full pl-3 pr-8 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-purple-500/20 outline-none appearance-none cursor-pointer transition shadow-sm">
-                                                <option value="offline">🏫 OFFLINE (Masuk Jadwal Besar)</option>
-                                                <option value="online">💻 ONLINE (Bebas Penjadwalan)</option>
+                                                <option value="offline">🏫 LURING (Masuk Jadwal Besar)</option>
+                                                <option value="online">💻 DARING (Bebas Penjadwalan)</option>
                                             </select>
                                             <div
                                                 class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
@@ -652,7 +658,7 @@
 
                                     <button type="submit" id="btn-submit-{{ $k->id }}"
                                         class="w-full py-3.5 bg-slate-900 hover:bg-purple-600 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-lg hover:shadow-purple-500/30 transform active:scale-95 transition-all duration-300 mt-2">Simpan
-                                        Plotting</button>
+                                        Distribusi</button>
                                 </div>
                             </form>
                         </div>
@@ -772,10 +778,10 @@ function editJadwalInline(kelasId, jadwalId, mapelId, guruId, jam, tipe, status)
     const btnSubmit = document.getElementById(`btn-submit-${kelasId}`);
 
     container.classList.add('ring-2', 'ring-amber-200');
-    title.innerHTML = `<span class="text-amber-600">EDIT PLOTTING</span>`;
+    title.innerHTML = `<span class="text-amber-600">UBAH DISTRIBUSI</span>`;
     document.getElementById(`btn-batal-${kelasId}`).classList.remove('hidden');
 
-    btnSubmit.innerHTML = "UPDATE";
+    btnSubmit.innerHTML = "PERBARUI";
     btnSubmit.className =
         "w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold shadow-lg transition mt-2";
 
@@ -797,11 +803,11 @@ function resetFormJadwal(kelasId) {
 
     container.classList.remove('ring-2', 'ring-amber-200');
     document.getElementById(`form-title-${kelasId}`).innerHTML =
-        `<span class="w-2 h-2 rounded-full bg-purple-500"></span> Input Plotting`;
+        `<span class="w-2 h-2 rounded-full bg-purple-500"></span> Input Distribusi`;
     document.getElementById(`btn-batal-${kelasId}`).classList.add('hidden');
 
     const btnSubmit = document.getElementById(`btn-submit-${kelasId}`);
-    btnSubmit.innerHTML = "SIMPAN PLOTTING";
+    btnSubmit.innerHTML = "SIMPAN DISTRIBUSI";
     btnSubmit.className =
         "w-full py-3.5 bg-slate-900 hover:bg-purple-600 text-white rounded-xl font-bold text-xs tracking-widest uppercase shadow-lg transition mt-2";
 
@@ -829,7 +835,7 @@ async function handleFormJadwal(e, form, kelasId) {
     const btn = form.querySelector('button[type="submit"]');
     const oldText = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = "Loading...";
+    btn.innerHTML = "Memuat...";
 
     try {
         const res = await fetch(form.action, {
@@ -863,8 +869,13 @@ function updateTableUI(kelasId, jadwal, isEdit) {
     const guruName = jadwal.guru?.nama_guru || '-';
 
     const badgeHTML = jadwal.status === 'online' ?
-        '<span class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">ONLINE</span>' :
-        '<span class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">OFFLINE</span>';
+        '<span class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">DARING</span>' :
+        '<span class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">LURING</span>';
+
+    let tipeTranslate = jadwal.tipe_jam;
+    if (tipeTranslate === 'single') tipeTranslate = 'Satu (1x)';
+    if (tipeTranslate === 'double') tipeTranslate = 'Dua (2x)';
+    if (tipeTranslate === 'triple') tipeTranslate = 'Tiga (3x)';
 
     if (isEdit) {
         const row = document.getElementById(`row-jadwal-${jadwal.id}`);
@@ -873,10 +884,10 @@ function updateTableUI(kelasId, jadwal, isEdit) {
             row.querySelector('.guru-text').innerText = guruName;
 
             const jamSpan = row.querySelector('.jam-text');
-            jamSpan.innerText = jadwal.jumlah_jam + ' JP';
+            jamSpan.innerText = jadwal.jumlah_jam + ' Jam';
             jamSpan.setAttribute('data-jam', jadwal.jumlah_jam);
 
-            row.querySelector('.tipe-text').innerText = jadwal.tipe_jam;
+            row.querySelector('.tipe-text').innerText = tipeTranslate;
 
             const oldBadge = row.querySelector('.status-badge');
             if (oldBadge) oldBadge.outerHTML = badgeHTML;
@@ -898,14 +909,14 @@ function updateTableUI(kelasId, jadwal, isEdit) {
                 <td class="px-4 py-3 text-slate-600 guru-text align-middle font-medium">${guruName}</td>
                 <td class="px-4 py-3 text-center align-middle">
                     <div class="flex flex-col items-center">
-                        <span class="bg-white border border-purple-100 text-purple-700 py-0.5 px-2 rounded-md font-bold text-[10px] jam-text shadow-sm" data-jam="${jadwal.jumlah_jam}">${jadwal.jumlah_jam} JP</span>
+                        <span class="bg-white border border-purple-100 text-purple-700 py-0.5 px-2 rounded-md font-bold text-[10px] jam-text shadow-sm" data-jam="${jadwal.jumlah_jam}">${jadwal.jumlah_jam} Jam</span>
                         ${badgeHTML}
-                        <span class="text-[9px] text-slate-400 uppercase mt-0.5 font-semibold tracking-wider tipe-text">${jadwal.tipe_jam}</span>
+                        <span class="text-[9px] text-slate-400 uppercase mt-0.5 font-semibold tracking-wider tipe-text">${tipeTranslate}</span>
                     </div>
                 </td>
                 <td class="px-4 py-3 text-right align-middle">
                     <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onclick="editJadwalInline(${kelasId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}', '${jadwal.status}')" class="p-1.5 text-purple-600 hover:bg-purple-100 rounded-lg transition" title="Edit">
+                        <button onclick="editJadwalInline(${kelasId}, ${jadwal.id}, ${jadwal.mapel_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}', '${jadwal.status}')" class="p-1.5 text-purple-600 hover:bg-purple-100 rounded-lg transition" title="Ubah">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                         </button>
                         <button onclick="hapusJadwal(${jadwal.id}, this, ${kelasId})" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition" title="Hapus">

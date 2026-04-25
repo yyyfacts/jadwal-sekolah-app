@@ -1,12 +1,13 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+{{-- Diubah ke FULL WIDTH agar proporsional secara penuh --}}
+<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
 
     {{-- Header Halaman --}}
     <div class="mb-6">
-        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Edit Data User</h1>
-        <p class="text-slate-500 text-sm mt-1">Perbarui informasi akun, username, dan kata sandi pengguna.</p>
+        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Ubah Data Pengguna</h1>
+        <p class="text-slate-500 text-sm mt-1">Perbarui informasi akun, nama pengguna, dan kata sandi pengguna.</p>
     </div>
 
     {{-- Flash Message --}}
@@ -31,7 +32,6 @@
 
     {{-- Form Card --}}
     <div class="bg-white rounded-xl shadow-lg shadow-slate-200/50 border border-slate-200 overflow-hidden">
-        {{-- PERUBAHAN PENTING: Action mengarah ke user.update beserta ID usernya --}}
         <form action="{{ route('user.update', $user->id) }}" method="POST" class="p-8">
             @csrf
             @method('PUT')
@@ -49,8 +49,8 @@
 
                 {{-- Username --}}
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Username
-                        Login</label>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Pengguna
+                        (Login)</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,7 +70,7 @@
                     <div class="border-t border-slate-100"></div>
                 </div>
 
-                {{-- Alert Ganti Password --}}
+                {{-- Alert Ganti Kata Sandi --}}
                 <div class="bg-amber-50 border border-amber-100 rounded-lg p-4">
                     <h3 class="text-sm font-bold text-amber-800 mb-1 flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -78,16 +78,16 @@
                                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
                             </path>
                         </svg>
-                        Ganti Password (Opsional)
+                        Ubah Kata Sandi (Opsional)
                     </h3>
-                    <p class="text-xs text-amber-700/80">Biarkan kolom password kosong jika Anda tidak ingin mengubah
+                    <p class="text-xs text-amber-700/80">Biarkan kolom kata sandi kosong jika Anda tidak ingin mengubah
                         sandi pengguna ini.</p>
                 </div>
 
-                {{-- Password Baru --}}
+                {{-- Kata Sandi Baru --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Password
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kata Sandi
                             Baru</label>
                         <input type="password" name="password"
                             class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm"
@@ -97,10 +97,10 @@
 
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Konfirmasi
-                            Password</label>
+                            Kata Sandi</label>
                         <input type="password" name="password_confirmation"
                             class="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm"
-                            placeholder="Ulangi password baru" autocomplete="new-password">
+                            placeholder="Ulangi kata sandi baru" autocomplete="new-password">
                     </div>
                 </div>
 

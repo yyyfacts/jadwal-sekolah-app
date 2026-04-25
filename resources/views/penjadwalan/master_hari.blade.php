@@ -8,8 +8,8 @@
     <div class="absolute top-20 left-10 w-72 h-72 bg-cyan-300/10 rounded-full blur-3xl opacity-70"></div>
 </div>
 
-{{-- CONTAINER UTAMA --}}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-6rem)] pb-4 pt-6 flex flex-col">
+{{-- CONTAINER UTAMA (FULL WIDTH) --}}
+<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-6rem)] pb-4 pt-6 flex flex-col">
 
     {{-- FLASH MESSAGE --}}
     @if(session('success'))
@@ -109,7 +109,7 @@
                                 <button type="button"
                                     onclick="openEditModal({{ $h->id }}, '{{ $h->nama_hari }}', {{ $h->is_active ? 1 : 0 }})"
                                     class="p-2 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg transition-colors bg-white"
-                                    title="Edit Status">
+                                    title="Ubah Status">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
@@ -184,7 +184,7 @@
     class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99] hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
         <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
-            <h3 class="font-bold text-amber-800">Edit Status Hari</h3>
+            <h3 class="font-bold text-amber-800">Ubah Status Hari</h3>
             <button type="button" onclick="closeModal('modaledit')"
                 class="text-amber-400 hover:text-amber-600 text-2xl leading-none">&times;</button>
         </div>
@@ -205,7 +205,7 @@
                 </select>
             </div>
             <button type="submit"
-                class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold mt-2 py-3.5 rounded-xl shadow-lg transition">UPDATE
+                class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold mt-2 py-3.5 rounded-xl shadow-lg transition">PERBARUI
                 STATUS</button>
         </form>
     </div>
@@ -230,8 +230,8 @@
             <div
                 class="bg-blue-50 border border-blue-100 text-blue-800 text-xs p-3 rounded-xl mb-4 font-medium flex gap-2">
                 <span class="text-lg leading-none">💡</span>
-                <p><strong>Penting untuk AI:</strong> Tentukan mana kotak yang bertipe "Belajar" dan mana yang
-                    "Istirahat/Upacara". AI Python hanya akan meletakkan jadwal pelajaran di kotak yang bertipe
+                <p><strong>Penting untuk Penjadwalan:</strong> Tentukan mana kotak yang bertipe "Belajar" dan mana yang
+                    "Istirahat/Upacara". AI hanya akan meletakkan jadwal pelajaran di kotak yang bertipe
                     <strong>Belajar</strong>.
                 </p>
             </div>
@@ -289,7 +289,6 @@ function openEditModal(id, nama, active) {
     openModal('modaledit');
 }
 
-// LOGIK UNTUK POP-UP ATUR WAKTU
 let rowCount = 0;
 
 async function bukaModalWaktu(idHari, namaHari) {
@@ -309,7 +308,6 @@ async function bukaModalWaktu(idHari, namaHari) {
         rowCount = 0;
 
         if (data.length === 0) {
-            // Kalau kosong, otomatis kasih 1 baris
             tambahBarisWaktu();
         } else {
             data.forEach(item => {
@@ -323,7 +321,6 @@ async function bukaModalWaktu(idHari, namaHari) {
 
 function tambahBarisWaktu(jamKe = '', mulai = '', selesai = '', tipe = 'Belajar') {
     rowCount++;
-    // Otomatis ngisi angka kalau kosong
     if (jamKe === '') jamKe = document.querySelectorAll('.jam-input').length + 1;
 
     const tr = document.createElement('tr');
@@ -353,7 +350,6 @@ function tambahBarisWaktu(jamKe = '', mulai = '', selesai = '', tipe = 'Belajar'
         </td>
     `;
 
-    // Ganti warna dropdown saat dipilih
     const select = tr.querySelector('select');
     select.addEventListener('change', function() {
         if (this.value === 'Belajar') {

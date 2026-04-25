@@ -8,8 +8,8 @@
     <div class="absolute top-20 left-10 w-72 h-72 bg-cyan-300/10 rounded-full blur-3xl opacity-70"></div>
 </div>
 
-{{-- CONTAINER UTAMA --}}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-6rem)] pb-4 pt-6 flex flex-col relative z-0">
+{{-- CONTAINER UTAMA (FULL WIDTH) --}}
+<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-6rem)] pb-4 pt-6 flex flex-col relative z-0">
 
     {{-- FLASH MESSAGE --}}
     @if(session('success'))
@@ -37,7 +37,7 @@
                 <div class="flex gap-3 items-start">
                     <div class="w-2.5 h-8 bg-indigo-600 rounded-full mt-0.5"></div>
                     <div>
-                        <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Bank Data Guru</h1>
+                        <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Data Guru</h1>
                         <p class="text-slate-500 text-sm mt-1 font-medium">Manajemen profil pengajar, NIP, dan beban
                             jam.</p>
                     </div>
@@ -63,7 +63,7 @@
                 </div>
             </div>
 
-            {{-- Search Bar --}}
+            {{-- Kolom Cari --}}
             <div class="relative group">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <svg class="h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" fill="none"
@@ -78,7 +78,7 @@
             </div>
         </div>
 
-        {{-- 2. TABLE SECTION --}}
+        {{-- 2. TABEL DATA --}}
         <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white px-2">
             <table class="w-full text-left border-collapse min-w-[800px]">
                 <thead class="bg-white sticky top-0 z-10">
@@ -134,11 +134,11 @@
                                         @if($g->jenis_hari == 'hard')
                                         <span
                                             class="px-1.5 py-0.5 bg-rose-100 text-rose-600 text-[9px] rounded font-bold uppercase"
-                                            title="Hard Constraint">Hari: Strict</span>
+                                            title="Aturan Mutlak">Hari: Ketat</span>
                                         @else
                                         <span
                                             class="px-1.5 py-0.5 bg-emerald-100 text-emerald-600 text-[9px] rounded font-bold uppercase"
-                                            title="Soft Constraint">Hari: Soft</span>
+                                            title="Aturan Fleksibel">Hari: Bebas</span>
                                         @endif
                                         @endif
                                     </div>
@@ -176,7 +176,7 @@
                                 </button>
                                 <button type="button" onclick="openModal('edit{{ $g->id }}')"
                                     class="p-2 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg transition-colors bg-white"
-                                    title="Edit">
+                                    title="Ubah">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
@@ -230,29 +230,16 @@
                 </tbody>
             </table>
         </div>
-
-        <div class="bg-white border-t border-slate-100 px-8 py-4 flex justify-between items-center shrink-0">
-            <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Sistem Penjadwalan</span>
-            <span class="text-[11px] font-bold text-emerald-500 flex items-center gap-1.5 uppercase tracking-wider">
-                <svg class="w-4 h-4 bg-emerald-500 text-white rounded-full p-0.5" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                </svg>
-                Secure Data
-            </span>
-        </div>
     </div>
 </div>
 @endsection
 
-
-{{-- AREA MODALS: Dipindahkan ke sini (luar section content) agar terbebas dari jeratan tag Main --}}
 @push('modals')
 
 {{-- 1. Modal Tambah Guru --}}
 <div id="modaltambah"
     class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-scale-in border border-white/20">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-white/20">
         <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
             <h3 class="font-bold text-slate-800 flex items-center gap-2">
                 <span class="w-1.5 h-5 bg-indigo-600 rounded-full"></span> Tambah Guru
@@ -306,13 +293,13 @@
 </div>
 
 @foreach($gurus as $g)
-{{-- 2. Modal Edit Guru --}}
+{{-- 2. Modal Ubah Guru --}}
 <div id="edit{{ $g->id }}"
     class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
         <div class="px-6 py-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
             <h3 class="font-bold text-amber-800 flex items-center gap-2"><span
-                    class="w-1.5 h-5 bg-amber-500 rounded-full"></span> Edit Guru</h3>
+                    class="w-1.5 h-5 bg-amber-500 rounded-full"></span> Ubah Data Guru</h3>
             <button type="button" onclick="closeModal('edit{{ $g->id }}')"
                 class="text-amber-400 hover:text-amber-600 text-2xl leading-none">&times;</button>
         </div>
@@ -358,16 +345,16 @@
             </div>
 
             <button type="submit"
-                class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">UPDATE</button>
+                class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-xs">PERBARUI</button>
         </form>
     </div>
 </div>
 
-{{-- 3. Modal Jadwal Mengajar (Distribusi/Plotting) --}}
+{{-- 3. Modal Jadwal Mengajar --}}
 <div id="modaljadwal{{ $g->id }}"
     class="fixed inset-0 bg-slate-900/80 z-[9999] hidden items-center justify-center p-2 sm:p-4 transition-opacity duration-300">
     <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-200 overflow-hidden animate-scale-in relative">
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col border border-slate-200 overflow-hidden relative">
         <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
             <div class="flex items-center gap-3">
                 <div class="p-2 bg-indigo-600 text-white rounded-lg shadow-sm">
@@ -431,13 +418,18 @@
                                             JP</span>
                                         @if($jadwal->status == 'online')
                                         <span
-                                            class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">ONLINE</span>
+                                            class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">DARING</span>
                                         @else
                                         <span
-                                            class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">OFFLINE</span>
+                                            class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">LURING</span>
                                         @endif
                                         <span
-                                            class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">{{ $jadwal->tipe_jam }}</span>
+                                            class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">
+                                            @if($jadwal->tipe_jam == 'single') Satu (1x)
+                                            @elseif($jadwal->tipe_jam == 'double') Dua (2x)
+                                            @elseif($jadwal->tipe_jam == 'triple') Tiga (3x)
+                                            @else {{ $jadwal->tipe_jam }} @endif
+                                        </span>
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 text-right align-middle">
@@ -446,7 +438,7 @@
                                         <button type="button"
                                             onclick="editJadwalInline('{{ $g->id }}', '{{ $jadwal->id }}', '{{ $jadwal->mapel_id }}', '{{ $jadwal->kelas_id }}', '{{ $jadwal->jumlah_jam }}', '{{ $jadwal->tipe_jam }}', '{{ $jadwal->status ?? 'offline' }}')"
                                             class="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded-lg transition"
-                                            title="Edit">
+                                            title="Ubah">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
@@ -511,7 +503,7 @@
                                         </svg>
                                     </button>
                                     <div id="dropdown-mapel-{{ $g->id }}"
-                                        class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-xl mt-1 max-h-56 overflow-y-auto animate-scale-in">
+                                        class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-xl mt-1 max-h-56 overflow-y-auto">
                                         <div class="sticky top-0 bg-white p-2 border-b border-slate-100">
                                             <input type="text" placeholder="Cari..."
                                                 onkeyup="filterCustomDropdown('mapel', '{{ $g->id }}', this)"
@@ -546,7 +538,7 @@
                                         </svg>
                                     </button>
                                     <div id="dropdown-kelas-{{ $g->id }}"
-                                        class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-xl mt-1 max-h-56 overflow-y-auto animate-scale-in">
+                                        class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-xl mt-1 max-h-56 overflow-y-auto">
                                         <div class="sticky top-0 bg-white p-2 border-b border-slate-100">
                                             <input type="text" placeholder="Cari..."
                                                 onkeyup="filterCustomDropdown('kelas', '{{ $g->id }}', this)"
@@ -582,9 +574,9 @@
                                             class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Tipe</label>
                                         <select name="tipe_jam" id="select-tipe-{{ $g->id }}"
                                             class="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 outline-none appearance-none cursor-pointer transition">
-                                            <option value="single">Single (1x)</option>
-                                            <option value="double">Double (2x)</option>
-                                            <option value="triple">Triple (3x)</option>
+                                            <option value="single">Satu (1x)</option>
+                                            <option value="double">Dua (2x)</option>
+                                            <option value="triple">Tiga (3x)</option>
                                         </select>
                                     </div>
                                 </div>
@@ -597,8 +589,8 @@
                                     <div class="relative">
                                         <select name="status" id="select-status-{{ $g->id }}"
                                             class="w-full pl-3 pr-8 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 outline-none appearance-none cursor-pointer transition shadow-sm">
-                                            <option value="offline">🏫 OFFLINE (Masuk Jadwal Besar)</option>
-                                            <option value="online">💻 ONLINE (Bebas Penjadwalan)</option>
+                                            <option value="offline">🏫 LURING (Masuk Jadwal Besar)</option>
+                                            <option value="online">💻 DARING (Bebas Penjadwalan)</option>
                                         </select>
                                         <div
                                             class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
@@ -669,7 +661,6 @@ function closeModal(modalID) {
     }
 }
 
-// Logic Window Onclick disamakan persis dengan mapel untuk kestabilan
 window.onclick = function(event) {
     if (event.target.classList.contains('fixed')) {
         event.target.classList.add('hidden');
@@ -754,12 +745,12 @@ function editJadwalInline(guruId, jadwalId, mapelId, kelasId, jam, tipe, status)
     const btnSubmit = document.getElementById(`btn-submit-${guruId}`);
 
     container.classList.add('ring-2', 'ring-amber-200');
-    title.innerHTML = `<span class="text-amber-600">EDIT DISTRIBUSI</span>`;
+    title.innerHTML = `<span class="text-amber-600">UBAH DISTRIBUSI</span>`;
     document.getElementById(`btn-batal-${guruId}`).classList.remove('hidden');
 
     btnSubmit.className =
         "w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold shadow-lg transition mt-2";
-    btnSubmit.innerHTML = "UPDATE";
+    btnSubmit.innerHTML = "PERBARUI";
 
     setCustomDropdownValue('mapel', guruId, mapelId);
     setCustomDropdownValue('kelas', guruId, kelasId);
@@ -802,7 +793,7 @@ async function handleFormJadwal(e, form, guruId) {
     const btn = form.querySelector('button[type="submit"]');
     const oldText = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = "Loading...";
+    btn.innerHTML = "Memuat...";
 
     try {
         const res = await fetch(form.action, {
@@ -837,8 +828,13 @@ function updateTableUI(guruId, jadwal, isEdit) {
     const jadwalStatus = jadwal.status || 'offline';
 
     const badgeHTML = jadwalStatus === 'online' ?
-        '<span class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">ONLINE</span>' :
-        '<span class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">OFFLINE</span>';
+        '<span class="status-badge mt-1 bg-amber-100 text-amber-700 px-2 rounded text-[9px] font-bold tracking-wider">DARING</span>' :
+        '<span class="status-badge mt-1 bg-emerald-100 text-emerald-700 px-2 rounded text-[9px] font-bold tracking-wider">LURING</span>';
+
+    let tipeTranslate = jadwal.tipe_jam;
+    if (tipeTranslate === 'single') tipeTranslate = 'Satu (1x)';
+    if (tipeTranslate === 'double') tipeTranslate = 'Dua (2x)';
+    if (tipeTranslate === 'triple') tipeTranslate = 'Tiga (3x)';
 
     if (isEdit) {
         const row = document.getElementById(`row-jadwal-${jadwal.id}`);
@@ -851,7 +847,7 @@ function updateTableUI(guruId, jadwal, isEdit) {
             jamSpan.innerText = jadwal.jumlah_jam + ' JP';
             jamSpan.setAttribute('data-jam', jadwal.jumlah_jam);
 
-            row.querySelector('.tipe-text').innerText = jadwal.tipe_jam;
+            row.querySelector('.tipe-text').innerText = tipeTranslate;
 
             const oldBadge = row.querySelector('.status-badge');
             if (oldBadge) oldBadge.outerHTML = badgeHTML;
@@ -875,12 +871,12 @@ function updateTableUI(guruId, jadwal, isEdit) {
                 <div class="flex flex-col items-center">
                     <span class="bg-white text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold jam-text border border-indigo-100 shadow-sm" data-jam="${jadwal.jumlah_jam}">${jadwal.jumlah_jam} JP</span>
                     ${badgeHTML}
-                    <span class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">${jadwal.tipe_jam}</span>
+                    <span class="text-[9px] text-slate-400 mt-0.5 tipe-text uppercase font-semibold tracking-wider">${tipeTranslate}</span>
                 </div>
             </td>
             <td class="px-4 py-3 text-right align-middle">
                 <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button type="button" onclick="editJadwalInline('${guruId}', '${jadwal.id}', '${jadwal.mapel_id}', '${jadwal.kelas_id}', '${jadwal.jumlah_jam}', '${jadwal.tipe_jam}', '${jadwalStatus}')" class="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded-lg transition" title="Edit">
+                    <button type="button" onclick="editJadwalInline('${guruId}', '${jadwal.id}', '${jadwal.mapel_id}', '${jadwal.kelas_id}', '${jadwal.jumlah_jam}', '${jadwal.tipe_jam}', '${jadwalStatus}')" class="p-1.5 text-indigo-600 hover:bg-indigo-100 rounded-lg transition" title="Ubah">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                     </button>
                     <button type="button" onclick="hapusJadwal('${jadwal.id}', this)" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition" title="Hapus">
