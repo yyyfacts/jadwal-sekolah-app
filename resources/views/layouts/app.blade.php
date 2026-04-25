@@ -279,6 +279,9 @@
         @yield('content')
     </main>
 
+    {{-- AREA UNTUK SEMUA POP UP MODAL (DI LUAR MAIN AGAR TIDAK TERTUTUP NAVBAR) --}}
+    @stack('modals')
+
     {{-- DI SINI TEMPAT YANG BENAR UNTUK PUSH SCRIPTS DARI CHILD VIEW --}}
     @stack('scripts')
 </body>

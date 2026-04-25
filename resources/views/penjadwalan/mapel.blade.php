@@ -253,10 +253,10 @@
     </div>
 
 </div> {{-- END OF CONTAINER UTAMA --}}
+@endsection
 
-
-{{-- MODALS AREA (DIPINDAHKAN KE LUAR CONTAINER AGAR TIDAK KETUTUPAN NAVBAR) --}}
-
+{{-- AREA MODALS: Dipindahkan ke sini (luar section content) agar terbebas dari jeratan tag Main --}}
+@push('modals')
 {{-- 1. Modal Tambah --}}
 <div id="modaltambah"
     class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] hidden items-center justify-center p-4">
@@ -624,11 +624,9 @@
     </div>
 </div>
 @endforeach
-
-@endsection
+@endpush
 
 @push('scripts')
-{{-- Bagian Script kamu tetap sama, tidak saya buang --}}
 <script>
 const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
@@ -860,7 +858,7 @@ function updateTableUI(mapelId, jadwal, isEdit) {
             const btnEdit = row.querySelector('button[onclick^="editJadwalInline"]');
             btnEdit.setAttribute('onclick',
                 `editJadwalInline(${mapelId}, ${jadwal.id}, ${jadwal.kelas_id}, ${jadwal.guru_id}, ${jadwal.jumlah_jam}, '${jadwal.tipe_jam}', '${jadwal.status}')`
-                );
+            );
 
             row.classList.add('bg-amber-100');
             setTimeout(() => row.classList.remove('bg-amber-100'), 1500);

@@ -229,7 +229,7 @@
                         </div>
                         <input type="text" id="search-jadwal" oninput="filterJadwalRealtime()"
                             class="block w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition"
-                            placeholder="Cari Guru/Mapel...">
+                            placeholder="Cari Mapel...">
                     </div>
 
                     <a href="{{ route('jadwal.export') }}"
