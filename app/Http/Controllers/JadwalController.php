@@ -165,15 +165,13 @@ class JadwalController extends Controller
                 ];
             });
 
-            // PERBAIKAN: Masukkan preferensi 'jenis_hari' ke solver
             $gurus = Guru::all()->map(fn ($guru) => [
                 'id'            => $guru->id,
                 'nama'          => $guru->nama_guru,
                 'hari_mengajar' => $guru->hari_mengajar ?? [],
-                'jenis_hari'    => $guru->jenis_hari ?? 'hard', // Mengambil data dari database
+                'jenis_hari'    => $guru->jenis_hari ?? 'hard', 
             ]);
 
-            // PERBAIKAN: Hapus Hardcode PJOK, ganti dengan data dari database mapel
             $assignments = Jadwal::with('mapel')
                 ->where(function ($q) {
                     $q->where('status', 'offline')->orWhereNull('status');
@@ -190,7 +188,7 @@ class JadwalController extends Controller
                         'jumlah_jam'         => $j->jumlah_jam,
                         'nama_mapel'         => $namaMapel,
                         'batas_maksimal_jam' => isset($j->mapel->batas_maksimal_jam) ? (int) $j->mapel->batas_maksimal_jam : null,
-                        'jenis_batas'        => $j->mapel->jenis_batas ?? 'soft', // Default soft jika null
+                        'jenis_batas'        => $j->mapel->jenis_batas ?? 'soft', 
                     ];
                 });
 
@@ -257,11 +255,13 @@ class JadwalController extends Controller
                         ->with('total_hard_constraints',   $metrik['total_hard_constraints']  ?? 0)
                         ->with('jumlah_pelanggaran_hard',  $metrik['jumlah_pelanggaran_hard'] ?? 0)
                         ->with('detail_pelanggaran_hard',  $metrik['detail_pelanggaran_hard'] ?? [])
+                        ->with('breakdown_csr',            $metrik['breakdown_csr']           ?? []) // PENAMBAHAN DATA BREAKDOWN
                         ->with('scfr',                     $metrik['SCFR']                    ?? null)
                         ->with('total_preferensi',         $metrik['total_preferensi']        ?? 0)
                         ->with('jumlah_pelanggaran_soft',  $metrik['jumlah_pelanggaran_soft'] ?? 0)
                         ->with('toleransi_soft',           $metrik['toleransi_soft']          ?? 1)
-                        ->with('detail_pelanggaran_soft',  $metrik['detail_pelanggaran_soft'] ?? []);
+                        ->with('detail_pelanggaran_soft',  $metrik['detail_pelanggaran_soft'] ?? [])
+                        ->with('breakdown_scfr',           $metrik['breakdown_scfr']          ?? []); // PENAMBAHAN DATA BREAKDOWN
 
                 } catch (\Exception $e) {
                     DB::rollBack();

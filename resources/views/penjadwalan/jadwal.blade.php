@@ -55,12 +55,46 @@
                     <span>Rumus : ((Total Evaluasi Aturan - Jumlah Pelanggaran) / Total Evaluasi Aturan) x 100%</span>
                     <span>Hitung : (({{ session('total_hard_constraints') }} - {{ session('jumlah_pelanggaran_hard') }})
                         / {{ session('total_hard_constraints') ?: 1 }}) x 100%</span>
-                    <span>Hasil : <strong>{{ session('csr') }}%</strong></span>
+                    <span>Hasil : <strong class="text-[12px]">{{ session('csr') }}%</strong></span>
+
+                    {{-- TABEL BREAKDOWN CSR --}}
+                    @if(session('breakdown_csr') && count(session('breakdown_csr')) > 0)
+                    <div class="mt-2 overflow-x-auto rounded border border-blue-200/60 bg-white">
+                        <table class="w-full text-left border-collapse min-w-full">
+                            <thead class="bg-blue-50">
+                                <tr class="text-blue-800 text-[10px]">
+                                    <th class="px-2 py-1 font-bold border-b border-blue-200/60">Kategori Evaluasi</th>
+                                    <th class="px-2 py-1 font-bold text-center border-b border-blue-200/60 border-l">
+                                        Total Evaluasi</th>
+                                    <th class="px-2 py-1 font-bold text-center border-b border-blue-200/60 border-l">
+                                        Pelanggaran</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-blue-100/50 text-[10px]">
+                                @foreach(session('breakdown_csr') as $b)
+                                <tr class="hover:bg-blue-50/50 transition-colors">
+                                    <td class="px-2 py-1">
+                                        <span class="font-bold">{{ $b['kategori'] }}</span>: <span
+                                            class="text-[9px] text-blue-700/80">{{ $b['deskripsi'] }}</span>
+                                    </td>
+                                    <td class="px-2 py-1 text-center font-bold border-l border-blue-100/50">
+                                        {{ $b['total'] }}</td>
+                                    <td
+                                        class="px-2 py-1 text-center font-bold border-l border-blue-100/50 {{ $b['pelanggaran'] > 0 ? 'text-rose-600' : 'text-emerald-600' }}">
+                                        {{ $b['pelanggaran'] }}
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @endif
 
                     @if(session('jumlah_pelanggaran_hard') > 0)
                     <div
-                        class="mt-1 border-t border-blue-200/50 pt-1 text-[10px] text-rose-600 leading-tight font-bold">
+                        class="mt-2 border-t border-blue-200/50 pt-2 text-[10px] text-rose-600 leading-tight font-bold">
                         Terdapat {{ session('jumlah_pelanggaran_hard') }} pelanggaran aturan mutlak (Hard Constraint).
+                        Jadwal tidak valid 100%.
                     </div>
                     @endif
                 </div>
@@ -76,7 +110,42 @@
                         100%</span>
                     <span>Hitung : (({{ session('total_preferensi') }} - {{ session('jumlah_pelanggaran_soft') }}) /
                         {{ session('total_preferensi') ?: 1 }}) x 100%</span>
-                    <span>Hasil : <strong>{{ session('scfr') }}%</strong></span>
+                    <span>Hasil : <strong class="text-[12px]">{{ session('scfr') }}%</strong></span>
+
+                    {{-- TABEL BREAKDOWN SCFR --}}
+                    @if(session('breakdown_scfr') && count(session('breakdown_scfr')) > 0)
+                    <div class="mt-2 overflow-x-auto rounded border border-emerald-200/60 bg-white">
+                        <table class="w-full text-left border-collapse min-w-full">
+                            <thead class="bg-emerald-50">
+                                <tr class="text-emerald-800 text-[10px]">
+                                    <th class="px-2 py-1 font-bold border-b border-emerald-200/60">Kategori Evaluasi
+                                    </th>
+                                    <th class="px-2 py-1 font-bold text-center border-b border-emerald-200/60 border-l">
+                                        Total Evaluasi</th>
+                                    <th class="px-2 py-1 font-bold text-center border-b border-emerald-200/60 border-l">
+                                        Pelanggaran</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-emerald-100/50 text-[10px]">
+                                @foreach(session('breakdown_scfr') as $b)
+                                <tr class="hover:bg-emerald-50/50 transition-colors">
+                                    <td class="px-2 py-1">
+                                        <span class="font-bold">{{ $b['kategori'] }}</span>: <span
+                                            class="text-[9px] text-emerald-700/80">{{ $b['deskripsi'] }}</span>
+                                    </td>
+                                    <td class="px-2 py-1 text-center font-bold border-l border-emerald-100/50">
+                                        {{ $b['total'] }}</td>
+                                    <td
+                                        class="px-2 py-1 text-center font-bold border-l border-emerald-100/50 {{ $b['pelanggaran'] > 0 ? 'text-amber-600' : 'text-emerald-600' }}">
+                                        {{ $b['pelanggaran'] }}
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @endif
+
                 </div>
                 @endif
             </div>
