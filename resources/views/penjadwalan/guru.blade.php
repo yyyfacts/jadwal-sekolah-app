@@ -67,20 +67,23 @@
 
         {{-- 2. TABEL DATA --}}
         <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white">
-            <table class="w-full text-left border-collapse min-w-[800px]">
+            <table class="w-full text-left border-collapse min-w-[850px]">
                 <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
                     <tr>
                         <th
                             class="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center w-12 border-b border-slate-200">
                             No</th>
                         <th
-                            class="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider w-[40%] border-b border-slate-200">
+                            class="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider w-[35%] border-b border-slate-200">
                             Profil Guru</th>
                         <th
-                            class="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center w-[25%] border-b border-slate-200">
+                            class="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center w-[15%] border-b border-slate-200">
                             Beban Mengajar</th>
                         <th
-                            class="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right w-[35%] border-b border-slate-200">
+                            class="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center w-[15%] border-b border-slate-200">
+                            Waktu Sistem</th>
+                        <th
+                            class="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right w-[25%] border-b border-slate-200">
                             Aksi & Jadwal</th>
                     </tr>
                 </thead>
@@ -143,6 +146,14 @@
                             </div>
                             @endif
                         </td>
+                        <td class="px-3 py-2 text-center align-middle">
+                            <div class="flex flex-col items-center gap-0.5 text-[9px]">
+                                <span class="text-slate-400" title="Dibuat: {{ $g->created_at }}">➕
+                                    {{ $g->created_at ? $g->created_at->format('d/m/Y') : '-' }}</span>
+                                <span class="text-indigo-400" title="Diperbarui: {{ $g->updated_at }}">🔄
+                                    {{ $g->updated_at ? $g->updated_at->format('d/m/Y') : '-' }}</span>
+                            </div>
+                        </td>
                         <td class="px-4 py-2 align-middle text-right">
                             <div class="flex items-center justify-end gap-1.5">
                                 <button type="button" onclick="openModal('modaljadwal{{ $g->id }}')"
@@ -179,11 +190,11 @@
                     </tr>
                     @empty
                     <tr id="no-data-row">
-                        <td colspan="4" class="px-4 py-12 text-center text-slate-400 text-xs">Belum ada data guru.</td>
+                        <td colspan="5" class="px-4 py-12 text-center text-slate-400 text-xs">Belum ada data guru.</td>
                     </tr>
                     @endforelse
                     <tr id="search-no-result" class="hidden">
-                        <td colspan="4" class="px-4 py-8 text-center text-slate-400 text-xs">Guru tidak ditemukan.</td>
+                        <td colspan="5" class="px-4 py-8 text-center text-slate-400 text-xs">Guru tidak ditemukan.</td>
                     </tr>
                 </tbody>
             </table>

@@ -61,28 +61,30 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
                             </path>
-                        </svg> Tambah
-                    </button>
+                        </svg Tambah </button>
                 </div>
             </div>
         </div>
 
         {{-- 2. TABEL DATA (FLEX-1 MENGISI RUANG TERSISA) --}}
         <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white">
-            <table class="w-full text-left border-collapse min-w-[800px]">
+            <table class="w-full text-left border-collapse min-w-[850px]">
                 <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
                     <tr>
                         <th
                             class="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center w-12 border-b border-slate-200">
                             No</th>
                         <th
-                            class="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider w-[35%] border-b border-slate-200">
+                            class="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider w-[30%] border-b border-slate-200">
                             Identitas Kelas</th>
                         <th
-                            class="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center w-[25%] border-b border-slate-200">
+                            class="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center w-[20%] border-b border-slate-200">
                             Beban / Kapasitas</th>
                         <th
-                            class="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right w-[35%] border-b border-slate-200">
+                            class="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center w-[15%] border-b border-slate-200">
+                            Waktu Sistem</th>
+                        <th
+                            class="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right w-[25%] border-b border-slate-200">
                             Aksi</th>
                     </tr>
                 </thead>
@@ -125,6 +127,14 @@
                                 </div>
                             </div>
                         </td>
+                        <td class="px-3 py-2 text-center align-middle">
+                            <div class="flex flex-col items-center gap-0.5 text-[9px]">
+                                <span class="text-slate-400" title="Dibuat: {{ $k->created_at }}">➕
+                                    {{ $k->created_at ? $k->created_at->format('d/m/Y') : '-' }}</span>
+                                <span class="text-purple-400" title="Diperbarui: {{ $k->updated_at }}">🔄
+                                    {{ $k->updated_at ? $k->updated_at->format('d/m/Y') : '-' }}</span>
+                            </div>
+                        </td>
                         <td class="px-4 py-2 text-right align-middle">
                             <div class="flex items-center justify-end gap-1.5">
                                 <button onclick="openModal('modaljadwal{{ $k->id }}')"
@@ -154,7 +164,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="px-4 py-12 text-center text-xs text-slate-400">Belum ada data.</td>
+                        <td colspan="5" class="px-4 py-12 text-center text-xs text-slate-400">Belum ada data.</td>
                     </tr>
                     @endforelse
                 </tbody>

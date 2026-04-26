@@ -60,6 +60,7 @@
                             <th class="px-4 py-2 border-b">Tahun</th>
                             <th class="px-3 py-2 border-b">Semester</th>
                             <th class="px-3 py-2 text-center border-b">Status</th>
+                            <th class="px-3 py-2 text-center border-b">Waktu Sistem</th>
                             <th class="px-4 py-2 text-right border-b">Aksi</th>
                         </tr>
                     </thead>
@@ -73,6 +74,14 @@
                             <td class="px-3 py-2 text-center">@if($t->is_active)<span
                                     class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold text-[10px]">AKTIF</span>@else<span
                                     class="bg-slate-100 text-slate-400 px-2 py-0.5 rounded text-[10px] font-bold">Nonaktif</span>@endif
+                            </td>
+                            <td class="px-3 py-2 text-center align-middle">
+                                <div class="flex flex-col items-center gap-0.5 text-[9px]">
+                                    <span class="text-slate-400" title="Dibuat: {{ $t->created_at }}">➕
+                                        {{ $t->created_at ? $t->created_at->format('d/m/Y') : '-' }}</span>
+                                    <span class="text-slate-500" title="Diperbarui: {{ $t->updated_at }}">🔄
+                                        {{ $t->updated_at ? $t->updated_at->format('d/m/Y') : '-' }}</span>
+                                </div>
                             </td>
                             <td class="px-4 py-2 text-right">
                                 <div class="flex justify-end gap-1.5 items-center">
@@ -95,7 +104,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="4" class="px-4 py-8 text-center text-slate-400 text-xs">Kosong.</td>
+                            <td colspan="5" class="px-4 py-8 text-center text-slate-400 text-xs">Kosong.</td>
                         </tr>
                         @endforelse
                     </tbody>
