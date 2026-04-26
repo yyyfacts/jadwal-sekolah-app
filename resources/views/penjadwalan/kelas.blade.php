@@ -4,19 +4,21 @@
 {{-- BACKGROUND --}}
 <div class="fixed inset-0 -z-10 pointer-events-none bg-[#f4f7fb]"></div>
 
-{{-- CONTAINER UTAMA (PADAT, SCROLL HANYA DI TABEL) --}}
-<div class="max-w-full mx-auto px-2 sm:px-4 pt-4 pb-12 flex flex-col">
+{{-- CONTAINER UTAMA (SUPER PADAT & FULL WIDTH SEPERTI GURU) --}}
+<div class="w-full max-w-[100vw] mx-auto px-2 sm:px-4 h-[calc(100vh-4rem)] pb-2 pt-2 flex flex-col relative z-0">
 
     @if(session('success'))
     <div x-data="{ show: true }" x-show="show" x-transition
-        class="mb-3 flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-lg shadow-sm text-emerald-800 shrink-0">
+        class="mb-2 flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-lg shadow-sm text-emerald-800 shrink-0">
         <span class="font-bold text-xs">✅ {{ session('success') }}</span>
         <button @click="show = false" class="text-emerald-400 hover:text-emerald-700">&times;</button>
     </div>
     @endif
 
     {{-- UNIFIED CARD --}}
-    <div class="bg-white rounded-xl border border-slate-200 shadow-md flex flex-col overflow-hidden">
+    <div class="bg-white rounded-xl border border-slate-200 shadow-md flex flex-col flex-1 overflow-hidden">
+
+        {{-- 1. HEADER SECTION --}}
         <div class="px-4 py-3 bg-white shrink-0 z-20 border-b border-slate-100">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div class="flex gap-2 items-center">
@@ -46,7 +48,8 @@
                         <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none"><svg
                                 class="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
-                                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg></div>
                         <input type="text" id="search-kelas-main" oninput="searchMainTable()"
                             class="block w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-purple-500 focus:bg-white transition"
@@ -56,15 +59,16 @@
                     <button onclick="openModal('modaltambah')"
                         class="px-4 py-1.5 bg-[#9333ea] text-white rounded-lg font-bold text-[10px] uppercase shadow-sm flex items-center gap-1.5 hover:bg-purple-700 transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 4v16m8-8H4"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
                         </svg> Tambah
                     </button>
                 </div>
             </div>
         </div>
 
-        {{-- TABEL DATA (DIBERIKAN MAX-H AGAR BISA DI-SCROLL TANPA MERUSAK LAYOUT HALAMAN) --}}
-        <div class="overflow-y-auto custom-scrollbar bg-white max-h-[75vh]">
+        {{-- 2. TABEL DATA (FLEX-1 MENGISI RUANG TERSISA) --}}
+        <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white">
             <table class="w-full text-left border-collapse min-w-[800px]">
                 <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
                     <tr>
@@ -126,12 +130,13 @@
                                 <button onclick="openModal('modaljadwal{{ $k->id }}')"
                                     class="flex items-center gap-1 px-2.5 py-1.5 bg-[#1e293b] text-white text-[10px] font-bold rounded-lg shadow-sm hover:bg-slate-800 transition"><svg
                                         class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 4v16m8-8H4"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 4v16m8-8H4"></path>
                                     </svg> Distribusi</button>
                                 <button onclick="openModal('edit{{ $k->id }}')"
                                     class="p-1.5 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg bg-white transition"><svg
                                         class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
                                         </path>
                                     </svg></button>
@@ -140,7 +145,7 @@
                                     @method('DELETE')<button type="submit"
                                         class="p-1.5 border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300 rounded-lg bg-white transition"><svg
                                             class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
                                             </path>
                                         </svg></button></form>
@@ -250,7 +255,7 @@
                 <div class="flex items-center gap-2">
                     <div class="p-1.5 bg-purple-600 text-white rounded"><svg class="w-4 h-4" fill="none"
                             stroke="currentColor" viewBox="0 0 24 24">
-                            <path
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
                             </path>
                         </svg></div>
@@ -261,7 +266,7 @@
                     </div>
                 </div>
                 <button onclick="closeModal('modaljadwal{{ $k->id }}')"
-                    class="text-slate-400 hover:text-red-500 text-2xl">&times;</button>
+                    class="text-slate-400 hover:text-red-500 text-2xl leading-none">&times;</button>
             </div>
             <div class="flex flex-col lg:flex-row h-full overflow-hidden">
                 <div class="flex-1 flex flex-col h-full border-r border-slate-100 relative">
@@ -300,7 +305,8 @@
                                                 class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"><svg
                                                     class="w-3.5 h-3.5" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
-                                                    <path
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
                                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
                                                     </path>
                                                 </svg></button>
