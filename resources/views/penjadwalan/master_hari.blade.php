@@ -137,8 +137,10 @@
         </div>
     </div>
 </div>
+@endsection
 
-{{-- AREA MODAL --}}
+{{-- AREA MODAL DIPINDAHKAN KE @push('modals') AGAR TIDAK KETUTUPAN HEADER --}}
+@push('modals')
 
 {{-- 1. Modal Tambah Hari --}}
 <div id="modaltambah"
@@ -199,11 +201,11 @@
     </div>
 </div>
 
-{{-- 3. MODAL ATUR SLOT WAKTU (DIPERBAIKI AGAR TIDAK KETUTUP HEADER) --}}
+{{-- 3. MODAL ATUR SLOT WAKTU --}}
 <div id="modalwaktu"
     class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] hidden items-center justify-center p-2 transition-all">
     <div
-        class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col border border-slate-200 overflow-hidden relative z-[10000]">
+        class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col border border-slate-200 overflow-hidden relative">
         <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center shrink-0">
             <div>
                 <h3 class="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
@@ -259,7 +261,7 @@
     </div>
 </div>
 
-@endsection
+@endpush
 
 @push('scripts')
 <script>
@@ -330,7 +332,7 @@ function tambahBarisWaktu(jamKe = '', mulai = '', selesai = '', tipe = 'Belajar'
                 <option value="Upacara" ${tipe === 'Upacara' ? 'selected' : ''}>Upacara</option>
                 <option value="Sholat" ${tipe === 'Sholat' ? 'selected' : ''}>Sholat</option>
                 <option value="Senam" ${tipe === 'Senam' ? 'selected' : ''}>Senam</option>
-                <option value="SholatDhuha" ${tipe === 'SholatDhuha' ? 'selected' : ''}>Sholat Dhuha</option>
+                <option value="Sholat Dhuha" ${tipe === 'Sholat Dhuha' ? 'selected' : ''}>Sholat Dhuha</option>
                 <option value="Jumat Bersih" ${tipe === 'Jumat Bersih' ? 'selected' : ''}>Jumat Bersih</option>
                 <option value="Pramuka" ${tipe === 'Pramuka' ? 'selected' : ''}>Pramuka</option>
                 <option value="Lainnya" ${tipe === 'Lainnya' ? 'selected' : ''}>Lainnya</option>
