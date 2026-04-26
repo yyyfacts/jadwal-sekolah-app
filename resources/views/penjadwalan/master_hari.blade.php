@@ -142,7 +142,7 @@
 
 {{-- 1. Modal Tambah Hari --}}
 <div id="modaltambah"
-    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden items-center justify-center p-2">
+    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] hidden items-center justify-center p-2">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-xs overflow-hidden border border-white/20">
         <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
             <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5"><span
@@ -172,7 +172,7 @@
 
 {{-- 2. Modal Ubah Status Hari --}}
 <div id="modaledit"
-    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[99] hidden items-center justify-center p-2">
+    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] hidden items-center justify-center p-2">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-xs overflow-hidden border border-white/20">
         <div class="px-4 py-3 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
             <h3 class="font-bold text-amber-800 text-sm flex items-center gap-1.5"><span
@@ -199,11 +199,11 @@
     </div>
 </div>
 
-{{-- 3. MODAL ATUR SLOT WAKTU (PENTING UNTUK AI) --}}
+{{-- 3. MODAL ATUR SLOT WAKTU (DIPERBAIKI AGAR TIDAK KETUTUP HEADER) --}}
 <div id="modalwaktu"
-    class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[99] hidden items-center justify-center p-2 transition-all">
+    class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] hidden items-center justify-center p-2 transition-all">
     <div
-        class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col border border-slate-200 overflow-hidden">
+        class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col border border-slate-200 overflow-hidden relative z-[10000]">
         <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center shrink-0">
             <div>
                 <h3 class="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
@@ -330,6 +330,10 @@ function tambahBarisWaktu(jamKe = '', mulai = '', selesai = '', tipe = 'Belajar'
                 <option value="Upacara" ${tipe === 'Upacara' ? 'selected' : ''}>Upacara</option>
                 <option value="Sholat" ${tipe === 'Sholat' ? 'selected' : ''}>Sholat</option>
                 <option value="Senam" ${tipe === 'Senam' ? 'selected' : ''}>Senam</option>
+                <option value="SholatDhuha" ${tipe === 'SholatDhuha' ? 'selected' : ''}>Sholat Dhuha</option>
+                <option value="Jumat Bersih" ${tipe === 'Jumat Bersih' ? 'selected' : ''}>Jumat Bersih</option>
+                <option value="Pramuka" ${tipe === 'Pramuka' ? 'selected' : ''}>Pramuka</option>
+                <option value="Lainnya" ${tipe === 'Lainnya' ? 'selected' : ''}>Lainnya</option>
             </select>
         </td>
         <td class="px-2 py-1.5 text-center">
