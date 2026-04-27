@@ -106,123 +106,101 @@
                     @php
                     $theme = $themes[$index % 4];
                     $jam = $g->total_jam_mengajar;
-
-                    // Logika Status Beban Mengajar (24-40 jam adalah Ideal/Sesuai)
-                    $statusLabel = 'Kosong';
-                    $statusBg = 'bg-slate-50 text-slate-500 border-slate-200';
-
-                    if ($jam > 0 && $jam < 24) { $statusLabel='Kurang' ;
-                        $statusBg='bg-rose-50 text-rose-600 border-rose-200' ; } elseif ($jam>= 24 && $jam <= 40) {
-                            $statusLabel='Sesuai' ; $statusBg='bg-emerald-50 text-emerald-600 border-emerald-200' ; }
-                            elseif ($jam> 40) {
-                            $statusLabel = 'Lebih';
-                            $statusBg = 'bg-amber-50 text-amber-600 border-amber-200';
-                            }
-                            @endphp
-                            <tr class="group hover:bg-slate-50/80 transition-colors"
-                                data-filter="{{ strtolower($g->nama_guru) }} {{ strtolower($g->kode_guru) }}">
-                                <td class="px-4 py-2 text-center align-middle">
-                                    <span class="font-medium text-slate-400 text-[11px]">{{ $index + 1 }}</span>
-                                </td>
-                                <td class="px-3 py-2 align-middle">
-                                    <div class="flex items-center gap-3">
-                                        <div
-                                            class="h-7 w-7 shrink-0 rounded-full {{ $theme['avatar'] }} text-white flex items-center justify-center font-bold text-[10px] shadow-sm">
-                                            {{ substr($g->nama_guru, 0, 1) }}
-                                        </div>
-                                        <div class="leading-tight">
-                                            <div class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-                                                {{ $g->nama_guru }}
-                                                @if(!empty($g->hari_array))
-                                                <span
-                                                    class="px-1 py-0.5 {{ $g->jenis_hari == 'hard' ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600' }} text-[8px] rounded uppercase"
-                                                    title="Aturan Hari">{{ $g->jenis_hari == 'hard' ? 'Ketat' : 'Bebas' }}</span>
-                                                @endif
-                                            </div>
-                                            <div
-                                                class="inline-block px-1.5 py-0.5 mt-0.5 rounded bg-slate-100 text-slate-500 font-bold text-[9px] uppercase tracking-wide border border-slate-200">
-                                                {{ $g->kode_guru }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-3 py-2 text-center align-middle">
-                                    <div class="flex flex-col items-center gap-1">
-                                        @if($jam > 0)
-                                        <div
-                                            class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md {{ $theme['pillBg'] }} {{ $theme['pillText'] }} border border-slate-100">
-                                            <div class="w-1.5 h-1.5 rounded-full {{ $theme['dot'] }}"></div>
-                                            <span class="text-[10px] font-bold">{{ $jam }} Jam</span>
-                                        </div>
+                    @endphp
+                    <tr class="group hover:bg-slate-50/80 transition-colors"
+                        data-filter="{{ strtolower($g->nama_guru) }} {{ strtolower($g->kode_guru) }}">
+                        <td class="px-4 py-2 text-center align-middle">
+                            <span class="font-medium text-slate-400 text-[11px]">{{ $index + 1 }}</span>
+                        </td>
+                        <td class="px-3 py-2 align-middle">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="h-7 w-7 shrink-0 rounded-full {{ $theme['avatar'] }} text-white flex items-center justify-center font-bold text-[10px] shadow-sm">
+                                    {{ substr($g->nama_guru, 0, 1) }}
+                                </div>
+                                <div class="leading-tight">
+                                    <div class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                                        {{ $g->nama_guru }}
+                                        @if(!empty($g->hari_array))
                                         <span
-                                            class="px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide border {{ $statusBg }}"
-                                            title="Standar Sesuai: 24 - 40 Jam">
-                                            {{ $statusLabel }}
-                                        </span>
-                                        @else
-                                        <div
-                                            class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-50 text-slate-400 border border-slate-100">
-                                            <div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
-                                            <span class="text-[10px] font-bold">0 Jam</span>
-                                        </div>
+                                            class="px-1 py-0.5 {{ $g->jenis_hari == 'hard' ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600' }} text-[8px] rounded uppercase"
+                                            title="Aturan Hari">{{ $g->jenis_hari == 'hard' ? 'Ketat' : 'Bebas' }}</span>
                                         @endif
                                     </div>
-                                </td>
-                                <td class="px-3 py-2 text-center align-middle">
-                                    <div class="flex flex-col items-center gap-0.5 text-[9px]">
-                                        <span class="text-slate-400" title="Dibuat: {{ $g->created_at }}">➕
-                                            {{ $g->created_at ? $g->created_at->format('d/m/Y') : '-' }}</span>
-                                        <span class="text-indigo-400" title="Diperbarui: {{ $g->updated_at }}">🔄
-                                            {{ $g->updated_at ? $g->updated_at->format('d/m/Y') : '-' }}</span>
+                                    <div
+                                        class="inline-block px-1.5 py-0.5 mt-0.5 rounded bg-slate-100 text-slate-500 font-bold text-[9px] uppercase tracking-wide border border-slate-200">
+                                        {{ $g->kode_guru }}
                                     </div>
-                                </td>
-                                <td class="px-4 py-2 align-middle text-right">
-                                    <div class="flex items-center justify-end gap-1.5">
-                                        <button type="button" onclick="openModal('modaljadwal{{ $g->id }}')"
-                                            class="flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600 text-[10px] font-bold rounded-lg transition-colors bg-white shadow-sm">
-                                            <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
-                                                </path>
-                                            </svg> Jadwal
-                                        </button>
-                                        <button type="button" onclick="openModal('edit{{ $g->id }}')"
-                                            class="p-1.5 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg transition-colors bg-white">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
-                                                </path>
-                                            </svg>
-                                        </button>
-                                        <form action="{{ route('guru.destroy', $g->id) }}" method="POST"
-                                            onsubmit="return confirm('Hapus data {{ $g->nama_guru }}?')" class="inline">
-                                            @csrf @method('DELETE')
-                                            <button type="submit"
-                                                class="p-1.5 border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300 rounded-lg transition-colors bg-white">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                                    </path>
-                                                </svg>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr id="no-data-row">
-                                <td colspan="5" class="px-4 py-12 text-center text-slate-400 text-xs">Belum ada data
-                                    guru.</td>
-                            </tr>
-                            @endforelse
-                            <tr id="search-no-result" class="hidden">
-                                <td colspan="5" class="px-4 py-8 text-center text-slate-400 text-xs">Guru tidak
-                                    ditemukan.</td>
-                            </tr>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-3 py-2 text-center align-middle">
+                            <div class="flex flex-col items-center gap-1">
+                                @if($jam > 0)
+                                <div class="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md {{ $theme['pillBg'] }} {{ $theme['pillText'] }} border border-slate-100"
+                                    title="Total Jam Terdistribusi">
+                                    <div class="w-1.5 h-1.5 rounded-full {{ $theme['dot'] }}"></div>
+                                    <span class="text-[11px] font-extrabold">{{ $jam }} Jam</span>
+                                </div>
+                                @else
+                                <div
+                                    class="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-slate-50 text-slate-400 border border-slate-100">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                                    <span class="text-[11px] font-extrabold">0 Jam</span>
+                                </div>
+                                @endif
+                            </div>
+                        </td>
+                        <td class="px-3 py-2 text-center align-middle">
+                            <div class="flex flex-col items-center gap-0.5 text-[9px]">
+                                <span class="text-slate-400" title="Dibuat: {{ $g->created_at }}">➕
+                                    {{ $g->created_at ? $g->created_at->format('d/m/Y') : '-' }}</span>
+                                <span class="text-indigo-400" title="Diperbarui: {{ $g->updated_at }}">🔄
+                                    {{ $g->updated_at ? $g->updated_at->format('d/m/Y') : '-' }}</span>
+                            </div>
+                        </td>
+                        <td class="px-4 py-2 align-middle text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <button type="button" onclick="openModal('modaljadwal{{ $g->id }}')"
+                                    class="flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600 text-[10px] font-bold rounded-lg transition-colors bg-white shadow-sm">
+                                    <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                        </path>
+                                    </svg> Jadwal
+                                </button>
+                                <button type="button" onclick="openModal('edit{{ $g->id }}')"
+                                    class="p-1.5 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg transition-colors bg-white">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
+                                        </path>
+                                    </svg>
+                                </button>
+                                <form action="{{ route('guru.destroy', $g->id) }}" method="POST"
+                                    onsubmit="return confirm('Hapus data {{ $g->nama_guru }}?')" class="inline">
+                                    @csrf @method('DELETE')
+                                    <button type="submit"
+                                        class="p-1.5 border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300 rounded-lg transition-colors bg-white">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                            </path>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr id="no-data-row">
+                        <td colspan="5" class="px-4 py-12 text-center text-slate-400 text-xs">Belum ada data guru.</td>
+                    </tr>
+                    @endforelse
+                    <tr id="search-no-result" class="hidden">
+                        <td colspan="5" class="px-4 py-8 text-center text-slate-400 text-xs">Guru tidak ditemukan.</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
