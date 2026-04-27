@@ -281,7 +281,6 @@
                         $tipeTampil = $waktuItem->tipe;
                         @endphp
 
-                        {{-- MENAMBAHKAN ATRIBUT DATA PADA TR UNTUK KEBUTUHAN FILTER WAKTU --}}
                         <tr class="hover:bg-slate-50/80 transition-colors jadwal-row"
                             data-hari="{{ strtolower($namaHari) }}" data-mulai="{{ $wMulai }}"
                             data-selesai="{{ $wSelesai }}">
@@ -321,12 +320,10 @@
                             $namaGuruStr = $data ? ($data['guru'] ?? $data['kode_guru']) : '';
                             @endphp
 
-                            {{-- MENAMBAHKAN ATRIBUT DATA GURU PADA TD --}}
                             <td class="h-[45px] p-1 border-r border-b border-slate-200 text-center align-middle min-w-[140px] max-w-[140px] w-[140px] bg-white transition-all jadwal-cell"
                                 data-search="{{ $data ? strtolower($data['mapel'].' '.$namaGuruStr.' '.$kelas->nama_kelas) : '' }}"
                                 data-kelas="{{ strtolower($kelas->nama_kelas) }}" data-guru="{{ $kodeGuruStr }}"
                                 data-namaguru="{{ $namaGuruStr }}">
-
                                 @if($data)
                                 <div
                                     class="w-full h-full flex flex-col justify-center items-center px-1 {{ $data['color'] }} rounded-md border border-slate-100">
@@ -356,8 +353,12 @@
         </div>
     </div>
 </div>
+@endsection
 
-{{-- MODAL CEK GURU MENGAJAR (DISAMAKAN DENGAN STYLE GURU/MAPEL) --}}
+{{-- AREA MODAL DIPINDAHKAN KE @push('modals') AGAR DI RENDER DI LUAR <MAIN> Z-0 --}}
+@push('modals')
+
+{{-- MODAL CEK GURU MENGAJAR --}}
 <div id="modal-cek-guru"
     class="hidden fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-2 sm:p-4 transition-opacity">
     <div
@@ -451,13 +452,14 @@
     </div>
 </div>
 
+{{-- MODAL LOADING --}}
 <div id="loading-overlay"
     class="hidden fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-slate-900/70 backdrop-blur-sm transition-opacity">
     <div class="bg-white p-8 rounded-3xl shadow-2xl text-center">
         <h3 class="text-xl font-extrabold text-slate-800 mb-2">AI Sedang Menyusun...</h3>
     </div>
 </div>
-@endsection
+@endpush
 
 @push('styles')
 <style>
@@ -570,7 +572,6 @@ function prosesCekGuru() {
 
         guruMap.forEach((nama, kode) => {
             const div = document.createElement('div');
-            // Menyesuaikan ukuran padding dan text agar selaras dengan form di atasnya
             div.className =
                 'flex items-center justify-between bg-white border border-slate-200 p-2 rounded-lg shadow-sm hover:border-blue-300 transition-colors';
             div.innerHTML = `
