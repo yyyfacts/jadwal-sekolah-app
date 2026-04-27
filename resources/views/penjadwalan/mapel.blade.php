@@ -4,23 +4,20 @@
 {{-- BACKGROUND --}}
 <div class="fixed inset-0 -z-10 pointer-events-none bg-[#f4f7fb]"></div>
 
-{{-- CONTAINER UTAMA (SUPER PADAT & FULL WIDTH SEPERTI GURU) --}}
+{{-- CONTAINER UTAMA --}}
 <div class="w-full max-w-[100vw] mx-auto px-2 sm:px-4 h-[calc(100vh-4rem)] pb-2 pt-2 flex flex-col relative z-0">
 
     @if(session('success'))
     <div x-data="{ show: true }" x-show="show" x-transition
         class="mb-2 flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-lg shadow-sm text-emerald-800 shrink-0">
-        <div class="flex items-center gap-2">
-            <span class="font-bold text-xs">✅ {{ session('success') }}</span>
-        </div>
+        <div class="flex items-center gap-2"><span class="font-bold text-xs">✅ {{ session('success') }}</span></div>
         <button @click="show = false" class="text-emerald-400 hover:text-emerald-700">&times;</button>
     </div>
     @endif
 
     {{-- UNIFIED CARD --}}
     <div class="bg-white rounded-xl border border-slate-200 shadow-md flex flex-col flex-1 overflow-hidden">
-
-        {{-- 1. HEADER SECTION --}}
+        {{-- HEADER SECTION --}}
         <div class="px-4 py-3 bg-white shrink-0 z-20 border-b border-slate-100">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div class="flex gap-2 items-center">
@@ -55,13 +52,12 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
                             </path>
-                        </svg> Tambah
-                    </button>
+                        </svg Tambah </button>
                 </div>
             </div>
         </div>
 
-        {{-- 2. TABEL DATA (FLEX-1 MENGISI RUANG TERSISA) --}}
+        {{-- TABEL DATA --}}
         <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white">
             <table class="w-full text-left border-collapse min-w-[850px]">
                 <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
@@ -93,7 +89,7 @@
                     if ($maxJam > 0) {
                     $percentage = ($totalJam / $maxJam) * 100;
                     } else {
-                    $maxJam = '-';
+                    $maxJam = null;
                     }
                     @endphp
                     <tr class="hover:bg-slate-50/80 transition-colors"
@@ -117,9 +113,13 @@
                         <td class="px-3 py-2 text-center align-middle">
                             <div class="flex flex-col items-center gap-1.5">
                                 <span class="text-[10px] font-bold text-slate-700">
+                                    @if($maxJam)
                                     {{ $totalJam }} / {{ $maxJam }} Jam
+                                    @else
+                                    {{ $totalJam }} Jam
+                                    @endif
                                 </span>
-                                @if($maxJam !== '-')
+                                @if($maxJam)
                                 <div class="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                     <div class="h-full bg-blue-500" style="width: {{ min($percentage, 100) }}%"></div>
                                 </div>
@@ -178,8 +178,8 @@
         <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
             <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                 <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5"><span
-                        class="w-1 h-4 bg-blue-600 rounded-full"></span> Tambah Mapel</h3>
-                <button onclick="closeModal('modaltambah')"
+                        class="w-1 h-4 bg-blue-600 rounded-full"></span> Tambah Mapel</h3><button
+                    onclick="closeModal('modaltambah')"
                     class="text-slate-400 hover:text-slate-600 text-lg leading-none">&times;</button>
             </div>
             <form action="{{ route('mapel.store') }}" method="POST" class="p-4 space-y-3">
@@ -216,8 +216,8 @@
         <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
             <div class="px-4 py-3 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
                 <h3 class="font-bold text-amber-800 text-sm flex items-center gap-1.5"><span
-                        class="w-1 h-4 bg-amber-500 rounded-full"></span> Ubah Mapel</h3>
-                <button onclick="closeModal('edit{{ $m->id }}')"
+                        class="w-1 h-4 bg-amber-500 rounded-full"></span> Ubah Mapel</h3><button
+                    onclick="closeModal('edit{{ $m->id }}')"
                     class="text-amber-400 hover:text-amber-600 text-lg leading-none">&times;</button>
             </div>
             <form action="{{ route('mapel.update', $m->id) }}" method="POST" class="p-4 space-y-3">

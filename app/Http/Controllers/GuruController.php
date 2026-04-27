@@ -32,6 +32,13 @@ class GuruController extends Controller
                 $table->enum('jenis_hari', ['hard', 'soft'])->default('hard')->after('hari_mengajar');
             });
         }
+
+        // PENGECEKAN KOLOM BARU: status_pegawai
+        if (Schema::hasTable('gurus') && !Schema::hasColumn('gurus', 'status_pegawai')) {
+            Schema::table('gurus', function (Blueprint $table) {
+                $table->enum('status_pegawai', ['PNS/P3K', 'Guru Tamu', 'Guru Ngamen'])->default('PNS/P3K')->after('jenis_hari');
+            });
+        }
     }
 
     public function index()
@@ -58,13 +65,15 @@ class GuruController extends Controller
         $this->checkAndFixDatabase(); // Panggil fungsi cek DB
 
         $request->validate([
-            'nama_guru'     => 'required|string',
-            'kode_guru'     => 'required|string|unique:gurus',
-            'hari_mengajar' => 'nullable|array',
-            'jenis_hari'    => 'nullable|in:hard,soft' 
+            'nama_guru'      => 'required|string',
+            'kode_guru'      => 'required|string|unique:gurus',
+            'hari_mengajar'  => 'nullable|array',
+            'jenis_hari'     => 'nullable|in:hard,soft',
+            'status_pegawai' => 'nullable|in:PNS/P3K,Guru Tamu,Guru Ngamen' // Validasi Status
         ]);
 
-        $data = $request->only('nama_guru', 'kode_guru', 'jenis_hari');
+        // Tangkap status_pegawai dari request form
+        $data = $request->only('nama_guru', 'kode_guru', 'jenis_hari', 'status_pegawai');
         $data['hari_mengajar'] = $request->hari_mengajar ?? [];
 
         Guru::create($data);
@@ -76,13 +85,15 @@ class GuruController extends Controller
         $this->checkAndFixDatabase(); // Panggil fungsi cek DB
 
         $request->validate([
-            'nama_guru'     => 'required|string',
-            'kode_guru'     => 'required|string|unique:gurus,kode_guru,' . $id,
-            'hari_mengajar' => 'nullable|array',
-            'jenis_hari'    => 'nullable|in:hard,soft' 
+            'nama_guru'      => 'required|string',
+            'kode_guru'      => 'required|string|unique:gurus,kode_guru,' . $id,
+            'hari_mengajar'  => 'nullable|array',
+            'jenis_hari'     => 'nullable|in:hard,soft',
+            'status_pegawai' => 'nullable|in:PNS/P3K,Guru Tamu,Guru Ngamen' // Validasi Status
         ]);
 
-        $data = $request->only('nama_guru', 'kode_guru', 'jenis_hari');
+        // Tangkap status_pegawai dari request form
+        $data = $request->only('nama_guru', 'kode_guru', 'jenis_hari', 'status_pegawai');
         $data['hari_mengajar'] = $request->hari_mengajar ?? [];
 
         Guru::findOrFail($id)->update($data);

@@ -4,24 +4,21 @@
 {{-- BACKGROUND --}}
 <div class="fixed inset-0 -z-10 pointer-events-none bg-[#f4f7fb]"></div>
 
-{{-- CONTAINER UTAMA (SUPER PADAT & FULL WIDTH) --}}
+{{-- CONTAINER UTAMA --}}
 <div class="w-full max-w-[100vw] mx-auto px-2 sm:px-4 h-[calc(100vh-4rem)] pb-2 pt-2 flex flex-col relative z-0">
 
     {{-- FLASH MESSAGE --}}
     @if(session('success'))
     <div x-data="{ show: true }" x-show="show" x-transition
         class="mb-2 flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-lg shadow-sm text-emerald-800 shrink-0">
-        <div class="flex items-center gap-2">
-            <span class="font-bold text-xs">✅ {{ session('success') }}</span>
-        </div>
+        <div class="flex items-center gap-2"><span class="font-bold text-xs">✅ {{ session('success') }}</span></div>
         <button @click="show = false" class="text-emerald-400 hover:text-emerald-700">&times;</button>
     </div>
     @endif
 
     {{-- UNIFIED CARD --}}
     <div class="bg-white rounded-xl border border-slate-200 shadow-md flex flex-col flex-1 overflow-hidden">
-
-        {{-- 1. HEADER SECTION --}}
+        {{-- HEADER SECTION --}}
         <div class="px-4 py-3 bg-white shrink-0 z-20 border-b border-slate-100">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div class="flex gap-2 items-center">
@@ -35,37 +32,33 @@
                 <div class="flex items-center gap-2">
                     <div
                         class="hidden md:flex items-center px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg shadow-sm">
-                        <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                            Total: <span class="text-indigo-600 ml-1 font-extrabold">{{ $gurus->count() }}</span>
-                        </span>
+                        <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total: <span
+                                class="text-indigo-600 ml-1 font-extrabold">{{ $gurus->count() }}</span></span>
                     </div>
 
                     <div class="relative group w-48">
-                        <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                            <svg class="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor"
+                        <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none"><svg
+                                class="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
-                        </div>
+                            </svg></div>
                         <input type="text" id="search-guru-main" oninput="searchMainTable()"
                             class="block w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition"
                             placeholder="Cari Guru...">
                     </div>
 
                     <button type="button" onclick="openModal('modaltambah')"
-                        class="px-4 py-1.5 font-bold text-white transition-all bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm flex items-center gap-1.5">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="px-4 py-1.5 font-bold text-white transition-all bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm flex items-center gap-1.5"><svg
+                            class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
                             </path>
-                        </svg>
-                        <span class="text-[10px] uppercase tracking-wide">Tambah</span>
-                    </button>
+                        </svg><span class="text-[10px] uppercase tracking-wide">Tambah</span></button>
                 </div>
             </div>
         </div>
 
-        {{-- 2. TABEL DATA --}}
+        {{-- TABEL DATA --}}
         <div class="flex-1 overflow-y-auto custom-scrollbar relative bg-white">
             <table class="w-full text-left border-collapse min-w-[850px]">
                 <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
@@ -87,7 +80,6 @@
                             Aksi & Jadwal</th>
                     </tr>
                 </thead>
-
                 <tbody id="tbody-guru-main" class="divide-y divide-slate-100">
                     @php
                     $themes = [
@@ -106,101 +98,115 @@
                     @php
                     $theme = $themes[$index % 4];
                     $jam = $g->total_jam_mengajar;
-                    @endphp
-                    <tr class="group hover:bg-slate-50/80 transition-colors"
-                        data-filter="{{ strtolower($g->nama_guru) }} {{ strtolower($g->kode_guru) }}">
-                        <td class="px-4 py-2 text-center align-middle">
-                            <span class="font-medium text-slate-400 text-[11px]">{{ $index + 1 }}</span>
-                        </td>
-                        <td class="px-3 py-2 align-middle">
-                            <div class="flex items-center gap-3">
-                                <div
-                                    class="h-7 w-7 shrink-0 rounded-full {{ $theme['avatar'] }} text-white flex items-center justify-center font-bold text-[10px] shadow-sm">
-                                    {{ substr($g->nama_guru, 0, 1) }}
-                                </div>
-                                <div class="leading-tight">
-                                    <div class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-                                        {{ $g->nama_guru }}
-                                        @if(!empty($g->hari_array))
+
+                    // DEFAULT EVALUASI SEMENTARA: Standar PNS/P3K (24-40 Jam)
+                    $statusLabel = 'Kosong';
+                    $statusBg = 'bg-slate-50 text-slate-500 border-slate-200';
+
+                    if ($jam > 0 && $jam < 24) { $statusLabel='Kurang' ;
+                        $statusBg='bg-rose-50 text-rose-600 border-rose-200' ; } elseif ($jam>= 24 && $jam <= 40) {
+                            $statusLabel='Sesuai' ; $statusBg='bg-emerald-50 text-emerald-600 border-emerald-200' ; }
+                            elseif ($jam> 40) {
+                            $statusLabel = 'Lebih';
+                            $statusBg = 'bg-amber-50 text-amber-600 border-amber-200';
+                            }
+                            @endphp
+                            <tr class="group hover:bg-slate-50/80 transition-colors"
+                                data-filter="{{ strtolower($g->nama_guru) }} {{ strtolower($g->kode_guru) }}">
+                                <td class="px-4 py-2 text-center align-middle"><span
+                                        class="font-medium text-slate-400 text-[11px]">{{ $index + 1 }}</span></td>
+                                <td class="px-3 py-2 align-middle">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="h-7 w-7 shrink-0 rounded-full {{ $theme['avatar'] }} text-white flex items-center justify-center font-bold text-[10px] shadow-sm">
+                                            {{ substr($g->nama_guru, 0, 1) }}</div>
+                                        <div class="leading-tight">
+                                            <div class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                                                {{ $g->nama_guru }}
+                                                @if(!empty($g->hari_array))
+                                                <span
+                                                    class="px-1 py-0.5 {{ $g->jenis_hari == 'hard' ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600' }} text-[8px] rounded uppercase"
+                                                    title="Aturan Hari">{{ $g->jenis_hari == 'hard' ? 'Ketat' : 'Bebas' }}</span>
+                                                @endif
+                                            </div>
+                                            <div
+                                                class="inline-block px-1.5 py-0.5 mt-0.5 rounded bg-slate-100 text-slate-500 font-bold text-[9px] uppercase tracking-wide border border-slate-200">
+                                                {{ $g->kode_guru }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-3 py-2 text-center align-middle">
+                                    <div class="flex flex-col items-center gap-1">
+                                        @if($jam > 0)
+                                        <div
+                                            class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md {{ $theme['pillBg'] }} {{ $theme['pillText'] }} border border-slate-100">
+                                            <div class="w-1.5 h-1.5 rounded-full {{ $theme['dot'] }}"></div>
+                                            <span class="text-[10px] font-bold">{{ $jam }} Jam</span>
+                                        </div>
                                         <span
-                                            class="px-1 py-0.5 {{ $g->jenis_hari == 'hard' ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600' }} text-[8px] rounded uppercase"
-                                            title="Aturan Hari">{{ $g->jenis_hari == 'hard' ? 'Ketat' : 'Bebas' }}</span>
+                                            class="px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide border {{ $statusBg }}"
+                                            title="Standar Default: 24 - 40 Jam">
+                                            {{ $statusLabel }}
+                                        </span>
+                                        @else
+                                        <div
+                                            class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-50 text-slate-400 border border-slate-100">
+                                            <div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                                            <span class="text-[10px] font-bold">0 Jam</span>
+                                        </div>
                                         @endif
                                     </div>
-                                    <div
-                                        class="inline-block px-1.5 py-0.5 mt-0.5 rounded bg-slate-100 text-slate-500 font-bold text-[9px] uppercase tracking-wide border border-slate-200">
-                                        {{ $g->kode_guru }}
+                                </td>
+                                <td class="px-3 py-2 text-center align-middle">
+                                    <div class="flex flex-col items-center gap-0.5 text-[9px]">
+                                        <span class="text-slate-400" title="Dibuat: {{ $g->created_at }}">➕
+                                            {{ $g->created_at ? $g->created_at->format('d/m/Y') : '-' }}</span>
+                                        <span class="text-indigo-400" title="Diperbarui: {{ $g->updated_at }}">🔄
+                                            {{ $g->updated_at ? $g->updated_at->format('d/m/Y') : '-' }}</span>
                                     </div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2 text-center align-middle">
-                            <div class="flex flex-col items-center gap-1">
-                                @if($jam > 0)
-                                <div class="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md {{ $theme['pillBg'] }} {{ $theme['pillText'] }} border border-slate-100"
-                                    title="Total Jam Terdistribusi">
-                                    <div class="w-1.5 h-1.5 rounded-full {{ $theme['dot'] }}"></div>
-                                    <span class="text-[11px] font-extrabold">{{ $jam }} Jam</span>
-                                </div>
-                                @else
-                                <div
-                                    class="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-slate-50 text-slate-400 border border-slate-100">
-                                    <div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
-                                    <span class="text-[11px] font-extrabold">0 Jam</span>
-                                </div>
-                                @endif
-                            </div>
-                        </td>
-                        <td class="px-3 py-2 text-center align-middle">
-                            <div class="flex flex-col items-center gap-0.5 text-[9px]">
-                                <span class="text-slate-400" title="Dibuat: {{ $g->created_at }}">➕
-                                    {{ $g->created_at ? $g->created_at->format('d/m/Y') : '-' }}</span>
-                                <span class="text-indigo-400" title="Diperbarui: {{ $g->updated_at }}">🔄
-                                    {{ $g->updated_at ? $g->updated_at->format('d/m/Y') : '-' }}</span>
-                            </div>
-                        </td>
-                        <td class="px-4 py-2 align-middle text-right">
-                            <div class="flex items-center justify-end gap-1.5">
-                                <button type="button" onclick="openModal('modaljadwal{{ $g->id }}')"
-                                    class="flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600 text-[10px] font-bold rounded-lg transition-colors bg-white shadow-sm">
-                                    <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
-                                        </path>
-                                    </svg> Jadwal
-                                </button>
-                                <button type="button" onclick="openModal('edit{{ $g->id }}')"
-                                    class="p-1.5 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg transition-colors bg-white">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
-                                        </path>
-                                    </svg>
-                                </button>
-                                <form action="{{ route('guru.destroy', $g->id) }}" method="POST"
-                                    onsubmit="return confirm('Hapus data {{ $g->nama_guru }}?')" class="inline">
-                                    @csrf @method('DELETE')
-                                    <button type="submit"
-                                        class="p-1.5 border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300 rounded-lg transition-colors bg-white">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                            </path>
-                                        </svg>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr id="no-data-row">
-                        <td colspan="5" class="px-4 py-12 text-center text-slate-400 text-xs">Belum ada data guru.</td>
-                    </tr>
-                    @endforelse
-                    <tr id="search-no-result" class="hidden">
-                        <td colspan="5" class="px-4 py-8 text-center text-slate-400 text-xs">Guru tidak ditemukan.</td>
-                    </tr>
+                                </td>
+                                <td class="px-4 py-2 align-middle text-right">
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        <button type="button" onclick="openModal('modaljadwal{{ $g->id }}')"
+                                            class="flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600 text-[10px] font-bold rounded-lg transition-colors bg-white shadow-sm"><svg
+                                                class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                                </path>
+                                            </svg> Jadwal</button>
+                                        <button type="button" onclick="openModal('edit{{ $g->id }}')"
+                                            class="p-1.5 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg transition-colors bg-white"><svg
+                                                class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
+                                                </path>
+                                            </svg></button>
+                                        <form action="{{ route('guru.destroy', $g->id) }}" method="POST"
+                                            onsubmit="return confirm('Hapus data {{ $g->nama_guru }}?')" class="inline">
+                                            @csrf @method('DELETE')<button type="submit"
+                                                class="p-1.5 border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300 rounded-lg transition-colors bg-white"><svg
+                                                    class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                                    </path>
+                                                </svg></button></form>
+                                    </div>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr id="no-data-row">
+                                <td colspan="5" class="px-4 py-12 text-center text-slate-400 text-xs">Belum ada data
+                                    guru.</td>
+                            </tr>
+                            @endforelse
+                            <tr id="search-no-result" class="hidden">
+                                <td colspan="5" class="px-4 py-8 text-center text-slate-400 text-xs">Guru tidak
+                                    ditemukan.</td>
+                            </tr>
                 </tbody>
             </table>
         </div>
@@ -215,45 +221,34 @@
     <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
         <div class="px-4 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
             <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5"><span
-                    class="w-1 h-4 bg-indigo-600 rounded-full"></span> Tambah Guru</h3>
-            <button type="button" onclick="closeModal('modaltambah')"
+                    class="w-1 h-4 bg-indigo-600 rounded-full"></span> Tambah Guru</h3><button type="button"
+                onclick="closeModal('modaltambah')"
                 class="text-slate-400 hover:text-slate-600 text-lg leading-none">&times;</button>
         </div>
         <form action="{{ route('guru.store') }}" method="POST" class="p-4 space-y-3">
             @csrf
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nama Lengkap</label>
-                <input type="text" name="nama_guru"
+            <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nama Lengkap</label><input
+                    type="text" name="nama_guru"
                     class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-xs"
-                    required>
-            </div>
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">NIP / Kode</label>
-                <input type="text" name="kode_guru"
+                    required></div>
+            <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">NIP / Kode</label><input
+                    type="text" name="kode_guru"
                     class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none font-mono text-xs uppercase"
-                    required>
+                    required></div>
+            <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Hari Mengajar</label>
+                <div class="flex flex-wrap gap-1.5 mb-2">@foreach(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'] as
+                    $hari)<label
+                        class="inline-flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded cursor-pointer hover:bg-indigo-50 transition"><input
+                            type="checkbox" name="hari_mengajar[]" value="{{ $hari }}"
+                            class="rounded text-indigo-600 text-[10px]"><span
+                            class="text-[10px] font-bold text-slate-600">{{ $hari }}</span></label>@endforeach</div>
             </div>
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Hari Mengajar</label>
-                <div class="flex flex-wrap gap-1.5 mb-2">
-                    @foreach(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'] as $hari)
-                    <label
-                        class="inline-flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded cursor-pointer hover:bg-indigo-50 transition">
-                        <input type="checkbox" name="hari_mengajar[]" value="{{ $hari }}"
-                            class="rounded text-indigo-600 text-[10px]">
-                        <span class="text-[10px] font-bold text-slate-600">{{ $hari }}</span>
-                    </label>
-                    @endforeach
-                </div>
-            </div>
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sifat Hari</label>
-                <select name="jenis_hari"
+            <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sifat Hari</label><select
+                    name="jenis_hari"
                     class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none text-xs">
                     <option value="soft">Fleksibel</option>
                     <option value="hard">Mutlak</option>
-                </select>
-            </div>
+                </select></div>
             <button type="submit"
                 class="w-full bg-slate-900 hover:bg-indigo-600 text-white font-bold py-2.5 rounded-lg text-[10px] uppercase mt-2">Simpan</button>
         </form>
@@ -267,43 +262,32 @@
     <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
         <div class="px-4 py-3 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
             <h3 class="font-bold text-amber-800 text-sm flex items-center gap-1.5"><span
-                    class="w-1 h-4 bg-amber-500 rounded-full"></span> Ubah Guru</h3>
-            <button type="button" onclick="closeModal('edit{{ $g->id }}')"
+                    class="w-1 h-4 bg-amber-500 rounded-full"></span> Ubah Guru</h3><button type="button"
+                onclick="closeModal('edit{{ $g->id }}')"
                 class="text-amber-400 hover:text-amber-600 text-lg leading-none">&times;</button>
         </div>
         <form action="{{ route('guru.update', $g->id) }}" method="POST" class="p-4 space-y-3">
             @csrf @method('PUT')
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nama Lengkap</label>
-                <input type="text" name="nama_guru" value="{{ $g->nama_guru }}"
-                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs" required>
-            </div>
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">NIP / Kode</label>
-                <input type="text" name="kode_guru" value="{{ $g->kode_guru }}"
-                    class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono text-xs" required>
-            </div>
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Hari Mengajar</label>
-                <div class="flex flex-wrap gap-1.5 mb-2">
-                    @foreach(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'] as $hari)
-                    <label
-                        class="inline-flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded cursor-pointer">
-                        <input type="checkbox" name="hari_mengajar[]" value="{{ $hari }}"
+            <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nama Lengkap</label><input
+                    type="text" name="nama_guru" value="{{ $g->nama_guru }}"
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs" required></div>
+            <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">NIP / Kode</label><input
+                    type="text" name="kode_guru" value="{{ $g->kode_guru }}"
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 font-mono text-xs" required></div>
+            <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Hari Mengajar</label>
+                <div class="flex flex-wrap gap-1.5 mb-2">@foreach(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'] as
+                    $hari)<label
+                        class="inline-flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded cursor-pointer"><input
+                            type="checkbox" name="hari_mengajar[]" value="{{ $hari }}"
                             {{ in_array($hari, $g->hari_array ?? []) ? 'checked' : '' }}
-                            class="rounded text-amber-500 text-[10px]">
-                        <span class="text-[10px] font-bold text-slate-600">{{ $hari }}</span>
-                    </label>
-                    @endforeach
-                </div>
+                            class="rounded text-amber-500 text-[10px]"><span
+                            class="text-[10px] font-bold text-slate-600">{{ $hari }}</span></label>@endforeach</div>
             </div>
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sifat Hari</label>
-                <select name="jenis_hari" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs">
+            <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sifat Hari</label><select
+                    name="jenis_hari" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs">
                     <option value="soft" {{ $g->jenis_hari == 'soft' ? 'selected' : '' }}>Fleksibel</option>
                     <option value="hard" {{ $g->jenis_hari == 'hard' ? 'selected' : '' }}>Mutlak</option>
-                </select>
-            </div>
+                </select></div>
             <button type="submit"
                 class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-lg text-[10px] uppercase mt-2">Perbarui</button>
         </form>
@@ -334,11 +318,9 @@
 
         <div class="flex flex-col lg:flex-row h-full overflow-hidden">
             <div class="flex-1 flex flex-col h-full border-r border-slate-100 relative min-w-0">
-                <div class="p-2 border-b border-slate-100 bg-white shrink-0">
-                    <input type="text" id="search-{{ $g->id }}" oninput="searchTable('{{ $g->id }}')"
-                        placeholder="Cari..."
-                        class="w-full border border-slate-200 rounded pl-2 pr-2 py-1.5 text-xs outline-none">
-                </div>
+                <div class="p-2 border-b border-slate-100 bg-white shrink-0"><input type="text" id="search-{{ $g->id }}"
+                        oninput="searchTable('{{ $g->id }}')" placeholder="Cari..."
+                        class="w-full border border-slate-200 rounded pl-2 pr-2 py-1.5 text-xs outline-none"></div>
                 <div class="flex-1 overflow-y-auto custom-scrollbar bg-white">
                     <table class="w-full text-xs border-collapse">
                         <thead class="bg-slate-50 text-slate-500 text-[9px] font-bold uppercase sticky top-0 shadow-sm">
@@ -400,10 +382,11 @@
                             method="POST" onsubmit="handleFormJadwal(event, this, '{{ $g->id }}')">
                             <div id="method-spoof-{{ $g->id }}"></div>
                             <div class="space-y-3 text-[10px]">
-                                <div class="relative custom-select-wrapper" id="wrapper-mapel-{{ $g->id }}">
-                                    <label class="font-bold text-slate-500 uppercase block mb-0.5">Mapel</label>
-                                    <input type="hidden" name="mapel_id" id="real-input-mapel-{{ $g->id }}" required>
-                                    <button type="button" onclick="toggleCustomDropdown('mapel', '{{ $g->id }}')"
+                                <div class="relative custom-select-wrapper" id="wrapper-mapel-{{ $g->id }}"><label
+                                        class="font-bold text-slate-500 uppercase block mb-0.5">Mapel</label><input
+                                        type="hidden" name="mapel_id" id="real-input-mapel-{{ $g->id }}"
+                                        required><button type="button"
+                                        onclick="toggleCustomDropdown('mapel', '{{ $g->id }}')"
                                         class="w-full px-2 py-1.5 bg-slate-50 border rounded text-left flex justify-between items-center"><span
                                             id="display-mapel-{{ $g->id }}">Pilih...</span><svg class="w-3 h-3"
                                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -421,10 +404,11 @@
                                                 {{ $m->nama_mapel }}</div>@endforeach</div>
                                     </div>
                                 </div>
-                                <div class="relative custom-select-wrapper" id="wrapper-kelas-{{ $g->id }}">
-                                    <label class="font-bold text-slate-500 uppercase block mb-0.5">Kelas</label>
-                                    <input type="hidden" name="kelas_id" id="real-input-kelas-{{ $g->id }}" required>
-                                    <button type="button" onclick="toggleCustomDropdown('kelas', '{{ $g->id }}')"
+                                <div class="relative custom-select-wrapper" id="wrapper-kelas-{{ $g->id }}"><label
+                                        class="font-bold text-slate-500 uppercase block mb-0.5">Kelas</label><input
+                                        type="hidden" name="kelas_id" id="real-input-kelas-{{ $g->id }}"
+                                        required><button type="button"
+                                        onclick="toggleCustomDropdown('kelas', '{{ $g->id }}')"
                                         class="w-full px-2 py-1.5 bg-slate-50 border rounded text-left flex justify-between items-center"><span
                                             id="display-kelas-{{ $g->id }}">Pilih...</span><svg class="w-3 h-3"
                                             fill="none" stroke="currentColor" viewBox="0 0 24 24">

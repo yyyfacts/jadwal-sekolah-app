@@ -16,6 +16,7 @@ class Guru extends Model
         'kode_guru',
         'hari_mengajar',
         'jenis_hari', // <--- INI JUGA DITAMBAHKAN SUPAYA BISA NYIMPEN
+        'status_pegawai', // <--- TAMBAHAN: Agar status ngamen/tamu/PNS bisa disimpan
     ];
 
     protected $casts = [
