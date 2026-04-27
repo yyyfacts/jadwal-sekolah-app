@@ -357,89 +357,95 @@
     </div>
 </div>
 
-{{-- MODAL CEK GURU MENGAJAR (PERBAIKAN Z-INDEX DAN SCROLL) --}}
-{{-- z-[99999] memastikan modal selalu berada di atas elemen layout manapun (header/sidebar) --}}
+{{-- MODAL CEK GURU MENGAJAR (DISAMAKAN DENGAN STYLE GURU/MAPEL) --}}
 <div id="modal-cek-guru"
-    class="hidden fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm transition-opacity p-4 sm:p-6 overflow-hidden">
-    {{-- max-h-[90vh] membatasi tinggi modal agar tidak kelebihan layar, flex col untuk manajemen anak elemennya --}}
+    class="hidden fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-2 sm:p-4 transition-opacity">
     <div
-        class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl border border-slate-200 flex flex-col max-h-[90vh]">
+        class="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-auto max-h-[90vh] flex flex-col border border-slate-200 overflow-hidden">
 
-        {{-- Header Modal (Tetap diam/sticky) --}}
-        <div class="flex justify-between items-start mb-5 shrink-0">
-            <div>
-                <h3 class="text-xl font-extrabold text-slate-800">Cek Guru Mengajar</h3>
-                <p class="text-xs font-medium text-slate-500 mt-1">Cari tahu siapa saja guru yang sedang terikat jadwal
-                    kelas pada hari dan jam tertentu secara otomatis.</p>
-            </div>
-            <button onclick="document.getElementById('modal-cek-guru').classList.add('hidden')"
-                class="text-slate-400 hover:text-rose-500 p-1 bg-slate-50 hover:bg-rose-50 rounded-lg transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                    </path>
-                </svg>
-            </button>
-        </div>
-
-        {{-- Form Pencarian (Tetap diam/sticky) --}}
-        <div
-            class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end bg-slate-50 p-4 rounded-xl border border-slate-200 shrink-0">
-            <div class="sm:col-span-1">
-                <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Hari</label>
-                <select id="cg-hari"
-                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm">
-                    <option value="senin">Senin</option>
-                    <option value="selasa">Selasa</option>
-                    <option value="rabu">Rabu</option>
-                    <option value="kamis">Kamis</option>
-                    <option value="jumat">Jumat</option>
-                    <option value="sabtu">Sabtu</option>
-                </select>
-            </div>
-            <div class="sm:col-span-1">
-                <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Jam Mulai</label>
-                <input type="time" id="cg-mulai" value="09:00"
-                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm">
-            </div>
-            <div class="sm:col-span-1">
-                <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Jam Selesai</label>
-                <input type="time" id="cg-selesai" value="11:00"
-                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm">
-            </div>
-            <div class="sm:col-span-1">
-                <button type="button" onclick="prosesCekGuru()"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-sm transition-colors shadow-md h-[42px] flex items-center justify-center gap-2">
+        {{-- Header Modal --}}
+        <div class="px-4 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+            <div class="flex items-center gap-2">
+                <div class="p-1.5 bg-blue-600 text-white rounded">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                        </path>
                     </svg>
-                    Cari Guru
-                </button>
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-slate-800 leading-none">Cek Ketersediaan Guru</h3>
+                    <p class="text-[9px] text-slate-500 mt-0.5">Pengecekan guru berhalangan/dinas berdasarkan jadwal</p>
+                </div>
             </div>
+            <button type="button" onclick="document.getElementById('modal-cek-guru').classList.add('hidden')"
+                class="text-slate-400 hover:text-red-500 text-2xl leading-none">&times;</button>
         </div>
 
-        {{-- Area Hasil (Bagian inilah yang bisa di-scroll berkat flex-1 dan overflow-y-auto) --}}
-        <div id="cg-hasil" class="mt-5 hidden flex-col flex-1 min-h-0">
-            <div class="flex items-center justify-between mb-3 shrink-0">
-                <h4 class="text-sm font-extrabold text-slate-700 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-blue-500"></span> Guru yang sedang mengajar:
-                </h4>
-                <span id="cg-count"
-                    class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100 hidden">0
-                    Guru</span>
+        {{-- Body Modal --}}
+        <div class="flex flex-col flex-1 min-h-0 p-4 bg-white">
+
+            {{-- Form Pencarian --}}
+            <div
+                class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-end bg-slate-50 p-3 rounded-lg border border-slate-200 shrink-0">
+                <div class="sm:col-span-1">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Hari</label>
+                    <select id="cg-hari"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-white transition-shadow">
+                        <option value="senin">Senin</option>
+                        <option value="selasa">Selasa</option>
+                        <option value="rabu">Rabu</option>
+                        <option value="kamis">Kamis</option>
+                        <option value="jumat">Jumat</option>
+                        <option value="sabtu">Sabtu</option>
+                    </select>
+                </div>
+                <div class="sm:col-span-1">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Jam Mulai</label>
+                    <input type="time" id="cg-mulai" value="09:00"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-white transition-shadow">
+                </div>
+                <div class="sm:col-span-1">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Jam Selesai</label>
+                    <input type="time" id="cg-selesai" value="11:00"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-white transition-shadow">
+                </div>
+                <div class="sm:col-span-1">
+                    <button type="button" onclick="prosesCekGuru()"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg text-xs uppercase tracking-wide transition-colors shadow-sm h-[34px] flex items-center justify-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        Cari
+                    </button>
+                </div>
             </div>
 
-            {{-- List Guru --}}
-            <div id="cg-list-guru"
-                class="overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 custom-scrollbar pr-2 pb-2">
-            </div>
+            {{-- Area Hasil --}}
+            <div id="cg-hasil"
+                class="mt-4 hidden flex-col flex-1 min-h-0 border border-slate-100 rounded-lg overflow-hidden bg-slate-50/50">
+                <div class="px-3 py-2 border-b border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
+                    <h4 class="text-[10px] font-bold text-slate-600 uppercase tracking-wide flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Guru Sedang Mengajar
+                    </h4>
+                    <span id="cg-count"
+                        class="text-[9px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 hidden">0</span>
+                </div>
 
-            {{-- Pesan Kosong --}}
-            <div id="cg-kosong"
-                class="hidden text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-4 rounded-xl font-bold flex items-center justify-center gap-3">
-                <span class="text-2xl">✅</span>
-                <span>Alhamdulillah, tidak ada jadwal guru yang terikat pada rentang waktu ini. Cocok untuk
-                    Rapat!</span>
+                {{-- List Guru --}}
+                <div id="cg-list-guru"
+                    class="overflow-y-auto p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 custom-scrollbar bg-white flex-1">
+                </div>
+
+                {{-- Pesan Kosong --}}
+                <div id="cg-kosong"
+                    class="hidden h-full flex flex-col items-center justify-center p-6 text-center bg-white flex-1">
+                    <span class="text-3xl mb-2">✅</span>
+                    <span class="text-xs font-bold text-emerald-600">Alhamdulillah, tidak ada jadwal guru yang
+                        terikat.</span>
+                    <span class="text-[10px] text-slate-400 mt-1">Rentang waktu ini cocok untuk mengadakan rapat.</span>
+                </div>
             </div>
         </div>
     </div>
@@ -554,7 +560,7 @@ function prosesCekGuru() {
     const countTag = document.getElementById('cg-count');
 
     hasilContainer.classList.remove('hidden');
-    hasilContainer.classList.add('flex'); // Pakai flex agar anak-anaknya teratur
+    hasilContainer.classList.add('flex');
     listContainer.innerHTML = '';
 
     if (guruMap.size > 0) {
@@ -564,14 +570,15 @@ function prosesCekGuru() {
 
         guruMap.forEach((nama, kode) => {
             const div = document.createElement('div');
+            // Menyesuaikan ukuran padding dan text agar selaras dengan form di atasnya
             div.className =
-                'flex items-center justify-between bg-white border border-slate-200 p-3 rounded-xl shadow-sm hover:shadow transition-shadow';
+                'flex items-center justify-between bg-white border border-slate-200 p-2 rounded-lg shadow-sm hover:border-blue-300 transition-colors';
             div.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <div class="bg-indigo-50 text-indigo-700 text-xs font-black px-2.5 py-1.5 rounded-lg border border-indigo-100">${kode}</div>
-                    <span class="text-slate-800 text-xs font-bold leading-tight line-clamp-1">${nama}</span>
+                <div class="flex items-center gap-2">
+                    <div class="bg-indigo-50 text-indigo-700 text-[10px] font-black px-2 py-1 rounded border border-indigo-100">${kode}</div>
+                    <span class="text-slate-700 text-[11px] font-bold leading-tight line-clamp-1">${nama}</span>
                 </div>
-                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider bg-slate-50 px-2 py-1 rounded">Dinas</span>
+                <span class="text-[8px] text-slate-400 font-bold uppercase tracking-wider bg-slate-50 px-1.5 py-0.5 rounded">Dinas</span>
             `;
             listContainer.appendChild(div);
         });
