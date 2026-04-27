@@ -16,14 +16,14 @@
     <meta property="og:title" content="Sistem Penjadwalan - SMAN 1 Sampang">
     <meta property="og:description" content="web untuk manajemen jadwal pelajaran SMAN 1 Sampang.">
     {{-- Ganti 'preview.png' dengan nama file asli kamu yang ukuran 237x212 --}}
-    <meta property="og:image" content="{{ asset('img/logo-sekolah.png') }}">
+    <meta property="og:image" content="{{ secure_asset('img/logo-sekolah.png') }}">
 
     {{-- Twitter Card (Pakai 'summary' karena gambar berbentuk kotak kecil) --}}
     <meta name="twitter:card" content="summary">
     <meta name="twitter:url" content="{{ url()->current() }}">
     <meta name="twitter:title" content="Sistem Penjadwalan - SMAN 1 Sampang">
     <meta name="twitter:description" content="web untuk manajemen jadwal pelajaran SMAN 1 Sampang.">
-    <meta name="twitter:image" content="{{ asset('img/logo-sekolah.png') }}">
+    <meta name="twitter:image" content="{{ secure_asset('img/logo-sekolah.png') }}">
     {{-- ======================================================== --}}
     <title>Masuk - SISTEM PENJADWALAN SMAN 1 SAMPANG</title>
     <link rel="icon" href="{{ asset('img/logo-sekolah.png') }}" type="image/png">
