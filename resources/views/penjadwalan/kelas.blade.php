@@ -61,7 +61,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
                             </path>
-                        </svg Tambah </button>
+                        </svg> Tambah </button>
                 </div>
             </div>
         </div>
@@ -94,79 +94,103 @@
                     $totalJamOffline = $k->jadwals->where('status', 'offline')->sum('jumlah_jam');
                     $maxJam = $k->max_jam ?? 48;
                     $percentage = $maxJam > 0 ? ($totalJamOffline / $maxJam) * 100 : 0;
-                    $barColor = $totalJamOffline > $maxJam ? 'bg-rose-500' : 'bg-emerald-400';
-                    @endphp
-                    <tr class="hover:bg-slate-50/80 transition-colors"
-                        data-filter="{{ strtolower($k->nama_kelas) }} {{ strtolower($k->kode_kelas) }}">
-                        <td class="px-4 py-2 text-center text-[11px] font-medium text-slate-400 align-middle">
-                            {{ $index + 1 }}</td>
-                        <td class="px-3 py-2 align-middle">
-                            <div class="flex items-center gap-3">
-                                <div
-                                    class="h-8 w-8 shrink-0 rounded bg-[#f3e8ff] text-[#9333ea] flex items-center justify-center font-bold text-[10px] border border-[#e9d5ff]">
-                                    {{ substr($k->nama_kelas, 0, 2) }}
-                                </div>
-                                <div class="leading-tight">
-                                    <div class="font-bold text-slate-800 text-xs">{{ $k->nama_kelas }}</div>
+
+                    // Logika Status Kapasitas
+                    $statusLabel = 'Kosong';
+                    $statusBg = 'bg-slate-50 text-slate-500 border-slate-200';
+                    $barColor = 'bg-slate-300';
+                    $textColor = 'text-slate-600';
+
+                    if ($totalJamOffline == 0) {
+                    $statusLabel = 'Kosong';
+                    } elseif ($totalJamOffline < $maxJam) { $statusLabel='Kurang' ;
+                        $statusBg='bg-rose-50 text-rose-600 border-rose-200' ; $barColor='bg-rose-500' ;
+                        $textColor='text-rose-600' ; } elseif ($totalJamOffline==$maxJam) { $statusLabel='Sesuai' ;
+                        $statusBg='bg-emerald-50 text-emerald-600 border-emerald-200' ; $barColor='bg-emerald-500' ;
+                        $textColor='text-emerald-600' ; } elseif ($totalJamOffline> $maxJam) {
+                        $statusLabel = 'Lebih';
+                        $statusBg = 'bg-amber-50 text-amber-600 border-amber-200';
+                        $barColor = 'bg-amber-500';
+                        $textColor = 'text-amber-600';
+                        }
+                        @endphp
+                        <tr class="hover:bg-slate-50/80 transition-colors"
+                            data-filter="{{ strtolower($k->nama_kelas) }} {{ strtolower($k->kode_kelas) }}">
+                            <td class="px-4 py-2 text-center text-[11px] font-medium text-slate-400 align-middle">
+                                {{ $index + 1 }}</td>
+                            <td class="px-3 py-2 align-middle">
+                                <div class="flex items-center gap-3">
                                     <div
-                                        class="inline-block px-1.5 py-0.5 mt-0.5 rounded bg-slate-100 text-slate-500 font-bold text-[9px] uppercase border border-slate-200">
-                                        {{ $k->kode_kelas }}</div>
-                                    @if($k->waliKelas) <span class="text-[9px] text-slate-400 ml-1">Wali:
-                                        {{ $k->waliKelas->nama_guru }}</span> @endif
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2 text-center align-middle">
-                            <div class="flex flex-col items-center gap-1">
-                                <span
-                                    class="text-[10px] font-bold {{ $totalJamOffline > $maxJam ? 'text-rose-600' : 'text-emerald-600' }}">{{ $totalJamOffline }}
-                                    / {{ $maxJam }} Jam</span>
-                                <div class="w-20 h-1 bg-slate-100 rounded-full overflow-hidden">
-                                    <div class="h-full {{ $barColor }}" style="width: {{ min($percentage, 100) }}%">
+                                        class="h-8 w-8 shrink-0 rounded bg-[#f3e8ff] text-[#9333ea] flex items-center justify-center font-bold text-[10px] border border-[#e9d5ff]">
+                                        {{ substr($k->nama_kelas, 0, 2) }}
+                                    </div>
+                                    <div class="leading-tight">
+                                        <div class="font-bold text-slate-800 text-xs">{{ $k->nama_kelas }}</div>
+                                        <div
+                                            class="inline-block px-1.5 py-0.5 mt-0.5 rounded bg-slate-100 text-slate-500 font-bold text-[9px] uppercase border border-slate-200">
+                                            {{ $k->kode_kelas }}</div>
+                                        @if($k->waliKelas) <span class="text-[9px] text-slate-400 ml-1">Wali:
+                                            {{ $k->waliKelas->nama_guru }}</span> @endif
                                     </div>
                                 </div>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2 text-center align-middle">
-                            <div class="flex flex-col items-center gap-0.5 text-[9px]">
-                                <span class="text-slate-400" title="Dibuat: {{ $k->created_at }}">➕
-                                    {{ $k->created_at ? $k->created_at->format('d/m/Y') : '-' }}</span>
-                                <span class="text-purple-400" title="Diperbarui: {{ $k->updated_at }}">🔄
-                                    {{ $k->updated_at ? $k->updated_at->format('d/m/Y') : '-' }}</span>
-                            </div>
-                        </td>
-                        <td class="px-4 py-2 text-right align-middle">
-                            <div class="flex items-center justify-end gap-1.5">
-                                <button onclick="openModal('modaljadwal{{ $k->id }}')"
-                                    class="flex items-center gap-1 px-2.5 py-1.5 bg-[#1e293b] text-white text-[10px] font-bold rounded-lg shadow-sm hover:bg-slate-800 transition"><svg
-                                        class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 4v16m8-8H4"></path>
-                                    </svg> Distribusi</button>
-                                <button onclick="openModal('edit{{ $k->id }}')"
-                                    class="p-1.5 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg bg-white transition"><svg
-                                        class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
-                                        </path>
-                                    </svg></button>
-                                <form action="{{ route('kelas.destroy', $k->id) }}" method="POST"
-                                    onsubmit="return confirm('Hapus kelas?')" class="inline m-0">@csrf
-                                    @method('DELETE')<button type="submit"
-                                        class="p-1.5 border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300 rounded-lg bg-white transition"><svg
+                            </td>
+                            <td class="px-3 py-2 text-center align-middle">
+                                <div class="flex flex-col items-center gap-1.5">
+                                    <span class="text-[10px] font-bold {{ $textColor }}">
+                                        {{ $totalJamOffline }} / {{ $maxJam }} Jam
+                                    </span>
+                                    <div class="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                        <div class="h-full {{ $barColor }}" style="width: {{ min($percentage, 100) }}%">
+                                        </div>
+                                    </div>
+                                    <span
+                                        class="px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide border {{ $statusBg }}"
+                                        title="Kapasitas Optimal: {{ $maxJam }} Jam">
+                                        {{ $statusLabel }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="px-3 py-2 text-center align-middle">
+                                <div class="flex flex-col items-center gap-0.5 text-[9px]">
+                                    <span class="text-slate-400" title="Dibuat: {{ $k->created_at }}">➕
+                                        {{ $k->created_at ? $k->created_at->format('d/m/Y') : '-' }}</span>
+                                    <span class="text-purple-400" title="Diperbarui: {{ $k->updated_at }}">🔄
+                                        {{ $k->updated_at ? $k->updated_at->format('d/m/Y') : '-' }}</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-2 text-right align-middle">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <button onclick="openModal('modaljadwal{{ $k->id }}')"
+                                        class="flex items-center gap-1 px-2.5 py-1.5 bg-[#1e293b] text-white text-[10px] font-bold rounded-lg shadow-sm hover:bg-slate-800 transition"><svg
                                             class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                                d="M12 4v16m8-8H4"></path>
+                                        </svg> Distribusi</button>
+                                    <button onclick="openModal('edit{{ $k->id }}')"
+                                        class="p-1.5 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg bg-white transition"><svg
+                                            class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
                                             </path>
-                                        </svg></button></form>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5" class="px-4 py-12 text-center text-xs text-slate-400">Belum ada data.</td>
-                    </tr>
-                    @endforelse
+                                        </svg></button>
+                                    <form action="{{ route('kelas.destroy', $k->id) }}" method="POST"
+                                        onsubmit="return confirm('Hapus kelas?')" class="inline m-0">@csrf
+                                        @method('DELETE')<button type="submit"
+                                            class="p-1.5 border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300 rounded-lg bg-white transition"><svg
+                                                class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                                </path>
+                                            </svg></button></form>
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="5" class="px-4 py-12 text-center text-xs text-slate-400">Belum ada data.</td>
+                        </tr>
+                        @endforelse
                 </tbody>
             </table>
         </div>

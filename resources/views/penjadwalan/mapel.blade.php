@@ -74,7 +74,7 @@
                             Identitas Mapel</th>
                         <th
                             class="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider w-[20%] border-b border-slate-200 text-center">
-                            Total Distribusi</th>
+                            Beban / Kapasitas</th>
                         <th
                             class="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider w-[15%] border-b border-slate-200 text-center">
                             Waktu Sistem</th>
@@ -85,73 +85,116 @@
                 </thead>
                 <tbody id="tbody-mapel-main" class="divide-y divide-slate-100">
                     @forelse($mapels as $index => $m)
-                    <tr class="hover:bg-slate-50/80 transition-colors"
-                        data-filter="{{ strtolower($m->nama_mapel) }} {{ strtolower($m->kode_mapel) }}">
-                        <td class="px-4 py-2 text-center text-[11px] font-medium text-slate-400 align-middle">
-                            {{ $index + 1 }}</td>
-                        <td class="px-3 py-2 align-middle">
-                            <div class="flex items-center gap-3">
-                                <div
-                                    class="h-8 w-8 shrink-0 rounded-full bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center font-bold text-[10px] shadow-sm">
-                                    {{ substr($m->nama_mapel, 0, 1) }}
-                                </div>
-                                <div class="leading-tight">
-                                    <div class="font-bold text-slate-800 text-xs">{{ $m->nama_mapel }}
-                                        @if($m->batas_maksimal_jam) <span
-                                            class="text-[8px] font-bold bg-slate-100 text-slate-500 px-1 py-0.5 rounded ml-1 border border-slate-200">Maks:
-                                            {{ $m->batas_maksimal_jam }}</span> @endif</div>
+                    @php
+                    $totalJam = $m->total_jam_terdistribusi ?: 0;
+                    $maxJam = $m->batas_maksimal_jam;
+
+                    $statusLabel = 'Tanpa Batas';
+                    $statusBg = 'bg-blue-50 text-blue-600 border-blue-200';
+                    $barColor = 'bg-blue-400';
+                    $textColor = 'text-blue-600';
+                    $percentage = 0;
+
+                    if ($maxJam > 0) {
+                    $percentage = ($totalJam / $maxJam) * 100;
+                    if ($totalJam == 0) {
+                    $statusLabel = 'Kosong';
+                    $statusBg = 'bg-slate-50 text-slate-500 border-slate-200';
+                    $barColor = 'bg-slate-300';
+                    $textColor = 'text-slate-600';
+                    } elseif ($totalJam < $maxJam) { $statusLabel='Kurang' ;
+                        $statusBg='bg-rose-50 text-rose-600 border-rose-200' ; $barColor='bg-rose-500' ;
+                        $textColor='text-rose-600' ; } elseif ($totalJam==$maxJam) { $statusLabel='Sesuai' ;
+                        $statusBg='bg-emerald-50 text-emerald-600 border-emerald-200' ; $barColor='bg-emerald-500' ;
+                        $textColor='text-emerald-600' ; } elseif ($totalJam> $maxJam) {
+                        $statusLabel = 'Lebih';
+                        $statusBg = 'bg-amber-50 text-amber-600 border-amber-200';
+                        $barColor = 'bg-amber-500';
+                        $textColor = 'text-amber-600';
+                        }
+                        } else {
+                        $maxJam = '-';
+                        }
+                        @endphp
+                        <tr class="hover:bg-slate-50/80 transition-colors"
+                            data-filter="{{ strtolower($m->nama_mapel) }} {{ strtolower($m->kode_mapel) }}">
+                            <td class="px-4 py-2 text-center text-[11px] font-medium text-slate-400 align-middle">
+                                {{ $index + 1 }}</td>
+                            <td class="px-3 py-2 align-middle">
+                                <div class="flex items-center gap-3">
                                     <div
-                                        class="inline-block px-1.5 py-0.5 mt-0.5 rounded bg-slate-100 text-slate-500 font-bold text-[9px] uppercase border border-slate-200">
-                                        {{ $m->kode_mapel }}</div>
+                                        class="h-8 w-8 shrink-0 rounded-full bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center font-bold text-[10px] shadow-sm">
+                                        {{ substr($m->nama_mapel, 0, 1) }}
+                                    </div>
+                                    <div class="leading-tight">
+                                        <div class="font-bold text-slate-800 text-xs">{{ $m->nama_mapel }}</div>
+                                        <div
+                                            class="inline-block px-1.5 py-0.5 mt-0.5 rounded bg-slate-100 text-slate-500 font-bold text-[9px] uppercase border border-slate-200">
+                                            {{ $m->kode_mapel }}</div>
+                                    </div>
                                 </div>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2 align-middle text-center">
-                            <span
-                                class="inline-flex font-bold text-[10px] bg-blue-50 text-blue-700 px-2 py-1 rounded-md border border-blue-100">{{ $m->total_jam_terdistribusi ?: 0 }}
-                                Jam Total</span>
-                        </td>
-                        <td class="px-3 py-2 text-center align-middle">
-                            <div class="flex flex-col items-center gap-0.5 text-[9px]">
-                                <span class="text-slate-400" title="Dibuat: {{ $m->created_at }}">➕
-                                    {{ $m->created_at ? $m->created_at->format('d/m/Y') : '-' }}</span>
-                                <span class="text-blue-400" title="Diperbarui: {{ $m->updated_at }}">🔄
-                                    {{ $m->updated_at ? $m->updated_at->format('d/m/Y') : '-' }}</span>
-                            </div>
-                        </td>
-                        <td class="px-4 py-2 text-right align-middle">
-                            <div class="flex items-center justify-end gap-1.5">
-                                <button onclick="openModal('modaljadwal{{ $m->id }}')"
-                                    class="flex items-center gap-1 px-2.5 py-1.5 bg-[#294269] text-white text-[10px] font-bold rounded-lg shadow-sm hover:bg-blue-900 transition"><svg
-                                        class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z">
-                                        </path>
-                                    </svg> Distribusi</button>
-                                <button onclick="openModal('edit{{ $m->id }}')"
-                                    class="p-1.5 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg bg-white transition"><svg
-                                        class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
-                                        </path>
-                                    </svg></button>
-                                <form action="{{ route('mapel.destroy', $m->id) }}" method="POST" class="inline m-0"
-                                    onsubmit="return confirm('Hapus permanen mapel ini?')">@csrf
-                                    @method('DELETE')<button type="submit"
-                                        class="p-1.5 border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300 rounded-lg bg-white transition"><svg
+                            </td>
+                            <td class="px-3 py-2 text-center align-middle">
+                                <div class="flex flex-col items-center gap-1.5">
+                                    <span class="text-[10px] font-bold {{ $textColor }}">
+                                        {{ $totalJam }} / {{ $maxJam }} Jam
+                                    </span>
+                                    @if($maxJam !== '-')
+                                    <div class="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                        <div class="h-full {{ $barColor }}" style="width: {{ min($percentage, 100) }}%">
+                                        </div>
+                                    </div>
+                                    @endif
+                                    <span
+                                        class="px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide border {{ $statusBg }}"
+                                        title="Batas Maksimal: {{ $maxJam }} Jam">
+                                        {{ $statusLabel }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="px-3 py-2 text-center align-middle">
+                                <div class="flex flex-col items-center gap-0.5 text-[9px]">
+                                    <span class="text-slate-400" title="Dibuat: {{ $m->created_at }}">➕
+                                        {{ $m->created_at ? $m->created_at->format('d/m/Y') : '-' }}</span>
+                                    <span class="text-blue-400" title="Diperbarui: {{ $m->updated_at }}">🔄
+                                        {{ $m->updated_at ? $m->updated_at->format('d/m/Y') : '-' }}</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-2 text-right align-middle">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <button onclick="openModal('modaljadwal{{ $m->id }}')"
+                                        class="flex items-center gap-1 px-2.5 py-1.5 bg-[#294269] text-white text-[10px] font-bold rounded-lg shadow-sm hover:bg-blue-900 transition"><svg
                                             class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z">
                                             </path>
-                                        </svg></button></form>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5" class="px-4 py-12 text-center text-xs text-slate-400">Belum ada data mapel.</td>
-                    </tr>
-                    @endforelse
+                                        </svg> Distribusi</button>
+                                    <button onclick="openModal('edit{{ $m->id }}')"
+                                        class="p-1.5 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg bg-white transition"><svg
+                                            class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
+                                            </path>
+                                        </svg></button>
+                                    <form action="{{ route('mapel.destroy', $m->id) }}" method="POST" class="inline m-0"
+                                        onsubmit="return confirm('Hapus permanen mapel ini?')">@csrf
+                                        @method('DELETE')<button type="submit"
+                                            class="p-1.5 border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300 rounded-lg bg-white transition"><svg
+                                                class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                                </path>
+                                            </svg></button></form>
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="5" class="px-4 py-12 text-center text-xs text-slate-400">Belum ada data mapel.
+                            </td>
+                        </tr>
+                        @endforelse
                 </tbody>
             </table>
         </div>

@@ -8,21 +8,18 @@
     {{-- FLASH MESSAGES & METRIK --}}
     @if(session('success'))
     <div x-data="{ show: true }" x-show="show" x-transition class="mb-4 space-y-3">
-
+        {{-- Flash message content (tetap sama seperti sebelumnya) --}}
         <div
             class="flex flex-col p-3 bg-emerald-50 border border-emerald-100 rounded-lg shadow-sm text-emerald-800 shrink-0">
             <div class="flex items-center justify-between">
                 <div class="flex flex-wrap items-center gap-2">
                     <span class="font-bold text-xs">✅ {{ session('success') }}</span>
-
                     @if(session('status_solver'))
                     <span
-                        class="px-2 py-0.5 rounded text-[9px] font-bold uppercase border 
-                        {{ session('status_solver') == 'OPTIMAL' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-yellow-100 text-yellow-700 border-yellow-200' }}">
+                        class="px-2 py-0.5 rounded text-[9px] font-bold uppercase border {{ session('status_solver') == 'OPTIMAL' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-yellow-100 text-yellow-700 border-yellow-200' }}">
                         {{ session('status_solver') }}
                     </span>
                     @endif
-
                     @if(session('waktu_komputasi'))
                     <span
                         class="px-2 py-0.5 rounded bg-emerald-200/50 text-emerald-700 text-[9px] font-bold uppercase border border-emerald-200"
@@ -30,7 +27,6 @@
                         ⏱️ {{ session('waktu_komputasi') }} DTK
                     </span>
                     @endif
-
                     @if(session('csr') !== null)
                     <span
                         class="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[9px] font-bold uppercase border border-blue-200"
@@ -38,7 +34,6 @@
                         🎯 CSR: {{ session('csr') }}%
                     </span>
                     @endif
-
                     @if(session('scfr') !== null)
                     <span
                         class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 text-[9px] font-bold uppercase border border-indigo-200"
@@ -47,12 +42,10 @@
                     </span>
                     @endif
                 </div>
-
                 <button @click="show = false" class="text-emerald-400 hover:text-emerald-700 ml-4">&times;</button>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                {{-- DETAIL PERHITUNGAN CSR (HARD CONSTRAINT) --}}
                 @if(session('csr') !== null)
                 <div
                     class="p-3 bg-white/60 border border-blue-200/50 rounded-md text-[11px] text-blue-900 font-mono flex flex-col gap-1">
@@ -61,8 +54,6 @@
                     <span>Hitung : (({{ session('total_hard_constraints') }} - {{ session('jumlah_pelanggaran_hard') }})
                         / {{ session('total_hard_constraints') ?: 1 }}) x 100%</span>
                     <span>Hasil : <strong class="text-[12px]">{{ session('csr') }}%</strong></span>
-
-                    {{-- TABEL BREAKDOWN SELALU TAMPIL SEBAGAI BUKTI --}}
                     @if(session('breakdown_csr') && count(session('breakdown_csr')) > 0)
                     <div class="mt-2 overflow-x-auto rounded border border-blue-200/60 bg-white">
                         <table class="w-full text-left border-collapse min-w-full">
@@ -78,16 +69,13 @@
                             <tbody class="divide-y divide-blue-100/50 text-[10px]">
                                 @foreach(session('breakdown_csr') as $b)
                                 <tr class="hover:bg-blue-50/50 transition-colors">
-                                    <td class="px-2 py-1">
-                                        <span class="font-bold">{{ $b['kategori'] }}</span>: <span
-                                            class="text-[9px] text-blue-700/80">{{ $b['deskripsi'] }}</span>
-                                    </td>
+                                    <td class="px-2 py-1"><span class="font-bold">{{ $b['kategori'] }}</span>: <span
+                                            class="text-[9px] text-blue-700/80">{{ $b['deskripsi'] }}</span></td>
                                     <td class="px-2 py-1 text-center font-bold border-l border-blue-100/50">
                                         {{ $b['total'] }}</td>
                                     <td
                                         class="px-2 py-1 text-center font-bold border-l border-blue-100/50 {{ $b['pelanggaran'] > 0 ? 'text-rose-600' : 'text-emerald-600' }}">
-                                        {{ $b['pelanggaran'] }}
-                                    </td>
+                                        {{ $b['pelanggaran'] }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -97,7 +85,6 @@
                 </div>
                 @endif
 
-                {{-- DETAIL PERHITUNGAN SCFR (SOFT CONSTRAINT) --}}
                 @if(session('scfr') !== null)
                 <div
                     class="p-3 bg-white/60 border border-emerald-200/50 rounded-md text-[11px] text-emerald-900 font-mono flex flex-col gap-1">
@@ -106,8 +93,6 @@
                     <span>Hitung : (({{ session('total_preferensi') }} - {{ session('jumlah_pelanggaran_soft') }}) /
                         {{ session('total_preferensi') ?: 1 }}) x 100%</span>
                     <span>Hasil : <strong class="text-[12px]">{{ session('scfr') }}%</strong></span>
-
-                    {{-- TABEL BREAKDOWN SCFR --}}
                     @if(session('breakdown_scfr') && count(session('breakdown_scfr')) > 0)
                     <div class="mt-2 overflow-x-auto rounded border border-emerald-200/60 bg-white">
                         <table class="w-full text-left border-collapse min-w-full">
@@ -124,16 +109,13 @@
                             <tbody class="divide-y divide-emerald-100/50 text-[10px]">
                                 @foreach(session('breakdown_scfr') as $b)
                                 <tr class="hover:bg-emerald-50/50 transition-colors">
-                                    <td class="px-2 py-1">
-                                        <span class="font-bold">{{ $b['kategori'] }}</span>: <span
-                                            class="text-[9px] text-emerald-700/80">{{ $b['deskripsi'] }}</span>
-                                    </td>
+                                    <td class="px-2 py-1"><span class="font-bold">{{ $b['kategori'] }}</span>: <span
+                                            class="text-[9px] text-emerald-700/80">{{ $b['deskripsi'] }}</span></td>
                                     <td class="px-2 py-1 text-center font-bold border-l border-emerald-100/50">
                                         {{ $b['total'] }}</td>
                                     <td
                                         class="px-2 py-1 text-center font-bold border-l border-emerald-100/50 {{ $b['pelanggaran'] > 0 ? 'text-amber-600' : 'text-emerald-600' }}">
-                                        {{ $b['pelanggaran'] }}
-                                    </td>
+                                        {{ $b['pelanggaran'] }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -145,16 +127,13 @@
             </div>
         </div>
 
-        {{-- UI DETAIL PELANGGARAN HARD CONSTRAINT --}}
         @if(session('jumlah_pelanggaran_hard') > 0)
         <div x-data="{ bukaDetailHard: true }"
             class="bg-rose-50 border border-rose-200 rounded-lg shadow-sm text-sm overflow-hidden transition-all duration-300 mb-3">
             <button @click="bukaDetailHard = !bukaDetailHard"
                 class="w-full flex items-center justify-between p-3 text-rose-700 font-bold hover:bg-rose-100 transition-colors">
-                <div class="flex items-center gap-2">
-                    <span>❌ Terdapat {{ session('jumlah_pelanggaran_hard') }} Pelanggaran Aturan Mutlak (Hard
-                        Constraint)</span>
-                </div>
+                <div class="flex items-center gap-2"><span>❌ Terdapat {{ session('jumlah_pelanggaran_hard') }}
+                        Pelanggaran Aturan Mutlak (Hard Constraint)</span></div>
                 <svg :class="{'rotate-180': bukaDetailHard}" class="w-4 h-4 transition-transform" fill="none"
                     stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -162,24 +141,19 @@
             </button>
             <div x-show="bukaDetailHard" class="px-5 pb-4 pt-1">
                 <ul class="list-disc list-inside text-rose-600 text-xs space-y-1">
-                    @foreach(session('detail_pelanggaran_hard') as $ph)
-                    <li>{{ $ph }}</li>
-                    @endforeach
+                    @foreach(session('detail_pelanggaran_hard') as $ph) <li>{{ $ph }}</li> @endforeach
                 </ul>
             </div>
         </div>
         @endif
 
-        {{-- UI DETAIL PELANGGARAN SOFT CONSTRAINT --}}
         @if(session('jumlah_pelanggaran_soft') > 0)
         <div x-data="{ bukaDetail: false }"
             class="bg-indigo-50/50 border border-indigo-100 rounded-lg shadow-sm text-sm overflow-hidden transition-all duration-300">
             <button @click="bukaDetail = !bukaDetail"
                 class="w-full flex items-center justify-between p-3 text-indigo-700 font-medium hover:bg-indigo-50 transition-colors">
-                <div class="flex items-center gap-2">
-                    <span>⚠️ Terdapat {{ session('jumlah_pelanggaran_soft') }} Penyesuaian Jadwal (Soft
-                        Constraint)</span>
-                </div>
+                <div class="flex items-center gap-2"><span>⚠️ Terdapat {{ session('jumlah_pelanggaran_soft') }}
+                        Penyesuaian Jadwal (Soft Constraint)</span></div>
                 <svg :class="{'rotate-180': bukaDetail}" class="w-4 h-4 transition-transform" fill="none"
                     stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -187,9 +161,7 @@
             </button>
             <div x-show="bukaDetail" style="display: none;" class="px-5 pb-4 pt-1">
                 <ul class="list-disc list-inside text-indigo-600/80 text-xs space-y-1">
-                    @foreach(session('detail_pelanggaran_soft') as $p)
-                    <li>{{ $p }}</li>
-                    @endforeach
+                    @foreach(session('detail_pelanggaran_soft') as $p) <li>{{ $p }}</li> @endforeach
                 </ul>
             </div>
         </div>
@@ -231,6 +203,17 @@
                             class="block w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition"
                             placeholder="Cari Mapel...">
                     </div>
+
+                    {{-- TOMBOL BARU: CEK KETERSEDIAAN GURU --}}
+                    <button type="button" onclick="document.getElementById('modal-cek-guru').classList.remove('hidden')"
+                        class="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 font-bold text-xs uppercase rounded-xl shadow-sm transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                            </path>
+                        </svg>
+                        Cek Guru
+                    </button>
 
                     <a href="{{ route('jadwal.export') }}"
                         class="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 font-bold text-xs uppercase rounded-xl shadow-sm transition-all">
@@ -292,11 +275,18 @@
                         @foreach($waktuAktif as $waktuItem)
                         @php
                         $j = $waktuItem->jam_ke;
+                        $wMulai = \Carbon\Carbon::parse($waktuItem->waktu_mulai)->format('H:i');
+                        $wSelesai = \Carbon\Carbon::parse($waktuItem->waktu_selesai)->format('H:i');
                         $waktuTampil = \Carbon\Carbon::parse($waktuItem->waktu_mulai)->format('H.i') . ' - ' .
                         \Carbon\Carbon::parse($waktuItem->waktu_selesai)->format('H.i');
                         $tipeTampil = $waktuItem->tipe;
                         @endphp
-                        <tr class="hover:bg-slate-50/80 transition-colors">
+
+                        {{-- MENAMBAHKAN ATRIBUT DATA PADA TR UNTUK KEBUTUHAN FILTER WAKTU --}}
+                        <tr class="hover:bg-slate-50/80 transition-colors jadwal-row"
+                            data-hari="{{ strtolower($namaHari) }}" data-mulai="{{ $wMulai }}"
+                            data-selesai="{{ $wSelesai }}">
+
                             @if($firstRow)
                             <td rowspan="{{ $rowSpanTotal }}"
                                 class="w-[40px] min-w-[40px] sticky left-0 z-[30] p-0 bg-white border-r border-b border-slate-200 align-middle text-center">
@@ -313,7 +303,8 @@
                             </td>
                             <td
                                 class="h-[45px] w-[90px] min-w-[90px] sticky left-[75px] z-[30] p-1 bg-white border-r border-b border-slate-200 text-center text-[10px] font-mono font-medium text-slate-700">
-                                {{ $waktuTampil }}</td>
+                                {{ $waktuTampil }}
+                            </td>
 
                             @if(in_array($tipeTampil, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat
                             Bersih', 'Pramuka']))
@@ -325,17 +316,25 @@
                             </td>
                             @else
                             @foreach($kelass as $kelas)
-                            @php $data = $jadwals[$kelas->id][$namaHari][$j] ?? null; @endphp
+                            @php
+                            $data = $jadwals[$kelas->id][$namaHari][$j] ?? null;
+                            $kodeGuruStr = $data ? $data['kode_guru'] : '';
+                            $namaGuruStr = $data ? ($data['guru'] ?? $data['kode_guru']) : '';
+                            @endphp
+
+                            {{-- MENAMBAHKAN ATRIBUT DATA GURU PADA TD --}}
                             <td class="h-[45px] p-1 border-r border-b border-slate-200 text-center align-middle min-w-[140px] max-w-[140px] w-[140px] bg-white transition-all jadwal-cell"
-                                data-search="{{ $data ? strtolower($data['mapel'].' '.$data['guru'].' '.$kelas->nama_kelas) : '' }}"
-                                data-kelas="{{ strtolower($kelas->nama_kelas) }}">
+                                data-search="{{ $data ? strtolower($data['mapel'].' '.$namaGuruStr.' '.$kelas->nama_kelas) : '' }}"
+                                data-kelas="{{ strtolower($kelas->nama_kelas) }}" data-guru="{{ $kodeGuruStr }}"
+                                data-namaguru="{{ $namaGuruStr }}">
+
                                 @if($data)
                                 <div
                                     class="w-full h-full flex flex-col justify-center items-center px-1 {{ $data['color'] }} rounded-md border border-slate-100">
                                     <span
                                         class="font-bold text-[11px] leading-tight text-slate-800 break-words line-clamp-1">{{ $data['mapel'] }}</span>
                                     <span
-                                        class="text-[9px] font-medium mt-0.5 text-slate-500 truncate max-w-full">{{ $data['kode_guru'] }}</span>
+                                        class="text-[9px] font-medium mt-0.5 text-slate-500 truncate max-w-full">{{ $kodeGuruStr }}</span>
                                 </div>
                                 @else
                                 <div class="w-full h-full flex items-center justify-center opacity-30"><span
@@ -359,6 +358,68 @@
     </div>
 </div>
 
+{{-- MODAL CEK GURU MENGAJAR --}}
+<div id="modal-cek-guru"
+    class="hidden fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm transition-opacity">
+    <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border border-slate-200">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-slate-800">Cek Guru Mengajar</h3>
+            <button onclick="document.getElementById('modal-cek-guru').classList.add('hidden')"
+                class="text-slate-400 hover:text-rose-500">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <p class="text-xs text-slate-500 mb-4">Cari tahu siapa saja guru yang sedang ada jadwal di kelas pada hari dan
+            jam tertentu (misal untuk pengecekan guru sebelum rapat).</p>
+
+        <div class="space-y-3">
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Hari</label>
+                <select id="cg-hari"
+                    class="w-full border border-slate-200 rounded-lg p-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    <option value="senin">Senin</option>
+                    <option value="selasa">Selasa</option>
+                    <option value="rabu">Rabu</option>
+                    <option value="kamis">Kamis</option>
+                    <option value="jumat">Jumat</option>
+                    <option value="sabtu">Sabtu</option>
+                </select>
+            </div>
+            <div class="flex gap-3">
+                <div class="w-1/2">
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Jam Mulai</label>
+                    <input type="time" id="cg-mulai" value="09:00"
+                        class="w-full border border-slate-200 rounded-lg p-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div class="w-1/2">
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Jam Selesai</label>
+                    <input type="time" id="cg-selesai" value="11:00"
+                        class="w-full border border-slate-200 rounded-lg p-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+            </div>
+            <button type="button" onclick="prosesCekGuru()"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg text-sm mt-4 transition-colors shadow-sm">
+                Cari Ketersediaan
+            </button>
+        </div>
+
+        <div id="cg-hasil" class="mt-5 hidden border-t border-slate-100 pt-4">
+            <h4 class="text-xs font-bold text-slate-600 mb-2">Guru yang sedang mengajar:</h4>
+            <div id="cg-list-guru"
+                class="max-h-[160px] overflow-y-auto text-sm text-slate-700 space-y-2 custom-scrollbar pr-2">
+            </div>
+            <div id="cg-kosong"
+                class="text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 p-2 rounded-lg font-medium hidden">
+                ✅ Tidak ada jadwal guru pada rentang waktu tersebut. Aman untuk jadwal rapat.
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="loading-overlay"
     class="hidden fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-900/70 backdrop-blur-sm transition-opacity">
     <div class="bg-white p-8 rounded-3xl shadow-2xl text-center">
@@ -375,7 +436,7 @@ table {
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
     height: 10px;
 }
 
@@ -393,6 +454,7 @@ table {
 }
 </style>
 @endpush
+
 @push('scripts')
 <script>
 function filterJadwalRealtime() {
@@ -418,6 +480,81 @@ function filterJadwalRealtime() {
 
 function showLoading() {
     document.getElementById('loading-overlay').classList.remove('hidden');
+}
+
+// FUNGSI BARU UNTUK CEK KETERSEDIAAN GURU
+function prosesCekGuru() {
+    const hari = document.getElementById('cg-hari').value.toLowerCase();
+    const mulai = document.getElementById('cg-mulai').value;
+    const selesai = document.getElementById('cg-selesai').value;
+
+    if (!mulai || !selesai) {
+        alert('Harap pilih jam mulai dan jam selesai terlebih dahulu!');
+        return;
+    }
+
+    // Ubah jam format "HH:MM" menjadi total menit agar mudah dikalkulasi batas irisannya
+    const tMulai = parseInt(mulai.split(':')[0]) * 60 + parseInt(mulai.split(':')[1]);
+    const tSelesai = parseInt(selesai.split(':')[0]) * 60 + parseInt(selesai.split(':')[1]);
+
+    const rows = document.querySelectorAll('.jadwal-row');
+    let guruMap = new Map(); // Pakai Map agar terfilter unik dan menyimpan info nama/kode
+
+    rows.forEach(row => {
+        // Cek apakah hari cocok
+        if (row.dataset.hari === hari) {
+            const rowMulai = row.dataset.mulai;
+            const rowSelesai = row.dataset.selesai;
+
+            if (rowMulai && rowSelesai) {
+                const rMulai = parseInt(rowMulai.split(':')[0]) * 60 + parseInt(rowMulai.split(':')[1]);
+                const rSelesai = parseInt(rowSelesai.split(':')[0]) * 60 + parseInt(rowSelesai.split(':')[1]);
+
+                // Logika Cek Irisan Waktu (Overlap)
+                // Jadwal mengajar beririsan JIKA (Waktu Mulai Jadwal < Waktu Selesai Rapat) DAN (Waktu Selesai Jadwal > Waktu Mulai Rapat)
+                if (rMulai < tSelesai && rSelesai > tMulai) {
+                    const cells = row.querySelectorAll('.jadwal-cell');
+                    cells.forEach(cell => {
+                        const kodeGuru = cell.dataset.guru;
+                        const namaGuru = cell.dataset.namaguru;
+
+                        // Jika sel ini memiliki guru (tidak jam kosong)
+                        if (kodeGuru && kodeGuru.trim() !== '') {
+                            guruMap.set(kodeGuru, namaGuru);
+                        }
+                    });
+                }
+            }
+        }
+    });
+
+    const hasilContainer = document.getElementById('cg-hasil');
+    const listContainer = document.getElementById('cg-list-guru');
+    const kosongMsg = document.getElementById('cg-kosong');
+
+    hasilContainer.classList.remove('hidden');
+    listContainer.innerHTML = '';
+
+    if (guruMap.size > 0) {
+        kosongMsg.classList.add('hidden');
+
+        // Render daftar guru
+        guruMap.forEach((nama, kode) => {
+            const div = document.createElement('div');
+            div.className =
+                'flex items-center justify-between bg-slate-50 border border-slate-100 p-2.5 rounded-lg';
+            div.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded">${kode}</div>
+                    <span class="text-slate-700 text-xs font-medium">${nama}</span>
+                </div>
+                <span class="text-[10px] text-slate-400 font-medium">Berdinas</span>
+            `;
+            listContainer.appendChild(div);
+        });
+    } else {
+        kosongMsg.classList.remove('hidden');
+    }
 }
 </script>
 @endpush
