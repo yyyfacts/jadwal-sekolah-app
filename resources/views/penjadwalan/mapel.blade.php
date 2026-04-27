@@ -52,7 +52,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
                             </path>
-                        </svg Tambah </button>
+                        </svg> Tambah </button>
                 </div>
             </div>
         </div>
@@ -111,18 +111,27 @@
                             </div>
                         </td>
                         <td class="px-3 py-2 text-center align-middle">
-                            <div class="flex flex-col items-center gap-1.5">
-                                <span class="text-[10px] font-bold text-slate-700">
-                                    @if($maxJam)
-                                    {{ $totalJam }} / {{ $maxJam }} Jam
-                                    @else
+                            <div class="flex flex-col items-center gap-0.5">
+                                {{-- ANGKA TOTAL JAM UTAMA --}}
+                                <span class="text-[11px] font-extrabold text-slate-700">
                                     {{ $totalJam }} Jam
-                                    @endif
                                 </span>
+
                                 @if($maxJam)
-                                <div class="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                {{-- PROGRESS BAR --}}
+                                <div class="w-20 h-1.5 bg-slate-200 rounded-full overflow-hidden my-1">
                                     <div class="h-full bg-blue-500" style="width: {{ min($percentage, 100) }}%"></div>
                                 </div>
+                                {{-- KETERANGAN BATAS MAKSIMAL DI BAWAH --}}
+                                <span
+                                    class="text-[8px] font-bold text-slate-500 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded">
+                                    Maks: {{ $maxJam }} Jam
+                                </span>
+                                @else
+                                {{-- JIKA TANPA BATAS --}}
+                                <span class="text-[8px] font-medium text-slate-400 mt-1">
+                                    Tanpa Batas
+                                </span>
                                 @endif
                             </div>
                         </td>

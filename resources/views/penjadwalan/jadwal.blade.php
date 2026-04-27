@@ -8,7 +8,7 @@
     {{-- FLASH MESSAGES & METRIK --}}
     @if(session('success'))
     <div x-data="{ show: true }" x-show="show" x-transition class="mb-4 space-y-3">
-        {{-- Flash message content (tetap sama seperti sebelumnya) --}}
+        {{-- Flash message content --}}
         <div
             class="flex flex-col p-3 bg-emerald-50 border border-emerald-100 rounded-lg shadow-sm text-emerald-800 shrink-0">
             <div class="flex items-center justify-between">
@@ -204,7 +204,7 @@
                             placeholder="Cari Mapel...">
                     </div>
 
-                    {{-- TOMBOL BARU: CEK KETERSEDIAAN GURU --}}
+                    {{-- TOMBOL CEK KETERSEDIAAN GURU --}}
                     <button type="button" onclick="document.getElementById('modal-cek-guru').classList.remove('hidden')"
                         class="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 font-bold text-xs uppercase rounded-xl shadow-sm transition-all">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -358,29 +358,35 @@
     </div>
 </div>
 
-{{-- MODAL CEK GURU MENGAJAR --}}
+{{-- MODAL CEK GURU MENGAJAR (DIPERLEBAR & DIRAPIKAN) --}}
 <div id="modal-cek-guru"
-    class="hidden fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm transition-opacity">
-    <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border border-slate-200">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-bold text-slate-800">Cek Guru Mengajar</h3>
+    class="hidden fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm transition-opacity p-4 sm:p-6">
+    <div
+        class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl border border-slate-200 flex flex-col max-h-[90vh]">
+
+        {{-- Header Modal --}}
+        <div class="flex justify-between items-start mb-5 shrink-0">
+            <div>
+                <h3 class="text-xl font-extrabold text-slate-800">Cek Guru Mengajar</h3>
+                <p class="text-xs font-medium text-slate-500 mt-1">Cari tahu siapa saja guru yang sedang terikat jadwal
+                    kelas pada hari dan jam tertentu secara otomatis.</p>
+            </div>
             <button onclick="document.getElementById('modal-cek-guru').classList.add('hidden')"
-                class="text-slate-400 hover:text-rose-500">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                class="text-slate-400 hover:text-rose-500 p-1 bg-slate-50 hover:bg-rose-50 rounded-lg transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
                     </path>
                 </svg>
             </button>
         </div>
 
-        <p class="text-xs text-slate-500 mb-4">Cari tahu siapa saja guru yang sedang ada jadwal di kelas pada hari dan
-            jam tertentu (misal untuk pengecekan guru sebelum rapat).</p>
-
-        <div class="space-y-3">
-            <div>
-                <label class="block text-xs font-bold text-slate-600 mb-1">Hari</label>
+        {{-- Form Pencarian (Horizontal Grid) --}}
+        <div
+            class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end bg-slate-50 p-4 rounded-xl border border-slate-200 shrink-0">
+            <div class="sm:col-span-1">
+                <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Hari</label>
                 <select id="cg-hari"
-                    class="w-full border border-slate-200 rounded-lg p-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm">
                     <option value="senin">Senin</option>
                     <option value="selasa">Selasa</option>
                     <option value="rabu">Rabu</option>
@@ -389,32 +395,50 @@
                     <option value="sabtu">Sabtu</option>
                 </select>
             </div>
-            <div class="flex gap-3">
-                <div class="w-1/2">
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Jam Mulai</label>
-                    <input type="time" id="cg-mulai" value="09:00"
-                        class="w-full border border-slate-200 rounded-lg p-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none">
-                </div>
-                <div class="w-1/2">
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Jam Selesai</label>
-                    <input type="time" id="cg-selesai" value="11:00"
-                        class="w-full border border-slate-200 rounded-lg p-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none">
-                </div>
+            <div class="sm:col-span-1">
+                <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Jam Mulai</label>
+                <input type="time" id="cg-mulai" value="09:00"
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm">
             </div>
-            <button type="button" onclick="prosesCekGuru()"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg text-sm mt-4 transition-colors shadow-sm">
-                Cari Ketersediaan
-            </button>
+            <div class="sm:col-span-1">
+                <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Jam Selesai</label>
+                <input type="time" id="cg-selesai" value="11:00"
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm">
+            </div>
+            <div class="sm:col-span-1">
+                <button type="button" onclick="prosesCekGuru()"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-sm transition-colors shadow-md h-[42px] flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    Cari Guru
+                </button>
+            </div>
         </div>
 
-        <div id="cg-hasil" class="mt-5 hidden border-t border-slate-100 pt-4">
-            <h4 class="text-xs font-bold text-slate-600 mb-2">Guru yang sedang mengajar:</h4>
-            <div id="cg-list-guru"
-                class="max-h-[160px] overflow-y-auto text-sm text-slate-700 space-y-2 custom-scrollbar pr-2">
+        {{-- Area Hasil --}}
+        <div id="cg-hasil" class="mt-5 hidden flex-col min-h-0 flex-1">
+            <div class="flex items-center justify-between mb-3 shrink-0">
+                <h4 class="text-sm font-extrabold text-slate-700 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span> Guru yang sedang mengajar:
+                </h4>
+                <span id="cg-count"
+                    class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100 hidden">0
+                    Guru</span>
             </div>
+
+            {{-- List Guru (Grid Layout) --}}
+            <div id="cg-list-guru"
+                class="overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 custom-scrollbar pr-2 pb-2">
+            </div>
+
+            {{-- Pesan Kosong --}}
             <div id="cg-kosong"
-                class="text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 p-2 rounded-lg font-medium hidden">
-                ✅ Tidak ada jadwal guru pada rentang waktu tersebut. Aman untuk jadwal rapat.
+                class="hidden text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-4 rounded-xl font-bold flex items-center justify-center gap-3">
+                <span class="text-2xl">✅</span>
+                <span>Alhamdulillah, tidak ada jadwal guru yang terikat pada rentang waktu ini. Cocok untuk
+                    Rapat!</span>
             </div>
         </div>
     </div>
@@ -482,7 +506,7 @@ function showLoading() {
     document.getElementById('loading-overlay').classList.remove('hidden');
 }
 
-// FUNGSI BARU UNTUK CEK KETERSEDIAAN GURU
+// FUNGSI CEK KETERSEDIAAN GURU
 function prosesCekGuru() {
     const hari = document.getElementById('cg-hari').value.toLowerCase();
     const mulai = document.getElementById('cg-mulai').value;
@@ -493,15 +517,13 @@ function prosesCekGuru() {
         return;
     }
 
-    // Ubah jam format "HH:MM" menjadi total menit agar mudah dikalkulasi batas irisannya
     const tMulai = parseInt(mulai.split(':')[0]) * 60 + parseInt(mulai.split(':')[1]);
     const tSelesai = parseInt(selesai.split(':')[0]) * 60 + parseInt(selesai.split(':')[1]);
 
     const rows = document.querySelectorAll('.jadwal-row');
-    let guruMap = new Map(); // Pakai Map agar terfilter unik dan menyimpan info nama/kode
+    let guruMap = new Map();
 
     rows.forEach(row => {
-        // Cek apakah hari cocok
         if (row.dataset.hari === hari) {
             const rowMulai = row.dataset.mulai;
             const rowSelesai = row.dataset.selesai;
@@ -510,15 +532,12 @@ function prosesCekGuru() {
                 const rMulai = parseInt(rowMulai.split(':')[0]) * 60 + parseInt(rowMulai.split(':')[1]);
                 const rSelesai = parseInt(rowSelesai.split(':')[0]) * 60 + parseInt(rowSelesai.split(':')[1]);
 
-                // Logika Cek Irisan Waktu (Overlap)
-                // Jadwal mengajar beririsan JIKA (Waktu Mulai Jadwal < Waktu Selesai Rapat) DAN (Waktu Selesai Jadwal > Waktu Mulai Rapat)
                 if (rMulai < tSelesai && rSelesai > tMulai) {
                     const cells = row.querySelectorAll('.jadwal-cell');
                     cells.forEach(cell => {
                         const kodeGuru = cell.dataset.guru;
                         const namaGuru = cell.dataset.namaguru;
 
-                        // Jika sel ini memiliki guru (tidak jam kosong)
                         if (kodeGuru && kodeGuru.trim() !== '') {
                             guruMap.set(kodeGuru, namaGuru);
                         }
@@ -531,29 +550,33 @@ function prosesCekGuru() {
     const hasilContainer = document.getElementById('cg-hasil');
     const listContainer = document.getElementById('cg-list-guru');
     const kosongMsg = document.getElementById('cg-kosong');
+    const countTag = document.getElementById('cg-count');
 
     hasilContainer.classList.remove('hidden');
     listContainer.innerHTML = '';
 
     if (guruMap.size > 0) {
         kosongMsg.classList.add('hidden');
+        countTag.classList.remove('hidden');
+        countTag.innerText = guruMap.size + ' Guru';
 
-        // Render daftar guru
         guruMap.forEach((nama, kode) => {
             const div = document.createElement('div');
+            // Desain item list diubah untuk pas dengan layout Grid
             div.className =
-                'flex items-center justify-between bg-slate-50 border border-slate-100 p-2.5 rounded-lg';
+                'flex items-center justify-between bg-white border border-slate-200 p-3 rounded-xl shadow-sm hover:shadow transition-shadow';
             div.innerHTML = `
                 <div class="flex items-center gap-3">
-                    <div class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded">${kode}</div>
-                    <span class="text-slate-700 text-xs font-medium">${nama}</span>
+                    <div class="bg-indigo-50 text-indigo-700 text-xs font-black px-2.5 py-1.5 rounded-lg border border-indigo-100">${kode}</div>
+                    <span class="text-slate-800 text-xs font-bold leading-tight line-clamp-1">${nama}</span>
                 </div>
-                <span class="text-[10px] text-slate-400 font-medium">Berdinas</span>
+                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider bg-slate-50 px-2 py-1 rounded">Dinas</span>
             `;
             listContainer.appendChild(div);
         });
     } else {
         kosongMsg.classList.remove('hidden');
+        countTag.classList.add('hidden');
     }
 }
 </script>
