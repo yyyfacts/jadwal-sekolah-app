@@ -4,28 +4,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
     {{-- ======================================================== --}}
     {{-- META TAGS UNTUK LINK PREVIEW (WHATSAPP, TELEGRAM, DLL) --}}
     {{-- ======================================================== --}}
-    <title>Sistem Penjadwalan - SMAN 1 Sampang</title>
+    <title>Masuk - Sistem Penjadwalan SMAN 1 Sampang</title>
     <meta name="description" content="Aplikasi cerdas untuk manajemen jadwal pelajaran SMAN 1 Sampang.">
 
     {{-- Open Graph (Facebook, WA, LinkedIn) --}}
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:title" content="Sistem Penjadwalan - SMAN 1 Sampang">
-    <meta property="og:description" content="web untuk manajemen jadwal pelajaran SMAN 1 Sampang.">
-    {{-- Ganti 'preview.png' dengan nama file asli kamu yang ukuran 237x212 --}}
-    <meta property="og:image" content="{{ secure_asset('img/logo-sekolah.png') }}">
+    <meta property="og:description" content="Web cerdas untuk manajemen jadwal pelajaran SMAN 1 Sampang.">
 
-    {{-- Twitter Card (Pakai 'summary' karena gambar berbentuk kotak kecil) --}}
+    {{-- WAJIB: Deklarasi gambar, tipe, dan dimensi agar WA tidak bingung --}}
+    <meta property="og:image" itemprop="image" content="{{ secure_asset('img/logo-sekolah.png') }}">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="237">
+    <meta property="og:image:height" content="212">
+
+    {{-- Twitter Card --}}
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:url" content="{{ url()->current() }}">
     <meta name="twitter:title" content="Sistem Penjadwalan - SMAN 1 Sampang">
-    <meta name="twitter:description" content="web untuk manajemen jadwal pelajaran SMAN 1 Sampang.">
+    <meta name="twitter:description" content="Web cerdas untuk manajemen jadwal pelajaran SMAN 1 Sampang.">
     <meta name="twitter:image" content="{{ secure_asset('img/logo-sekolah.png') }}">
     {{-- ======================================================== --}}
-    <title>Masuk - SISTEM PENJADWALAN SMAN 1 SAMPANG</title>
+
     <link rel="icon" href="{{ asset('img/logo-sekolah.png') }}" type="image/png">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -145,11 +149,7 @@
         </div>
     </div>
 
-    <div class="absolute bottom-6 w-full text-center">
-        <p class="text-[9px] text-slate-500/60 font-mono tracking-widest uppercase">
-            SISTEM TERPROTEKSI &nbsp;&nbsp;•&nbsp;&nbsp; @ {{ date('Y') }} SMAN 1 SAMPANG
-        </p>
-    </div>
+
 
 </body>
 
