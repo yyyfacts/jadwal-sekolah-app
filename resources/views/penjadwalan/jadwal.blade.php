@@ -8,7 +8,6 @@
     {{-- FLASH MESSAGES & METRIK --}}
     @if(session('success'))
     <div x-data="{ show: true }" x-show="show" x-transition class="mb-4 space-y-3">
-        {{-- Flash message content --}}
         <div
             class="flex flex-col p-3 bg-emerald-50 border border-emerald-100 rounded-lg shadow-sm text-emerald-800 shrink-0">
             <div class="flex items-center justify-between">
@@ -358,13 +357,15 @@
     </div>
 </div>
 
-{{-- MODAL CEK GURU MENGAJAR (DIPERLEBAR & DIRAPIKAN) --}}
+{{-- MODAL CEK GURU MENGAJAR (PERBAIKAN Z-INDEX DAN SCROLL) --}}
+{{-- z-[99999] memastikan modal selalu berada di atas elemen layout manapun (header/sidebar) --}}
 <div id="modal-cek-guru"
-    class="hidden fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm transition-opacity p-4 sm:p-6">
+    class="hidden fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm transition-opacity p-4 sm:p-6 overflow-hidden">
+    {{-- max-h-[90vh] membatasi tinggi modal agar tidak kelebihan layar, flex col untuk manajemen anak elemennya --}}
     <div
         class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl border border-slate-200 flex flex-col max-h-[90vh]">
 
-        {{-- Header Modal --}}
+        {{-- Header Modal (Tetap diam/sticky) --}}
         <div class="flex justify-between items-start mb-5 shrink-0">
             <div>
                 <h3 class="text-xl font-extrabold text-slate-800">Cek Guru Mengajar</h3>
@@ -380,7 +381,7 @@
             </button>
         </div>
 
-        {{-- Form Pencarian (Horizontal Grid) --}}
+        {{-- Form Pencarian (Tetap diam/sticky) --}}
         <div
             class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end bg-slate-50 p-4 rounded-xl border border-slate-200 shrink-0">
             <div class="sm:col-span-1">
@@ -417,8 +418,8 @@
             </div>
         </div>
 
-        {{-- Area Hasil --}}
-        <div id="cg-hasil" class="mt-5 hidden flex-col min-h-0 flex-1">
+        {{-- Area Hasil (Bagian inilah yang bisa di-scroll berkat flex-1 dan overflow-y-auto) --}}
+        <div id="cg-hasil" class="mt-5 hidden flex-col flex-1 min-h-0">
             <div class="flex items-center justify-between mb-3 shrink-0">
                 <h4 class="text-sm font-extrabold text-slate-700 flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-blue-500"></span> Guru yang sedang mengajar:
@@ -428,7 +429,7 @@
                     Guru</span>
             </div>
 
-            {{-- List Guru (Grid Layout) --}}
+            {{-- List Guru --}}
             <div id="cg-list-guru"
                 class="overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 custom-scrollbar pr-2 pb-2">
             </div>
@@ -445,7 +446,7 @@
 </div>
 
 <div id="loading-overlay"
-    class="hidden fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-900/70 backdrop-blur-sm transition-opacity">
+    class="hidden fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-slate-900/70 backdrop-blur-sm transition-opacity">
     <div class="bg-white p-8 rounded-3xl shadow-2xl text-center">
         <h3 class="text-xl font-extrabold text-slate-800 mb-2">AI Sedang Menyusun...</h3>
     </div>
@@ -553,6 +554,7 @@ function prosesCekGuru() {
     const countTag = document.getElementById('cg-count');
 
     hasilContainer.classList.remove('hidden');
+    hasilContainer.classList.add('flex'); // Pakai flex agar anak-anaknya teratur
     listContainer.innerHTML = '';
 
     if (guruMap.size > 0) {
@@ -562,7 +564,6 @@ function prosesCekGuru() {
 
         guruMap.forEach((nama, kode) => {
             const div = document.createElement('div');
-            // Desain item list diubah untuk pas dengan layout Grid
             div.className =
                 'flex items-center justify-between bg-white border border-slate-200 p-3 rounded-xl shadow-sm hover:shadow transition-shadow';
             div.innerHTML = `
