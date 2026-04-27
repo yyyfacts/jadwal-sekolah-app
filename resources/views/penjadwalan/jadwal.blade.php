@@ -5,27 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    {{-- ======================================================== --}}
-    {{-- META TAGS UNTUK LINK PREVIEW (WHATSAPP, TELEGRAM, DLL) --}}
-    {{-- ======================================================== --}}
-    <title>Sistem Penjadwalan - SMAN 1 Sampang</title>
-    <meta name="description" content="Aplikasi cerdas untuk manajemen jadwal pelajaran SMAN 1 Sampang.">
 
-    {{-- Open Graph (Facebook, WA, LinkedIn) --}}
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:title" content="Sistem Penjadwalan - SMAN 1 Sampang">
-    <meta property="og:description" content="Aplikasi cerdas untuk manajemen jadwal pelajaran SMAN 1 Sampang.">
-    {{-- Ganti 'preview.png' dengan nama file asli kamu yang ukuran 237x212 --}}
-    <meta property="og:image" content="{{ asset('img/logo-sekolah.png') }}">
-
-    {{-- Twitter Card (Pakai 'summary' karena gambar berbentuk kotak kecil) --}}
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:url" content="{{ url()->current() }}">
-    <meta name="twitter:title" content="Sistem Penjadwalan - SMAN 1 Sampang">
-    <meta name="twitter:description" content="Aplikasi cerdas untuk manajemen jadwal pelajaran SMAN 1 Sampang.">
-    <meta name="twitter:image" content="{{ asset('img/preview.png') }}">
-    {{-- ======================================================== --}}
 
     {{-- Favicon Global: Menggunakan logo sekolah --}}
     <link rel="icon" href="{{ asset('img/logo-sekolah.png') }}" type="image/png">
