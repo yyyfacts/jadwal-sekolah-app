@@ -428,7 +428,7 @@
                 class="mt-4 hidden flex-col flex-1 min-h-0 border border-slate-100 rounded-lg overflow-hidden bg-slate-50/50">
                 <div class="px-3 py-2 border-b border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
                     <h4 class="text-[10px] font-bold text-slate-600 uppercase tracking-wide flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Guru Sedang Mengajar
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Ketersediaan Guru
                     </h4>
                     <span id="cg-count"
                         class="text-[9px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 hidden">0</span>
@@ -445,7 +445,7 @@
                     <span class="text-3xl mb-2">✅</span>
                     <span class="text-xs font-bold text-emerald-600">Alhamdulillah, tidak ada jadwal guru yang
                         terikat.</span>
-                    <span class="text-[10px] text-slate-400 mt-1">Rentang waktu ini cocok untuk mengadakan rapat.</span>
+                    <span class="text-[10px] text-slate-400 mt-1">Semua guru tersedia (kosong).</span>
                 </div>
             </div>
         </div>
@@ -531,18 +531,18 @@ function prosesCekGuru() {
 
     const rows = document.querySelectorAll('.jadwal-row');
 
-    // 1. Dapatkan Total Semua Guru (Unik) dari seluruh tabel jadwal sebagai patokan
-    let totalSemuaGuru = new Set();
+    // 1. Dapatkan Total Semua Guru (Unik) beserta Namanya dari seluruh tabel
+    let semuaGuruMap = new Map();
     document.querySelectorAll('.jadwal-cell').forEach(cell => {
         const kode = cell.dataset.guru;
+        const nama = cell.dataset.namaguru;
         if (kode && kode.trim() !== '') {
-            totalSemuaGuru.add(kode);
+            semuaGuruMap.set(kode, nama);
         }
     });
-    const jumlahTotalGuru = totalSemuaGuru.size;
+    const jumlahTotalGuru = semuaGuruMap.size;
 
-    // 2. Cari guru yang mengajar di rentang waktu terpilih
-    // Struktur Map: key = kodeGuru, value = { namaGuru, kelas: Set() }
+    // 2. Cari guru yang sedang mengajar di rentang waktu terpilih
     let guruMengajarMap = new Map();
 
     rows.forEach(row => {
@@ -563,19 +563,26 @@ function prosesCekGuru() {
                         const kelas = cell.dataset.kelas;
 
                         if (kodeGuru && kodeGuru.trim() !== '') {
-                            // Jika guru belum masuk map, inisialisasi
                             if (!guruMengajarMap.has(kodeGuru)) {
                                 guruMengajarMap.set(kodeGuru, {
                                     nama: namaGuru,
                                     kelas: new Set()
                                 });
                             }
-                            // Tambahkan kelas ke dalam Set (agar otomatis unik jika ada double)
                             guruMengajarMap.get(kodeGuru).kelas.add(kelas.toUpperCase());
                         }
                     });
                 }
             }
+        }
+    });
+
+    // 3. Filter Guru yang Kosong (Tersedia)
+    // Logika: Semua Guru dikurangi Guru Mengajar
+    let guruKosongMap = new Map();
+    semuaGuruMap.forEach((nama, kode) => {
+        if (!guruMengajarMap.has(kode)) {
+            guruKosongMap.set(kode, nama);
         }
     });
 
@@ -587,31 +594,53 @@ function prosesCekGuru() {
     hasilContainer.classList.remove('hidden');
     hasilContainer.classList.add('flex');
     listContainer.innerHTML = ''; // Reset list
+    kosongMsg.classList.add('hidden');
 
     const jumlahMengajar = guruMengajarMap.size;
-    const jumlahKosong = jumlahTotalGuru - jumlahMengajar;
+    const jumlahKosong = guruKosongMap.size;
 
+    // Set Label Header
+    countTag.classList.remove('hidden');
+    countTag.innerText = `${jumlahMengajar} Mengajar | ${jumlahKosong} Kosong (Total: ${jumlahTotalGuru})`;
+    countTag.className = "text-[9px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200";
+
+    let htmlContent = '';
+
+    // --- RENDER GURU KOSONG (TERSEDIA) DULUAN (KARENA INI YANG PALING DICARI) ---
+    if (jumlahKosong > 0) {
+        htmlContent += `
+            <div class="col-span-full mb-1 mt-1 border-b border-emerald-100 pb-1">
+                <span class="text-[10px] font-extrabold text-emerald-600 uppercase flex items-center gap-1">
+                    🟢 Daftar Guru Tersedia (Free)
+                </span>
+            </div>
+        `;
+        guruKosongMap.forEach((nama, kode) => {
+            htmlContent += `
+                <div class="bg-emerald-50/50 border border-emerald-200 shadow-sm p-2 rounded-lg flex flex-col justify-center hover:border-emerald-300 transition-colors">
+                    <span class="text-[11px] font-bold text-slate-800 break-words leading-tight">${nama}</span>
+                    <div class="mt-1 flex items-center gap-1">
+                        <span class="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[8px] font-bold uppercase tracking-wider">
+                            Kosong / Available
+                        </span>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // --- RENDER GURU MENGAJAR DI BAWAHNYA ---
     if (jumlahMengajar > 0) {
-        kosongMsg.classList.add('hidden');
-        countTag.classList.remove('hidden');
-
-        // 3. Logika penentuan teks Keterangan Status Guru
-        if (jumlahMengajar === jumlahTotalGuru) {
-            countTag.innerText = `Semua Mengajar (${jumlahTotalGuru}/${jumlahTotalGuru})`;
-            countTag.className =
-                "text-[9px] font-bold text-rose-600 bg-rose-100 px-1.5 py-0.5 rounded border border-rose-200";
-        } else {
-            countTag.innerText = `${jumlahMengajar} Mengajar | ${jumlahKosong} Kosong (Total: ${jumlahTotalGuru})`;
-            countTag.className =
-                "text-[9px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200";
-        }
-
-        // 4. Render elemen list guru beserta kelasnya
+        htmlContent += `
+            <div class="col-span-full mb-1 mt-4 border-b border-slate-200 pb-1">
+                <span class="text-[10px] font-extrabold text-blue-600 uppercase flex items-center gap-1">
+                    🔵 Daftar Guru Sedang Mengajar
+                </span>
+            </div>
+        `;
         guruMengajarMap.forEach((data, kode) => {
-            // Gabungkan set kelas menjadi string (contoh: "X IPA 1, X IPA 2")
             const daftarKelas = Array.from(data.kelas).join(', ');
-
-            const cardHtml = `
+            htmlContent += `
                 <div class="bg-white border border-slate-200 shadow-sm p-2 rounded-lg flex flex-col justify-center hover:border-blue-300 transition-colors">
                     <span class="text-[11px] font-bold text-slate-800 break-words leading-tight">${data.nama}</span>
                     <div class="mt-1 flex items-center gap-1">
@@ -624,17 +653,11 @@ function prosesCekGuru() {
                     </div>
                 </div>
             `;
-            listContainer.insertAdjacentHTML('beforeend', cardHtml);
         });
-
-    } else {
-        // Jika tidak ada yang mengajar
-        kosongMsg.classList.remove('hidden');
-        countTag.classList.remove('hidden');
-        countTag.innerText = `0 Mengajar | ${jumlahTotalGuru} Kosong`;
-        countTag.className =
-            "text-[9px] font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-200";
     }
+
+    // Masukkan semua HTML ke dalam container
+    listContainer.innerHTML = htmlContent;
 }
 </script>
 @endpush
