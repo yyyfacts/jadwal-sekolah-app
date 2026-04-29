@@ -376,7 +376,7 @@
                 </div>
                 <div>
                     <h3 class="font-bold text-sm text-slate-800 leading-none">Cek Ketersediaan Guru</h3>
-                    <p class="text-[9px] text-slate-500 mt-0.5">Pengecekan guru berhalangan/dinas berdasarkan jadwal</p>
+                    <p class="text-[9px] text-slate-500 mt-0.5">Melihat daftar guru yang sedang ada jadwal mengajar</p>
                 </div>
             </div>
             <button type="button" onclick="document.getElementById('modal-cek-guru').classList.add('hidden')"
@@ -570,19 +570,7 @@ function prosesCekGuru() {
         countTag.classList.remove('hidden');
         countTag.innerText = guruMap.size + ' Guru';
 
-        guruMap.forEach((nama, kode) => {
-            const div = document.createElement('div');
-            div.className =
-                'flex items-center justify-between bg-white border border-slate-200 p-2 rounded-lg shadow-sm hover:border-blue-300 transition-colors';
-            div.innerHTML = `
-                <div class="flex items-center gap-2">
-                    <div class="bg-indigo-50 text-indigo-700 text-[10px] font-black px-2 py-1 rounded border border-indigo-100">${kode}</div>
-                    <span class="text-slate-700 text-[11px] font-bold leading-tight line-clamp-1">${nama}</span>
-                </div>
-                <span class="text-[8px] text-slate-400 font-bold uppercase tracking-wider bg-slate-50 px-1.5 py-0.5 rounded">Dinas</span>
-            `;
-            listContainer.appendChild(div);
-        });
+
     } else {
         kosongMsg.classList.remove('hidden');
         countTag.classList.add('hidden');
