@@ -176,7 +176,7 @@
     </div>
     @endif
 
-    {{-- BLOK VISUALISASI LOG SISTEM CSP (SESUAI ALUR LAPORAN SKRIPSI) --}}
+    {{-- BLOK VISUALISASI LOG SISTEM CSP (DETAIL TOTAL & HITUNGAN) --}}
     @if(session('tahapan_proses'))
     <div x-data="{ bukaTahapan: true }"
         class="mb-4 border-2 border-slate-800 rounded-xl shadow-lg overflow-hidden shrink-0 bg-slate-900">
@@ -185,9 +185,9 @@
             <div class="flex items-center gap-3">
                 <span class="text-xl">⚙️</span>
                 <div class="text-left">
-                    <h3 class="font-black text-sm uppercase tracking-wider">Log Eksekusi Sistem CSP</h3>
-                    <p class="text-[10px] text-slate-400 font-mono mt-0.5">Merekam data dari awal hingga akhir proses
-                        komputasi</p>
+                    <h3 class="font-black text-sm uppercase tracking-wider">Log Rincian Komputasi AI (Per Tahap)</h3>
+                    <p class="text-[10px] text-slate-400 font-mono mt-0.5">Merekam dan menghitung jumlah data dari awal
+                        hingga akhir proses</p>
                 </div>
             </div>
             <svg :class="{'rotate-180': bukaTahapan}" class="w-5 h-5 text-slate-400 transition-transform" fill="none"
@@ -199,128 +199,165 @@
         <div x-show="bukaTahapan"
             class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto custom-scrollbar bg-slate-50">
 
-            {{-- JSON MASUKAN --}}
+            {{-- 1. JSON MASUKAN --}}
             <div class="border border-slate-200 rounded p-3 bg-white shadow-sm md:col-span-2">
-                <h4 class="font-extrabold text-xs text-indigo-700 uppercase mb-2 border-b border-indigo-100 pb-1">JSON
-                    Masukan</h4>
-                <div class="bg-slate-900 text-green-400 p-2 rounded text-[10px] font-mono overflow-x-auto">
-                    <pre>
-assignments: [{ id, mapel, kelas_id, guru_id, jp_minggu, blok, mode, batas_* }]
-kelass:      [{ id, jp_per_hari, hari_aktif }]
-gurus:       [{ id, nama, hari_tersedia, hari_preferensi, jp_min, jp_max }]
-
-// Sampel Data Terekstrak:
-{{ json_encode(session('tahapan_proses')['tahap_1']['masukan_json_sample']['assignments'], JSON_PRETTY_PRINT) }}
-</pre>
-                </div>
-            </div>
-
-            {{-- PRA-PEMROSESAN --}}
-            <div class="border border-slate-200 rounded p-3 bg-white shadow-sm md:col-span-2">
-                <h4 class="font-extrabold text-xs text-indigo-700 uppercase mb-2 border-b border-indigo-100 pb-1">▼
-                    PRA-PEMROSESAN</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div class="bg-slate-50 p-2 rounded border border-slate-100">
-                        <p class="text-[10px] font-bold text-slate-700 mb-1">① Urutkan assignment blok terbesar →
-                            terkecil</p>
-                        <pre
-                            class="text-[9px] font-mono text-slate-600 bg-white p-1 border rounded">{{ json_encode(session('tahapan_proses')['tahap_2']['urut_assignment'], JSON_PRETTY_PRINT) }}</pre>
-                    </div>
-                    <div class="bg-slate-50 p-2 rounded border border-slate-100">
-                        <p class="text-[10px] font-bold text-slate-700 mb-1">② Buat peta guru_hari_ok → domain pruning
-                            awal</p>
-                        <pre
-                            class="text-[9px] font-mono text-slate-600 bg-white p-1 border rounded">{{ json_encode(session('tahapan_proses')['tahap_2']['peta_guru'], JSON_PRETTY_PRINT) }}</pre>
-                    </div>
-                    <div class="bg-slate-50 p-2 rounded border border-slate-100">
-                        <p class="text-[10px] font-bold text-slate-700 mb-1">③ Hitung batas_jp_harian per kelas</p>
+                <h4 class="font-extrabold text-xs text-indigo-700 uppercase mb-2 border-b border-indigo-100 pb-1">📥 1.
+                    TAHAP JSON MASUKAN</h4>
+                <div class="grid grid-cols-3 gap-2 text-center mb-2">
+                    <div class="bg-indigo-50 border border-indigo-100 rounded p-2">
                         <span
-                            class="text-[10px] font-mono text-blue-600">{{ session('tahapan_proses')['tahap_2']['batas_jp_harian_kelas'] }}</span>
+                            class="block text-2xl font-black text-indigo-600">{{ session('tahapan_proses')['tahap_1']['total_assignment'] }}</span>
+                        <span class="text-[10px] font-bold text-slate-600">Total Blok Assignment</span>
                     </div>
-                    <div class="bg-slate-50 p-2 rounded border border-slate-100">
-                        <p class="text-[10px] font-bold text-slate-700 mb-1">④ Hitung jp_target_harian per guru</p>
-                        <pre
-                            class="text-[9px] font-mono text-slate-600 bg-white p-1 border rounded">{{ json_encode(session('tahapan_proses')['tahap_2']['jp_target_guru'], JSON_PRETTY_PRINT) }}</pre>
+                    <div class="bg-indigo-50 border border-indigo-100 rounded p-2">
+                        <span
+                            class="block text-2xl font-black text-indigo-600">{{ session('tahapan_proses')['tahap_1']['total_kelas'] }}</span>
+                        <span class="text-[10px] font-bold text-slate-600">Total Ruang Kelas</span>
+                    </div>
+                    <div class="bg-indigo-50 border border-indigo-100 rounded p-2">
+                        <span
+                            class="block text-2xl font-black text-indigo-600">{{ session('tahapan_proses')['tahap_1']['total_guru'] }}</span>
+                        <span class="text-[10px] font-bold text-slate-600">Total Entitas Guru</span>
                     </div>
                 </div>
+                <p class="text-[10px] text-slate-500 font-mono italic">Keterangan:
+                    {{ session('tahapan_proses')['tahap_1']['ket'] }}</p>
             </div>
 
-            {{-- PEMODELAN CSP --}}
+            {{-- 2. PRA-PEMROSESAN --}}
             <div class="border border-slate-200 rounded p-3 bg-white shadow-sm md:col-span-2">
-                <h4 class="font-extrabold text-xs text-indigo-700 uppercase mb-2 border-b border-indigo-100 pb-1">▼
-                    PEMODELAN CSP</h4>
-                <ul
-                    class="text-[10px] font-mono text-slate-700 space-y-1 bg-slate-50 p-2 border border-slate-100 rounded">
-                    <li><strong class="text-blue-600">X:</strong> start_(t,h), end_(t,h), is_present_(t,h) → <span
-                            class="text-slate-500">Total: {{ session('tahapan_proses')['tahap_3']['X_vars'] }}</span>
-                    </li>
-                    <li><strong class="text-blue-600">D:</strong> domain awal → dipotong batas_hard & hari_tersedia</li>
-                    <li><strong class="text-blue-600">C-hard:</strong> HC-1..HC-6 via Add(), AddNoOverlap()</li>
-                    <li><strong class="text-blue-600">C-soft:</strong> SF-1..SF-3 via penalti variabel + Minimize()</li>
-                </ul>
+                <h4 class="font-extrabold text-xs text-indigo-700 uppercase mb-2 border-b border-indigo-100 pb-1">▼ 2.
+                    TAHAP PRA-PEMROSESAN (DOMAIN PRUNING)</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
+                    <div class="bg-slate-50 border border-slate-200 rounded p-2 flex flex-col justify-center">
+                        <span class="text-[10px] text-slate-500 font-bold mb-1">Total Kemungkinan Awal (Asumsi 5
+                            Hari)</span>
+                        <div class="text-xl font-black text-slate-700 border-b border-slate-200 pb-1 mb-1">
+                            {{ session('tahapan_proses')['tahap_2']['total_kemungkinan_awal'] }} <span
+                                class="text-[10px] font-normal">Kombinasi</span></div>
+                        <span class="text-[9px] text-slate-400">Assignment
+                            ({{ session('tahapan_proses')['tahap_1']['total_assignment'] }}) × 5 Hari</span>
+                    </div>
+                    <div class="bg-rose-50 border border-rose-200 rounded p-2 flex flex-col justify-center">
+                        <span class="text-[10px] text-rose-600 font-bold mb-1">Dipangkas Aturan Mutlak (Dihapus)</span>
+                        <div class="text-xl font-black text-rose-700 border-b border-rose-200 pb-1 mb-1">-
+                            {{ session('tahapan_proses')['tahap_2']['total_dipangkas'] }} <span
+                                class="text-[10px] font-normal">Kombinasi</span></div>
+                        <span class="text-[9px] text-rose-500">Karena hari libur guru atau kapasitas slot</span>
+                    </div>
+                    <div class="bg-emerald-50 border border-emerald-200 rounded p-2 flex flex-col justify-center">
+                        <span class="text-[10px] text-emerald-700 font-bold mb-1">Total Valid & Lolos (Variabel
+                            is_present)</span>
+                        <div class="text-xl font-black text-emerald-600 border-b border-emerald-200 pb-1 mb-1">
+                            {{ session('tahapan_proses')['tahap_2']['total_kombinasi_valid'] }} <span
+                                class="text-[10px] font-normal">Kombinasi</span></div>
+                        <span class="text-[9px] text-emerald-600">Disimpan ke memori untuk diolah AI</span>
+                    </div>
+                </div>
+                <p class="text-[10px] text-slate-500 font-mono italic">Keterangan:
+                    {{ session('tahapan_proses')['tahap_2']['ket'] }}</p>
             </div>
 
-            {{-- FASE 1 DAN FASE 2 --}}
+            {{-- 3. PEMODELAN CSP --}}
+            <div class="border border-slate-200 rounded p-3 bg-white shadow-sm md:col-span-2">
+                <h4 class="font-extrabold text-xs text-indigo-700 uppercase mb-2 border-b border-indigo-100 pb-1">▼ 3.
+                    TAHAP PEMODELAN CSP</h4>
+                <div class="flex flex-col md:flex-row gap-4 mb-2">
+                    <div
+                        class="w-full md:w-1/3 bg-blue-50 border border-blue-200 p-3 rounded text-center flex flex-col justify-center">
+                        <span
+                            class="text-3xl font-black text-blue-700">{{ session('tahapan_proses')['tahap_3']['total_variabel'] }}</span>
+                        <span class="text-[10px] font-bold text-blue-800 uppercase mt-1">Total Variabel CSP</span>
+                    </div>
+                    <div class="w-full md:w-2/3">
+                        <ul
+                            class="text-[10px] font-mono text-slate-700 space-y-1.5 bg-slate-50 p-2 border border-slate-100 rounded h-full flex flex-col justify-center">
+                            <li><strong class="text-blue-600">Kehadiran (is_present_vars) :</strong>
+                                {{ session('tahapan_proses')['tahap_3']['total_is_present'] }} variabel biner</li>
+                            <li><strong class="text-blue-600">Jam Mulai (start_vars) :</strong>
+                                {{ session('tahapan_proses')['tahap_3']['total_start'] }} variabel integer</li>
+                            <li><strong class="text-blue-600">Constraint Ditambahkan :</strong> HC-1 s.d HC-6, dan SF-1
+                                s.d SF-3</li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="text-[10px] text-slate-500 font-mono italic">Keterangan:
+                    {{ session('tahapan_proses')['tahap_3']['ket'] }}</p>
+            </div>
+
+            {{-- 4 & 5. FASE 1 DAN FASE 2 --}}
             <div class="border border-slate-200 rounded p-3 bg-emerald-50/50 shadow-sm flex flex-col justify-between">
                 <div>
                     <h4 class="font-extrabold text-xs text-emerald-700 uppercase mb-2 border-b border-emerald-100 pb-1">
-                        ▼ FASE 1 (25% waktu)</h4>
-                    <ul class="text-[10px] font-mono text-slate-700 space-y-1">
-                        <li>CP-SAT: CDCL + Constraint Propagation → cari feasible pertama</li>
-                        <li>Output: solusi awal (belum optimal)</li>
-                        <li class="mt-2 text-emerald-600 font-bold">Status:
-                            {{ session('tahapan_proses')['tahap_4']['status'] }}
-                            ({{ session('tahapan_proses')['tahap_4']['waktu'] }}s)</li>
-                    </ul>
+                        ▼ 4. FASE 1 (SOLUSI AWAL / 25% WAKTU)</h4>
+                    <div class="flex justify-between items-center bg-white p-2 border border-emerald-200 rounded mb-2">
+                        <span class="text-[10px] font-bold text-slate-600">Status Pencarian:</span>
+                        <span
+                            class="px-2 py-1 bg-amber-100 text-amber-800 text-[10px] font-bold rounded">{{ session('tahapan_proses')['tahap_4']['status'] }}</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-2 border border-emerald-200 rounded mb-2">
+                        <span class="text-[10px] font-bold text-slate-600">Waktu Dieksekusi:</span>
+                        <span
+                            class="text-[11px] font-mono font-bold text-slate-700">{{ session('tahapan_proses')['tahap_4']['waktu'] }}
+                            Detik</span>
+                    </div>
+                    <p class="text-[9px] text-emerald-700/80 font-mono leading-tight mt-1">
+                        {{ session('tahapan_proses')['tahap_4']['ket'] }}</p>
                 </div>
                 <div class="mt-3 text-center border-t border-b border-emerald-200 py-1 bg-emerald-100/50">
-                    <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-widest">▼ AddHint (Nilai fase
-                        1 dipasang sebagai titik awal)</span>
+                    <span class="text-[9px] font-bold text-emerald-800 uppercase tracking-widest">Injeksi AddHint() Ke
+                        Fase 2</span>
                 </div>
             </div>
 
             <div class="border border-slate-200 rounded p-3 bg-blue-50/50 shadow-sm flex flex-col justify-between">
                 <div>
-                    <h4 class="font-extrabold text-xs text-blue-700 uppercase mb-2 border-b border-blue-100 pb-1">▼ FASE
-                        2 (75% waktu)</h4>
-                    <ul class="text-[10px] font-mono text-slate-700 space-y-1">
-                        <li>CP-SAT: Branch & Bound + CDCL → optimasi penalti, gap ≤ 0.5%</li>
-                        <li>Output: solusi optimal / near-optimal</li>
-                        <li>Fallback: jika fase 2 gagal → pakai hasil fase 1</li>
-                        <li class="mt-2 text-blue-600 font-bold">Status:
-                            {{ session('tahapan_proses')['tahap_5']['status'] }} (Gap:
-                            {{ session('tahapan_proses')['tahap_5']['gap_final'] }}%)</li>
-                    </ul>
+                    <h4 class="font-extrabold text-xs text-blue-700 uppercase mb-2 border-b border-blue-100 pb-1">▼ 5.
+                        FASE 2 (OPTIMASI PENALTI / 75% WAKTU)</h4>
+                    <div class="flex justify-between items-center bg-white p-2 border border-blue-200 rounded mb-2">
+                        <span class="text-[10px] font-bold text-slate-600">Status Akhir:</span>
+                        <span
+                            class="px-2 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded">{{ session('tahapan_proses')['tahap_5']['status'] }}</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-2 border border-blue-200 rounded mb-2">
+                        <span class="text-[10px] font-bold text-slate-600">Sisa Gap Target:</span>
+                        <span
+                            class="text-[11px] font-mono font-bold text-rose-600">{{ session('tahapan_proses')['tahap_5']['gap'] }}%</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-2 border border-blue-200 rounded mb-2">
+                        <span class="text-[10px] font-bold text-slate-600">Waktu Dieksekusi:</span>
+                        <span
+                            class="text-[11px] font-mono font-bold text-slate-700">{{ session('tahapan_proses')['tahap_5']['waktu'] }}
+                            Detik</span>
+                    </div>
+                    <p class="text-[9px] text-blue-700/80 font-mono leading-tight mt-1">
+                        {{ session('tahapan_proses')['tahap_5']['ket'] }}</p>
                 </div>
             </div>
 
-            {{-- VERIFIKASI & OUTPUT --}}
+            {{-- 6. VERIFIKASI & OUTPUT --}}
             <div class="border border-slate-200 rounded p-3 bg-white shadow-sm md:col-span-2">
-                <h4 class="font-extrabold text-xs text-indigo-700 uppercase mb-2 border-b border-indigo-100 pb-1">▼
-                    VERIFIKASI & JSON KELUARAN</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div class="bg-slate-50 p-2 rounded border border-slate-100">
-                        <p class="text-[10px] font-bold text-slate-700 mb-1 border-b pb-1">Verifikasi Evaluasi
-                            Independen</p>
-                        <ul class="text-[10px] font-mono text-slate-600 space-y-1">
-                            <li>Hitung CSR (HC-1..HC-6 dicek ulang) → <strong
-                                    class="text-emerald-600">{{ session('tahapan_proses')['tahap_6']['CSR'] }}%</strong>
-                            </li>
-                            <li>Hitung SCFR (SF-1..SF-3) → <strong
-                                    class="text-blue-600">{{ session('tahapan_proses')['tahap_6']['SCFR'] }}%</strong>
-                            </li>
-                        </ul>
+                <h4 class="font-extrabold text-xs text-indigo-700 uppercase mb-2 border-b border-indigo-100 pb-1">▼ 6.
+                    TAHAP VERIFIKASI AKHIR</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
+                    <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
+                        <span
+                            class="block text-2xl font-black text-indigo-600">{{ session('tahapan_proses')['tahap_6']['total_evaluasi'] }}</span>
+                        <span class="text-[10px] font-bold text-slate-600">Total Evaluasi Silang</span>
                     </div>
-                    <div class="bg-slate-900 text-green-400 p-2 rounded border border-slate-800 overflow-x-auto">
-                        <p class="text-[10px] font-bold text-slate-300 mb-1 border-b border-slate-700 pb-1">JSON
-                            Keluaran (Sample `solution`)</p>
-                        <pre class="text-[9px] font-mono">
-status: "{{ session('status_solver') }}",
-waktu: {{ session('waktu_komputasi') }}s,
-solution: {{ json_encode(session('tahapan_proses')['tahap_6']['sample_output'], JSON_PRETTY_PRINT) }}
-</pre>
+                    <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
+                        <span
+                            class="block text-2xl font-black text-emerald-600">{{ session('tahapan_proses')['tahap_6']['csr'] }}%</span>
+                        <span class="text-[10px] font-bold text-slate-600">Tingkat Kepatuhan Aturan Mutlak (CSR)</span>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
+                        <span
+                            class="block text-2xl font-black text-blue-600">{{ session('tahapan_proses')['tahap_6']['scfr'] }}%</span>
+                        <span class="text-[10px] font-bold text-slate-600">Tingkat Pemenuhan Preferensi (SCFR)</span>
                     </div>
                 </div>
+                <p class="text-[10px] text-slate-500 font-mono italic text-center mt-2">
+                    {{ session('tahapan_proses')['tahap_6']['ket'] }}</p>
             </div>
 
         </div>
