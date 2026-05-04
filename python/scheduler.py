@@ -460,7 +460,7 @@ def ekstrak_solusi(solver, raw_assignments, presences, starts):
         t_id = t['id']
         for h in HARI_LIST:
             if (t_id, h) in presences and solver.Value(presences[(t_id, h)]) == 1:
-                solusi.append({'id': t_id, 'hari': h, 'jam': solver.Value(starts[(t_id, h)])})
+                solusi.append({'id': t_id, 'hari': h, 'jam_mulai': solver.Value(starts[(t_id, h)])})
                 break
     return solusi
 
@@ -503,14 +503,32 @@ def main():
     kelass          = data.get('kelass', [])
     gurus           = data.get('gurus', [])
 
-    raw_assignments.sort(key=lambda x: int(x['jumlah_jam']), reverse=True)
+    # === [ LOG TAHAP 1: JSON MASUKAN ] ===
+    log_input_sample = {
+        "assignments": raw_assignments[:2],
+        "kelass": kelass[:1],
+        "gurus": gurus[:1]
+    }
 
+    # === [ LOG TAHAP 2: PRA-PEMROSESAN ] ===
+    # ① Urutkan assignment blok terbesar → terkecil
+    raw_assignments.sort(key=lambda x: int(x['jumlah_jam']), reverse=True)
+    log_sorting = [{"id": t['id'], "blok_jp": t['jumlah_jam']} for t in raw_assignments[:5]]
+    
+    # ② Buat peta guru_hari_ok → domain pruning awal
     guru_hari_map, guru_jenis_hari_map = build_guru_maps(gurus)
+    log_pruning = [{"guru_id": g, "hari_ok": hari} for g, hari in list(guru_hari_map.items())[:5]]
+    
+    # ③ Hitung batas_jp_harian per kelas
     kelas_limits  = build_kelas_limits(kelass)
+    
+    # ④ Hitung jp_target_harian per guru
     max_jam_dinamis, min_jam_dinamis, target_jam_guru = hitung_batas_dinamis_guru(
         gurus, raw_assignments, guru_hari_map
     )
+    log_batas_guru = [{"guru_id": g['id'], "target": target_jam_guru.get(g['id'], 0), "min": min_jam_dinamis.get(g['id'], 0), "max": max_jam_dinamis.get(g['id'], 0)} for g in gurus[:3]]
 
+    # === [ LOG TAHAP 3: PEMODELAN CSP ] ===
     result = bangun_model(
         raw_assignments, kelass, gurus,
         kelas_limits, guru_hari_map, guru_jenis_hari_map,
@@ -532,7 +550,7 @@ def main():
         }))
         return
 
-    # ── Fungsi Objektif ───────────────────────────────────────────────────────
+    # ── Fungsi Objektif (C-soft) ──────────────────────────────────────────────
     obj_terms = []
     if soft_batas_violation_vars:
         obj_terms.append(BOBOT_BATAS_SOFT  * sum(soft_batas_violation_vars))
@@ -559,31 +577,33 @@ def main():
             cp_model.SELECT_MIN_VALUE
         )
 
+    log_pemodelan = {
+        "X_vars": f"{len(all_presence_vars)} is_present_vars, {len(all_start_vars)} start_vars",
+    }
+
     # =========================================================================
-    # PHASE 1 — Cari solusi feasible awal dengan cepat (25% budget waktu)
-    # Tujuan: mendapat "benih" solusi yang baik sebagai hint di Phase 2
+    # === [ LOG TAHAP 4: FASE 1 (25% waktu) ] ===
     # =========================================================================
-    WAKTU_P1  = max(20, MAX_WAKTU_SOLVER // 4)   # misal: 75 detik dari 300
+    WAKTU_P1  = max(20, MAX_WAKTU_SOLVER // 4)   
 
     solver_p1 = cp_model.CpSolver()
     solver_p1.parameters.max_time_in_seconds = WAKTU_P1
     solver_p1.parameters.num_search_workers  = 4
     solver_p1.parameters.interleave_search   = True
     solver_p1.parameters.max_memory_in_mb    = 2048
-    # Gap longgar di phase 1 → solver fokus cari solusi dulu, bukan buktikan optimal
     solver_p1.parameters.relative_gap_limit  = 1.0
 
     status_p1 = solver_p1.Solve(model)
     T_p1      = time.time() - T_mulai
     hint_ok   = status_p1 in (cp_model.OPTIMAL, cp_model.FEASIBLE)
+    
+    log_fase1 = {
+        "status": solver_p1.StatusName(status_p1), 
+        "waktu": round(T_p1, 2)
+    }
 
     # =========================================================================
-    # PHASE 2 — Pasang hint dari Phase 1, lanjutkan optimasi sisa waktu
-    #
-    # AddHint memberitahu solver CP-SAT:
-    #   "Variabel X kemungkinan bernilai Y → coba dari sini dulu"
-    # Hasilnya: solver tidak mulai dari nol, langsung perbaiki solusi Phase 1
-    # → lebih cepat temukan solusi yang lebih baik → peluang OPTIMAL meningkat
+    # AddHint & FASE 2 — Pasang hint dari Fase 1, lanjutkan optimasi sisa waktu
     # =========================================================================
     if hint_ok:
         for var_dict in [presences, starts, end_vars]:
@@ -591,7 +611,7 @@ def main():
                 try:
                     model.AddHint(v, solver_p1.Value(v))
                 except Exception:
-                    pass   # variabel tidak aktif, skip
+                    pass   
 
     sisa_waktu = max(30, MAX_WAKTU_SOLVER - int(T_p1))
 
@@ -600,14 +620,12 @@ def main():
     solver.parameters.num_search_workers  = 4
     solver.parameters.interleave_search   = True
     solver.parameters.max_memory_in_mb    = 2048
-    # Berhenti jika gap antara solusi terbaik dan lower bound ≤ 0.5%
-    # → secara praktis optimal, solver tidak perlu buktikan 100% matematis
     solver.parameters.relative_gap_limit  = 0.005
 
     status = solver.Solve(model)
     T = time.time() - T_mulai
 
-    # Fallback: jika phase 2 gagal, pakai hasil phase 1
+    # Fallback: jika fase 2 gagal, pakai hasil fase 1
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE) and hint_ok:
         solver = solver_p1
         status = status_p1
@@ -615,7 +633,7 @@ def main():
     if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
         solusi = ekstrak_solusi(solver, raw_assignments, presences, starts)
 
-        # Label: jika gap ≤ 0.5% label sebagai "NEAR-OPTIMAL", jika 0% = "OPTIMAL"
+        gap_pct = 0.0
         if status == cp_model.OPTIMAL:
             status_label = "OPTIMAL"
         else:
@@ -627,7 +645,13 @@ def main():
             else:
                 status_label = "FEASIBLE"
 
-        # ── CSR + Breakdown ───────────────────────────────────────────────────
+        log_fase2 = {
+            "status": status_label, 
+            "waktu": round(T - T_p1, 2), 
+            "gap_final": round(gap_pct, 4)
+        }
+
+        # === [ LOG TAHAP 6: VERIFIKASI ] ===
         CSR, total_hard, jml_hard, detail_hard, breakdown_csr = hitung_csr(
             solver, raw_assignments, kelass, gurus,
             kelas_limits, guru_hari_map, guru_jenis_hari_map,
@@ -690,42 +714,31 @@ def main():
         breakdown_scfr = [
             {
                 'kategori'   : 'SF-1',
-                'deskripsi'  : (
-                    'Penyebaran beban guru per hari '
-                    f'(pasangan guru×hari yang ada assignment, toleransi ±{TOLERANSI_SOFT} JP)'
-                ),
+                'deskripsi'  : 'Penyebaran beban guru per hari',
                 'total'      : sf1_total,
                 'pelanggaran': sf1_pelanggaran,
                 'terpenuhi'  : sf1_total - sf1_pelanggaran,
-                'persen'     : round(100.0*(sf1_total-sf1_pelanggaran)/sf1_total, 2)
-                               if sf1_total > 0 else 100.0,
+                'persen'     : round(100.0*(sf1_total-sf1_pelanggaran)/sf1_total, 2) if sf1_total > 0 else 100.0,
             },
             {
                 'kategori'   : 'SF-2',
-                'deskripsi'  : (
-                    'Mapel selesai sebelum batas slot preferensi '
-                    '(assignment unik dengan batas_maks soft)'
-                ),
+                'deskripsi'  : 'Mapel selesai sebelum batas slot preferensi',
                 'total'      : sf2_total,
                 'pelanggaran': sf2_pelanggaran,
                 'terpenuhi'  : sf2_total - sf2_pelanggaran,
-                'persen'     : round(100.0*(sf2_total-sf2_pelanggaran)/sf2_total, 2)
-                               if sf2_total > 0 else 100.0,
+                'persen'     : round(100.0*(sf2_total-sf2_pelanggaran)/sf2_total, 2) if sf2_total > 0 else 100.0,
             },
             {
                 'kategori'   : 'SF-3',
-                'deskripsi'  : (
-                    'Guru mengajar di hari preferensi '
-                    '(assignment unik yang gurunya bertipe soft-hari)'
-                ),
+                'deskripsi'  : 'Guru mengajar di hari preferensi',
                 'total'      : sf3_total,
                 'pelanggaran': sf3_pelanggaran,
                 'terpenuhi'  : sf3_total - sf3_pelanggaran,
-                'persen'     : round(100.0*(sf3_total-sf3_pelanggaran)/sf3_total, 2)
-                               if sf3_total > 0 else 100.0,
+                'persen'     : round(100.0*(sf3_total-sf3_pelanggaran)/sf3_total, 2) if sf3_total > 0 else 100.0,
             },
         ]
 
+        # === [ LOG TAHAP 7: JSON KELUARAN ] ===
         print(json.dumps({
             "status"  : status_label,
             "solution": solusi,
@@ -733,13 +746,11 @@ def main():
                 "waktu_komputasi_detik"  : round(T, 4),
                 "waktu_phase1_detik"     : round(T_p1, 4),
                 "waktu_phase2_detik"     : round(T - T_p1, 4),
-
                 "CSR"                    : round(CSR, 2),
                 "total_hard_constraints" : total_hard,
                 "jumlah_pelanggaran_hard": jml_hard,
                 "detail_pelanggaran_hard": detail_hard,
                 "breakdown_csr"          : breakdown_csr,
-
                 "SCFR"                   : round(SCFR, 2),
                 "total_preferensi"       : total_soft,
                 "jumlah_pelanggaran_soft": jml_soft,
@@ -747,10 +758,20 @@ def main():
                 "detail_pelanggaran_soft": detail_soft,
                 "breakdown_scfr"         : breakdown_scfr,
             },
-            "message": (
-                f"Solusi {status_label} ditemukan dalam {T:.2f} detik "
-                f"(Phase 1: {T_p1:.1f}s, Phase 2: {T - T_p1:.1f}s)."
-            )
+            "tahapan_proses": {
+                "tahap_1": {"masukan_json_sample": log_input_sample},
+                "tahap_2": {
+                    "urut_assignment": log_sorting, 
+                    "peta_guru": log_pruning, 
+                    "batas_jp_harian_kelas": "Terhitung otomatis via master_hari_aktif", 
+                    "jp_target_guru": log_batas_guru
+                },
+                "tahap_3": log_pemodelan,
+                "tahap_4": log_fase1,
+                "tahap_5": log_fase2,
+                "tahap_6": {"CSR": round(CSR, 2), "SCFR": round(SCFR, 2), "sample_output": solusi[:3]}
+            },
+            "message": f"Solusi {status_label} ditemukan dalam {T:.2f} detik."
         }))
 
     else:
@@ -759,7 +780,6 @@ def main():
             "metrik" : _empty_metrik(time.time() - T_mulai),
             "message": f"Solver gagal menemukan solusi dalam {time.time() - T_mulai:.2f} detik."
         }))
-
 
 if __name__ == '__main__':
     main()

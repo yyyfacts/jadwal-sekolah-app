@@ -216,7 +216,6 @@ class JadwalController extends Controller
             $result = json_decode($process->getOutput(), true);
             $metrik = $result['metrik'] ?? [];
 
-            // PERBAIKAN: Tambahkan NEAR-OPTIMAL agar tidak terlempar ke block else (Gagal)
             if (
                 isset($result['status'])
                 && in_array($result['status'], ['OPTIMAL', 'NEAR-OPTIMAL', 'FEASIBLE'])
@@ -227,7 +226,7 @@ class JadwalController extends Controller
 
                     foreach ($result['solution'] as $item) {
                         $nama_hari = $item['hari'];
-                        $tSlot     = $item['jam'];
+                        $tSlot     = $item['jam_mulai'];
 
                         $pSlot       = $slotMapping[$nama_hari][$tSlot] ?? $tSlot;
                         $hari_id_int = $hariIdMap[$nama_hari] ?? null;
@@ -258,7 +257,8 @@ class JadwalController extends Controller
                         ->with('jumlah_pelanggaran_soft',  $metrik['jumlah_pelanggaran_soft'] ?? 0)
                         ->with('toleransi_soft',           $metrik['toleransi_soft']          ?? 1)
                         ->with('detail_pelanggaran_soft',  $metrik['detail_pelanggaran_soft'] ?? [])
-                        ->with('breakdown_scfr',           $metrik['breakdown_scfr']          ?? []);
+                        ->with('breakdown_scfr',           $metrik['breakdown_scfr']          ?? [])
+                        ->with('tahapan_proses',           $result['tahapan_proses']          ?? null);
 
                 } catch (\Exception $e) {
                     DB::rollBack();

@@ -176,6 +176,158 @@
     </div>
     @endif
 
+    {{-- BLOK VISUALISASI LOG SISTEM CSP (SESUAI ALUR LAPORAN SKRIPSI) --}}
+    @if(session('tahapan_proses'))
+    <div x-data="{ bukaTahapan: true }"
+        class="mb-4 border-2 border-slate-800 rounded-xl shadow-lg overflow-hidden shrink-0 bg-slate-900">
+        <button @click="bukaTahapan = !bukaTahapan"
+            class="w-full flex items-center justify-between p-4 bg-slate-800 text-white hover:bg-slate-700 transition-colors">
+            <div class="flex items-center gap-3">
+                <span class="text-xl">⚙️</span>
+                <div class="text-left">
+                    <h3 class="font-black text-sm uppercase tracking-wider">Log Eksekusi Sistem CSP</h3>
+                    <p class="text-[10px] text-slate-400 font-mono mt-0.5">Merekam data dari awal hingga akhir proses
+                        komputasi</p>
+                </div>
+            </div>
+            <svg :class="{'rotate-180': bukaTahapan}" class="w-5 h-5 text-slate-400 transition-transform" fill="none"
+                stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+        </button>
+
+        <div x-show="bukaTahapan"
+            class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto custom-scrollbar bg-slate-50">
+
+            {{-- JSON MASUKAN --}}
+            <div class="border border-slate-200 rounded p-3 bg-white shadow-sm md:col-span-2">
+                <h4 class="font-extrabold text-xs text-indigo-700 uppercase mb-2 border-b border-indigo-100 pb-1">JSON
+                    Masukan</h4>
+                <div class="bg-slate-900 text-green-400 p-2 rounded text-[10px] font-mono overflow-x-auto">
+                    <pre>
+assignments: [{ id, mapel, kelas_id, guru_id, jp_minggu, blok, mode, batas_* }]
+kelass:      [{ id, jp_per_hari, hari_aktif }]
+gurus:       [{ id, nama, hari_tersedia, hari_preferensi, jp_min, jp_max }]
+
+// Sampel Data Terekstrak:
+{{ json_encode(session('tahapan_proses')['tahap_1']['masukan_json_sample']['assignments'], JSON_PRETTY_PRINT) }}
+</pre>
+                </div>
+            </div>
+
+            {{-- PRA-PEMROSESAN --}}
+            <div class="border border-slate-200 rounded p-3 bg-white shadow-sm md:col-span-2">
+                <h4 class="font-extrabold text-xs text-indigo-700 uppercase mb-2 border-b border-indigo-100 pb-1">▼
+                    PRA-PEMROSESAN</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="bg-slate-50 p-2 rounded border border-slate-100">
+                        <p class="text-[10px] font-bold text-slate-700 mb-1">① Urutkan assignment blok terbesar →
+                            terkecil</p>
+                        <pre
+                            class="text-[9px] font-mono text-slate-600 bg-white p-1 border rounded">{{ json_encode(session('tahapan_proses')['tahap_2']['urut_assignment'], JSON_PRETTY_PRINT) }}</pre>
+                    </div>
+                    <div class="bg-slate-50 p-2 rounded border border-slate-100">
+                        <p class="text-[10px] font-bold text-slate-700 mb-1">② Buat peta guru_hari_ok → domain pruning
+                            awal</p>
+                        <pre
+                            class="text-[9px] font-mono text-slate-600 bg-white p-1 border rounded">{{ json_encode(session('tahapan_proses')['tahap_2']['peta_guru'], JSON_PRETTY_PRINT) }}</pre>
+                    </div>
+                    <div class="bg-slate-50 p-2 rounded border border-slate-100">
+                        <p class="text-[10px] font-bold text-slate-700 mb-1">③ Hitung batas_jp_harian per kelas</p>
+                        <span
+                            class="text-[10px] font-mono text-blue-600">{{ session('tahapan_proses')['tahap_2']['batas_jp_harian_kelas'] }}</span>
+                    </div>
+                    <div class="bg-slate-50 p-2 rounded border border-slate-100">
+                        <p class="text-[10px] font-bold text-slate-700 mb-1">④ Hitung jp_target_harian per guru</p>
+                        <pre
+                            class="text-[9px] font-mono text-slate-600 bg-white p-1 border rounded">{{ json_encode(session('tahapan_proses')['tahap_2']['jp_target_guru'], JSON_PRETTY_PRINT) }}</pre>
+                    </div>
+                </div>
+            </div>
+
+            {{-- PEMODELAN CSP --}}
+            <div class="border border-slate-200 rounded p-3 bg-white shadow-sm md:col-span-2">
+                <h4 class="font-extrabold text-xs text-indigo-700 uppercase mb-2 border-b border-indigo-100 pb-1">▼
+                    PEMODELAN CSP</h4>
+                <ul
+                    class="text-[10px] font-mono text-slate-700 space-y-1 bg-slate-50 p-2 border border-slate-100 rounded">
+                    <li><strong class="text-blue-600">X:</strong> start_(t,h), end_(t,h), is_present_(t,h) → <span
+                            class="text-slate-500">Total: {{ session('tahapan_proses')['tahap_3']['X_vars'] }}</span>
+                    </li>
+                    <li><strong class="text-blue-600">D:</strong> domain awal → dipotong batas_hard & hari_tersedia</li>
+                    <li><strong class="text-blue-600">C-hard:</strong> HC-1..HC-6 via Add(), AddNoOverlap()</li>
+                    <li><strong class="text-blue-600">C-soft:</strong> SF-1..SF-3 via penalti variabel + Minimize()</li>
+                </ul>
+            </div>
+
+            {{-- FASE 1 DAN FASE 2 --}}
+            <div class="border border-slate-200 rounded p-3 bg-emerald-50/50 shadow-sm flex flex-col justify-between">
+                <div>
+                    <h4 class="font-extrabold text-xs text-emerald-700 uppercase mb-2 border-b border-emerald-100 pb-1">
+                        ▼ FASE 1 (25% waktu)</h4>
+                    <ul class="text-[10px] font-mono text-slate-700 space-y-1">
+                        <li>CP-SAT: CDCL + Constraint Propagation → cari feasible pertama</li>
+                        <li>Output: solusi awal (belum optimal)</li>
+                        <li class="mt-2 text-emerald-600 font-bold">Status:
+                            {{ session('tahapan_proses')['tahap_4']['status'] }}
+                            ({{ session('tahapan_proses')['tahap_4']['waktu'] }}s)</li>
+                    </ul>
+                </div>
+                <div class="mt-3 text-center border-t border-b border-emerald-200 py-1 bg-emerald-100/50">
+                    <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-widest">▼ AddHint (Nilai fase
+                        1 dipasang sebagai titik awal fase 2)</span>
+                </div>
+            </div>
+
+            <div class="border border-slate-200 rounded p-3 bg-blue-50/50 shadow-sm flex flex-col justify-between">
+                <div>
+                    <h4 class="font-extrabold text-xs text-blue-700 uppercase mb-2 border-b border-blue-100 pb-1">▼ FASE
+                        2 (75% waktu)</h4>
+                    <ul class="text-[10px] font-mono text-slate-700 space-y-1">
+                        <li>CP-SAT: Branch & Bound + CDCL → optimasi penalti, gap ≤ 0.5%</li>
+                        <li>Output: solusi optimal / near-optimal</li>
+                        <li>Fallback: jika fase 2 gagal → pakai hasil fase 1</li>
+                        <li class="mt-2 text-blue-600 font-bold">Status:
+                            {{ session('tahapan_proses')['tahap_5']['status'] }} (Gap:
+                            {{ session('tahapan_proses')['tahap_5']['gap_final'] }}%)</li>
+                    </ul>
+                </div>
+            </div>
+
+            {{-- VERIFIKASI & OUTPUT --}}
+            <div class="border border-slate-200 rounded p-3 bg-white shadow-sm md:col-span-2">
+                <h4 class="font-extrabold text-xs text-indigo-700 uppercase mb-2 border-b border-indigo-100 pb-1">▼
+                    VERIFIKASI & JSON KELUARAN</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="bg-slate-50 p-2 rounded border border-slate-100 flex flex-col justify-center">
+                        <p class="text-[10px] font-bold text-slate-700 mb-1 border-b pb-1">Verifikasi Evaluasi
+                            Independen</p>
+                        <ul class="text-[10px] font-mono text-slate-600 space-y-1">
+                            <li>Hitung CSR (HC-1..HC-6 dicek ulang) → <strong
+                                    class="text-emerald-600">{{ session('tahapan_proses')['tahap_6']['CSR'] }}%</strong>
+                            </li>
+                            <li>Hitung SCFR (SF-1..SF-3) → <strong
+                                    class="text-blue-600">{{ session('tahapan_proses')['tahap_6']['SCFR'] }}%</strong>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-slate-900 text-green-400 p-2 rounded border border-slate-800 overflow-x-auto">
+                        <p class="text-[10px] font-bold text-slate-300 mb-1 border-b border-slate-700 pb-1">JSON
+                            Keluaran</p>
+                        <pre class="text-[9px] font-mono">
+status: "{{ session('status_solver') }}",
+waktu: {{ session('waktu_komputasi') }}s,
+metrik: { CSR: {{ session('tahapan_proses')['tahap_6']['CSR'] }}, SCFR: {{ session('tahapan_proses')['tahap_6']['SCFR'] }}, gap: {{ session('tahapan_proses')['tahap_5']['gap_final'] }} },
+solution: {{ json_encode(session('tahapan_proses')['tahap_6']['sample_output'], JSON_PRETTY_PRINT) }}
+</pre>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    @endif
+
     {{-- MAIN CARD UI --}}
     <div class="bg-white rounded-xl border border-slate-200 shadow-md flex flex-col flex-1 overflow-hidden min-h-0">
         {{-- HEADER SECTION --}}
@@ -203,7 +355,6 @@
                             placeholder="Cari Mapel...">
                     </div>
 
-                    {{-- TOMBOL CEK KETERSEDIAAN GURU --}}
                     <button type="button" onclick="document.getElementById('modal-cek-guru').classList.remove('hidden')"
                         class="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 font-bold text-xs uppercase rounded-xl shadow-sm transition-all">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -355,7 +506,6 @@
 </div>
 @endsection
 
-{{-- AREA MODAL DIPINDAHKAN KE @push('modals') AGAR DI RENDER DI LUAR <MAIN> Z-0 --}}
 @push('modals')
 
 {{-- MODAL CEK GURU MENGAJAR --}}
@@ -364,7 +514,6 @@
     <div
         class="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-auto max-h-[90vh] flex flex-col border border-slate-200 overflow-hidden">
 
-        {{-- Header Modal --}}
         <div class="px-4 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
             <div class="flex items-center gap-2">
                 <div class="p-1.5 bg-blue-600 text-white rounded">
@@ -383,10 +532,8 @@
                 class="text-slate-400 hover:text-red-500 text-2xl leading-none">&times;</button>
         </div>
 
-        {{-- Body Modal --}}
         <div class="flex flex-col flex-1 min-h-0 p-4 bg-white">
 
-            {{-- Form Pencarian --}}
             <div
                 class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-end bg-slate-50 p-3 rounded-lg border border-slate-200 shrink-0">
                 <div class="sm:col-span-1">
@@ -423,7 +570,6 @@
                 </div>
             </div>
 
-            {{-- Area Hasil --}}
             <div id="cg-hasil"
                 class="mt-4 hidden flex-col flex-1 min-h-0 border border-slate-100 rounded-lg overflow-hidden bg-slate-50/50">
                 <div class="px-3 py-2 border-b border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
@@ -433,13 +579,9 @@
                     <span id="cg-count"
                         class="text-[9px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 hidden">0</span>
                 </div>
-
-                {{-- List Guru --}}
                 <div id="cg-list-guru"
                     class="overflow-y-auto p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 custom-scrollbar bg-white flex-1">
                 </div>
-
-                {{-- Pesan Kosong --}}
                 <div id="cg-kosong"
                     class="hidden h-full flex flex-col items-center justify-center p-6 text-center bg-white flex-1">
                     <span class="text-3xl mb-2">✅</span>
@@ -515,7 +657,6 @@ function showLoading() {
     document.getElementById('loading-overlay').classList.remove('hidden');
 }
 
-// FUNGSI CEK KETERSEDIAAN GURU
 function prosesCekGuru() {
     const hari = document.getElementById('cg-hari').value.toLowerCase();
     const mulai = document.getElementById('cg-mulai').value;
@@ -531,18 +672,14 @@ function prosesCekGuru() {
 
     const rows = document.querySelectorAll('.jadwal-row');
 
-    // 1. Dapatkan Total Semua Guru (Unik) beserta Namanya dari seluruh tabel
     let semuaGuruMap = new Map();
     document.querySelectorAll('.jadwal-cell').forEach(cell => {
         const kode = cell.dataset.guru;
         const nama = cell.dataset.namaguru;
-        if (kode && kode.trim() !== '') {
-            semuaGuruMap.set(kode, nama);
-        }
+        if (kode && kode.trim() !== '') semuaGuruMap.set(kode, nama);
     });
     const jumlahTotalGuru = semuaGuruMap.size;
 
-    // 2. Cari guru yang sedang mengajar di rentang waktu terpilih
     let guruMengajarMap = new Map();
 
     rows.forEach(row => {
@@ -554,7 +691,6 @@ function prosesCekGuru() {
                 const rMulai = parseInt(rowMulai.split(':')[0]) * 60 + parseInt(rowMulai.split(':')[1]);
                 const rSelesai = parseInt(rowSelesai.split(':')[0]) * 60 + parseInt(rowSelesai.split(':')[1]);
 
-                // Cek irisan waktu pencarian dengan waktu jadwal
                 if (rMulai < tSelesai && rSelesai > tMulai) {
                     const cells = row.querySelectorAll('.jadwal-cell');
                     cells.forEach(cell => {
@@ -577,13 +713,9 @@ function prosesCekGuru() {
         }
     });
 
-    // 3. Filter Guru yang Kosong (Tersedia)
-    // Logika: Semua Guru dikurangi Guru Mengajar
     let guruKosongMap = new Map();
     semuaGuruMap.forEach((nama, kode) => {
-        if (!guruMengajarMap.has(kode)) {
-            guruKosongMap.set(kode, nama);
-        }
+        if (!guruMengajarMap.has(kode)) guruKosongMap.set(kode, nama);
     });
 
     const hasilContainer = document.getElementById('cg-hasil');
@@ -593,20 +725,18 @@ function prosesCekGuru() {
 
     hasilContainer.classList.remove('hidden');
     hasilContainer.classList.add('flex');
-    listContainer.innerHTML = ''; // Reset list
+    listContainer.innerHTML = '';
     kosongMsg.classList.add('hidden');
 
     const jumlahMengajar = guruMengajarMap.size;
     const jumlahKosong = guruKosongMap.size;
 
-    // Set Label Header
     countTag.classList.remove('hidden');
     countTag.innerText = `${jumlahMengajar} Mengajar | ${jumlahKosong} Kosong (Total: ${jumlahTotalGuru})`;
     countTag.className = "text-[9px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200";
 
     let htmlContent = '';
 
-    // --- RENDER GURU KOSONG (TERSEDIA) DULUAN (KARENA INI YANG PALING DICARI) ---
     if (jumlahKosong > 0) {
         htmlContent += `
             <div class="col-span-full mb-1 mt-1 border-b border-emerald-100 pb-1">
@@ -629,7 +759,6 @@ function prosesCekGuru() {
         });
     }
 
-    // --- RENDER GURU MENGAJAR DI BAWAHNYA ---
     if (jumlahMengajar > 0) {
         htmlContent += `
             <div class="col-span-full mb-1 mt-4 border-b border-slate-200 pb-1">
@@ -644,19 +773,14 @@ function prosesCekGuru() {
                 <div class="bg-white border border-slate-200 shadow-sm p-2 rounded-lg flex flex-col justify-center hover:border-blue-300 transition-colors">
                     <span class="text-[11px] font-bold text-slate-800 break-words leading-tight">${data.nama}</span>
                     <div class="mt-1 flex items-center gap-1">
-                        <span class="px-1.5 py-0.5 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded text-[8px] font-bold uppercase tracking-wider">
-                            Kelas
-                        </span>
-                        <span class="text-[9px] text-slate-600 font-medium truncate" title="${daftarKelas}">
-                            ${daftarKelas}
-                        </span>
+                        <span class="px-1.5 py-0.5 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded text-[8px] font-bold uppercase tracking-wider">Kelas</span>
+                        <span class="text-[9px] text-slate-600 font-medium truncate" title="${daftarKelas}">${daftarKelas}</span>
                     </div>
                 </div>
             `;
         });
     }
 
-    // Masukkan semua HTML ke dalam container
     listContainer.innerHTML = htmlContent;
 }
 </script>
