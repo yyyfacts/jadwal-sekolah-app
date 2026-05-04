@@ -275,7 +275,7 @@ gurus:       [{ id, nama, hari_tersedia, hari_preferensi, jp_min, jp_max }]
                 </div>
                 <div class="mt-3 text-center border-t border-b border-emerald-200 py-1 bg-emerald-100/50">
                     <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-widest">▼ AddHint (Nilai fase
-                        1 dipasang sebagai titik awal fase 2)</span>
+                        1 dipasang sebagai titik awal)</span>
                 </div>
             </div>
 
@@ -299,7 +299,7 @@ gurus:       [{ id, nama, hari_tersedia, hari_preferensi, jp_min, jp_max }]
                 <h4 class="font-extrabold text-xs text-indigo-700 uppercase mb-2 border-b border-indigo-100 pb-1">▼
                     VERIFIKASI & JSON KELUARAN</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div class="bg-slate-50 p-2 rounded border border-slate-100 flex flex-col justify-center">
+                    <div class="bg-slate-50 p-2 rounded border border-slate-100">
                         <p class="text-[10px] font-bold text-slate-700 mb-1 border-b pb-1">Verifikasi Evaluasi
                             Independen</p>
                         <ul class="text-[10px] font-mono text-slate-600 space-y-1">
@@ -313,11 +313,10 @@ gurus:       [{ id, nama, hari_tersedia, hari_preferensi, jp_min, jp_max }]
                     </div>
                     <div class="bg-slate-900 text-green-400 p-2 rounded border border-slate-800 overflow-x-auto">
                         <p class="text-[10px] font-bold text-slate-300 mb-1 border-b border-slate-700 pb-1">JSON
-                            Keluaran</p>
+                            Keluaran (Sample `solution`)</p>
                         <pre class="text-[9px] font-mono">
 status: "{{ session('status_solver') }}",
 waktu: {{ session('waktu_komputasi') }}s,
-metrik: { CSR: {{ session('tahapan_proses')['tahap_6']['CSR'] }}, SCFR: {{ session('tahapan_proses')['tahap_6']['SCFR'] }}, gap: {{ session('tahapan_proses')['tahap_5']['gap_final'] }} },
 solution: {{ json_encode(session('tahapan_proses')['tahap_6']['sample_output'], JSON_PRETTY_PRINT) }}
 </pre>
                     </div>
@@ -337,8 +336,16 @@ solution: {{ json_encode(session('tahapan_proses')['tahap_6']['sample_output'], 
                     <div class="w-2 h-10 bg-indigo-600 rounded-full"></div>
                     <div>
                         <h1 class="text-xl font-extrabold text-slate-800 leading-none">Jadwal Pelajaran Terpadu</h1>
-                        <p class="text-slate-500 text-xs mt-1 font-medium">T.A
-                            {{ $judulTahun ?? date('Y').'/'.(date('Y')+1) }}</p>
+                        <div class="flex items-center gap-2 mt-1.5">
+                            <p class="text-slate-500 text-xs font-medium">T.A
+                                {{ $judulTahun ?? date('Y').'/'.(date('Y')+1) }}</p>
+                            <span class="text-slate-300">|</span>
+                            {{-- INI FITUR TERAKHIR GENERATE NYA --}}
+                            <p
+                                class="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                                ⏱️ Terakhir Update: {{ $terakhirGenerate ?? 'Belum pernah' }}
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -507,13 +514,10 @@ solution: {{ json_encode(session('tahapan_proses')['tahap_6']['sample_output'], 
 @endsection
 
 @push('modals')
-
-{{-- MODAL CEK GURU MENGAJAR --}}
 <div id="modal-cek-guru"
     class="hidden fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-2 sm:p-4 transition-opacity">
     <div
         class="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-auto max-h-[90vh] flex flex-col border border-slate-200 overflow-hidden">
-
         <div class="px-4 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
             <div class="flex items-center gap-2">
                 <div class="p-1.5 bg-blue-600 text-white rounded">
@@ -533,7 +537,6 @@ solution: {{ json_encode(session('tahapan_proses')['tahap_6']['sample_output'], 
         </div>
 
         <div class="flex flex-col flex-1 min-h-0 p-4 bg-white">
-
             <div
                 class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-end bg-slate-50 p-3 rounded-lg border border-slate-200 shrink-0">
                 <div class="sm:col-span-1">
@@ -564,8 +567,7 @@ solution: {{ json_encode(session('tahapan_proses')['tahap_6']['sample_output'], 
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                        Cari
+                        </svg> Cari
                     </button>
                 </div>
             </div>
@@ -594,7 +596,6 @@ solution: {{ json_encode(session('tahapan_proses')['tahap_6']['sample_output'], 
     </div>
 </div>
 
-{{-- MODAL LOADING --}}
 <div id="loading-overlay"
     class="hidden fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-slate-900/70 backdrop-blur-sm transition-opacity">
     <div class="bg-white p-8 rounded-3xl shadow-2xl text-center">

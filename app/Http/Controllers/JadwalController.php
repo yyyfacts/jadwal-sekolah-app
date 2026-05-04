@@ -126,10 +126,16 @@ class JadwalController extends Controller
             ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}"
             : date('Y') . '/' . (date('Y') + 1);
 
+        // MENDAPATKAN WAKTU TERAKHIR GENERATE (Berdasarkan jadwal terbaru)
+        $latestJadwal = Jadwal::whereNotNull('hari_id')->whereNotNull('jam')->orderBy('updated_at', 'desc')->first();
+        $terakhirGenerate = $latestJadwal && $latestJadwal->updated_at 
+            ? \Carbon\Carbon::parse($latestJadwal->updated_at)->translatedFormat('d F Y, H:i') . ' WIB'
+            : 'Belum pernah';
+
         return view('penjadwalan.jadwal', compact(
             'kelass', 'jadwals', 'onlineJadwals', 'judulTahun',
             'gurusList', 'kelassList', 'reqGuru', 'reqKelas',
-            'dataHari', 'dataWaktu'
+            'dataHari', 'dataWaktu', 'terakhirGenerate'
         ));
     }
 
