@@ -68,10 +68,7 @@ class JadwalController extends Controller
 
             foreach ($hariObj->waktuHaris as $waktuObj) {
                 $tipeSlot = $waktuObj->tipe;
-                if (
-                    !in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])
-                    && $tipeSlot !== 'Tidak Ada'
-                ) {
+                if (!in_array($tipeSlot, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka']) && $tipeSlot !== 'Tidak Ada') {
                     if ($waktuObj->jam_ke !== null) {
                         $belajarSlots[$namaHari][] = $waktuObj->jam_ke;
                     }
@@ -122,11 +119,8 @@ class JadwalController extends Controller
         $onlineJadwals = $queryOnline->orderBy('kelas_id')->get();
 
         $tahunAktif = TahunPelajaran::getActive();
-        $judulTahun = $tahunAktif
-            ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}"
-            : date('Y') . '/' . (date('Y') + 1);
+        $judulTahun = $tahunAktif ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}" : date('Y') . '/' . (date('Y') + 1);
 
-        // MENDAPATKAN WAKTU TERAKHIR GENERATE
         $latestJadwal = Jadwal::whereNotNull('hari_id')->whereNotNull('jam')->orderBy('updated_at', 'desc')->first();
         $terakhirGenerate = $latestJadwal && $latestJadwal->updated_at 
             ? \Carbon\Carbon::parse($latestJadwal->updated_at)->translatedFormat('d F Y, H:i') . ' WIB'
@@ -141,7 +135,8 @@ class JadwalController extends Controller
 
     public function generate(Request $request)
     {
-        set_time_limit(600);
+        // Hilangkan batas eksekusi PHP
+        set_time_limit(0);
 
         try {
             $dataHari = MasterHari::with(['waktuHaris' => function ($q) {
@@ -154,18 +149,12 @@ class JadwalController extends Controller
                 $counter = 1;
                 foreach ($hariObj->waktuHaris as $w) {
                     $tipe = $w->tipe;
-                    if (
-                        $tipe !== 'Tidak Ada'
-                        && !in_array($tipe, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])
-                    ) {
+                    if ($tipe !== 'Tidak Ada' && !in_array($tipe, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha', 'Jumat Bersih', 'Pramuka'])) {
                         $slotMapping[$hariObj->nama_hari][$counter] = $w->jam_ke;
                         $counter++;
                     }
                 }
-                return [
-                    'nama'    => $hariObj->nama_hari,
-                    'max_jam' => $counter - 1,
-                ];
+                return ['nama' => $hariObj->nama_hari, 'max_jam' => $counter - 1];
             });
 
             $gurus = Guru::all()->map(fn ($guru) => [
@@ -181,14 +170,13 @@ class JadwalController extends Controller
                 })
                 ->get()
                 ->map(function ($j) {
-                    $namaMapel = $j->mapel->nama_mapel ?? '';
                     return [
                         'id'                 => $j->id,
                         'guru_id'            => $j->guru_id,
                         'kelas_id'           => $j->kelas_id,
                         'mapel_id'           => $j->mapel_id,
                         'jumlah_jam'         => $j->jumlah_jam,
-                        'nama_mapel'         => $namaMapel,
+                        'nama_mapel'         => $j->mapel->nama_mapel ?? '',
                         'batas_maksimal_jam' => isset($j->mapel->batas_maksimal_jam) ? (int) $j->mapel->batas_maksimal_jam : null,
                         'jenis_batas'        => $j->mapel->jenis_batas ?? 'soft', 
                     ];
@@ -199,7 +187,6 @@ class JadwalController extends Controller
                 'nama_kelas'   => $k->nama_kelas,
                 'limit_harian' => $k->limit_harian ?? 10,
                 'limit_jumat'  => $k->limit_jumat  ?? 7,
-                'max_jam_total'=> $k->max_jam       ?? 48,
             ]);
 
             $dataInput = [
@@ -214,7 +201,8 @@ class JadwalController extends Controller
 
             $scriptPath = base_path('python/scheduler.py');
             $process    = new Process(['python', $scriptPath, $jsonPath]);
-            $process->setTimeout(600);
+            // Bebaskan waktu dari sisi Process agar menunggu limit 10 menit dari Python
+            $process->setTimeout(null); 
             $process->run();
 
             if (!$process->isSuccessful()) throw new ProcessFailedException($process);
@@ -222,10 +210,7 @@ class JadwalController extends Controller
             $result = json_decode($process->getOutput(), true);
             $metrik = $result['metrik'] ?? [];
 
-            if (
-                isset($result['status'])
-                && in_array($result['status'], ['OPTIMAL', 'NEAR-OPTIMAL', 'FEASIBLE'])
-            ) {
+            if (isset($result['status']) && in_array($result['status'], ['OPTIMAL', 'NEAR-OPTIMAL', 'FEASIBLE'])) {
                 DB::beginTransaction();
                 try {
                     $hariIdMap = MasterHari::pluck('id', 'nama_hari')->toArray();
@@ -250,34 +235,30 @@ class JadwalController extends Controller
                     DB::commit();
 
                     return redirect()->route('jadwal.index')
-                        ->with('success', $result['message'])
+                        ->with('success',                  $result['message'])
                         ->with('status_solver',            $result['status'])
+                        ->with('status_penjelasan',        $result['status_penjelasan']       ?? null)
                         ->with('waktu_komputasi',          $metrik['waktu_komputasi_detik']   ?? null)
                         ->with('csr',                      $metrik['CSR']                     ?? null)
-                        ->with('total_hard_constraints',   $metrik['total_hard_constraints']  ?? 0)
-                        ->with('jumlah_pelanggaran_hard',  $metrik['jumlah_pelanggaran_hard'] ?? 0)
-                        ->with('detail_pelanggaran_hard',  $metrik['detail_pelanggaran_hard'] ?? [])
-                        ->with('breakdown_csr',            $metrik['breakdown_csr']           ?? [])
                         ->with('scfr',                     $metrik['SCFR']                    ?? null)
-                        ->with('total_preferensi',         $metrik['total_preferensi']        ?? 0)
+                        ->with('jumlah_pelanggaran_hard',  $metrik['jumlah_pelanggaran_hard'] ?? 0)
                         ->with('jumlah_pelanggaran_soft',  $metrik['jumlah_pelanggaran_soft'] ?? 0)
-                        ->with('toleransi_soft',           $metrik['toleransi_soft']          ?? 1)
+                        ->with('detail_pelanggaran_hard',  $metrik['detail_pelanggaran_hard'] ?? [])
                         ->with('detail_pelanggaran_soft',  $metrik['detail_pelanggaran_soft'] ?? [])
+                        ->with('breakdown_csr',            $metrik['breakdown_csr']           ?? [])
                         ->with('breakdown_scfr',           $metrik['breakdown_scfr']          ?? [])
-                        ->with('tahapan_proses',           $result['tahapan_proses']          ?? null);
+                        ->with('kurva_solver',             $metrik['kurva_solver']            ?? null);
 
                 } catch (\Exception $e) {
                     DB::rollBack();
                     throw $e;
                 }
             } else {
-                return redirect()->route('jadwal.index')
-                    ->with('error', 'Gagal: ' . ($result['message'] ?? 'Solusi tidak ditemukan.'));
+                return redirect()->route('jadwal.index')->with('error', 'Gagal: ' . ($result['message'] ?? 'Solusi tidak ditemukan.'));
             }
 
         } catch (\Exception $e) {
-            return redirect()->route('jadwal.index')
-                ->with('error', 'Error: ' . $e->getMessage());
+            return redirect()->route('jadwal.index')->with('error', 'Error: ' . $e->getMessage());
         }
     }
 

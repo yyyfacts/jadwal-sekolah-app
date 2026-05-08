@@ -5,14 +5,15 @@
 
 <div class="w-full max-w-[100vw] mx-auto px-2 sm:px-4 h-[calc(100vh-4rem)] pb-2 pt-2 flex flex-col">
 
-    {{-- FLASH MESSAGES & METRIK --}}
+    {{-- FLASH MESSAGES & METRIK SCROLLABLE --}}
     @if(session('success'))
-    <div x-data="{ show: true }" x-show="show" x-transition class="mb-4 space-y-3">
-        <div
-            class="flex flex-col p-3 bg-emerald-50 border border-emerald-100 rounded-lg shadow-sm text-emerald-800 shrink-0">
-            <div class="flex items-center justify-between">
+    <div x-data="{ show: true }" x-show="show" x-transition class="mb-4 space-y-3 shrink-0">
+
+        {{-- CARD HEADER STATUS --}}
+        <div class="flex flex-col p-3 bg-white border-2 border-indigo-100 rounded-lg shadow-sm text-slate-800">
+            <div class="flex items-center justify-between mb-2">
                 <div class="flex flex-wrap items-center gap-2">
-                    <span class="font-bold text-xs">✅ {{ session('success') }}</span>
+                    <span class="font-bold text-xs text-emerald-600">✅ {{ session('success') }}</span>
                     @if(session('status_solver'))
                     <span
                         class="px-2 py-0.5 rounded text-[9px] font-bold uppercase border {{ session('status_solver') == 'OPTIMAL' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-yellow-100 text-yellow-700 border-yellow-200' }}">
@@ -21,150 +22,162 @@
                     @endif
                     @if(session('waktu_komputasi'))
                     <span
-                        class="px-2 py-0.5 rounded bg-emerald-200/50 text-emerald-700 text-[9px] font-bold uppercase border border-emerald-200"
-                        title="Waktu proses pencarian solusi">
-                        ⏱️ {{ session('waktu_komputasi') }} DTK
-                    </span>
-                    @endif
-                    @if(session('csr') !== null)
-                    <span
-                        class="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[9px] font-bold uppercase border border-blue-200"
-                        title="Tingkat Pemenuhan Aturan Mutlak (Hard Constraint)">
-                        🎯 CSR: {{ session('csr') }}%
-                    </span>
-                    @endif
-                    @if(session('scfr') !== null)
-                    <span
-                        class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 text-[9px] font-bold uppercase border border-indigo-200"
-                        title="Tingkat Pemenuhan Preferensi (Soft Constraint)">
-                        ⚖️ SCFR: {{ session('scfr') }}%
+                        class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[9px] font-bold uppercase border border-slate-200">
+                        ⏱️ Waktu: {{ session('waktu_komputasi') }} Detik
                     </span>
                     @endif
                 </div>
-                <button @click="show = false" class="text-emerald-400 hover:text-emerald-700 ml-4">&times;</button>
+                <button @click="show = false"
+                    class="text-slate-400 hover:text-rose-500 ml-4 font-bold text-lg">&times;</button>
             </div>
+            @if(session('status_penjelasan'))
+            <p
+                class="text-[11px] text-slate-600 font-medium leading-relaxed bg-indigo-50/50 p-2 border border-indigo-50 rounded">
+                🤖 <strong>AI Insight:</strong> {{ session('status_penjelasan') }}
+            </p>
+            @endif
+        </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+        {{-- BUNGKUSAN METRIK & GRAFIK (SCROLLABLE) --}}
+        <div
+            class="bg-white border-2 border-slate-800 rounded-xl shadow-lg max-h-[50vh] overflow-y-auto custom-scrollbar p-4 flex flex-col gap-4">
+
+            {{-- GRAFIK KURVA OBJEKTIF --}}
+            @if(session('kurva_solver') && count(session('kurva_solver')) > 0)
+            <div class="w-full border border-slate-200 bg-slate-50 rounded-lg p-3">
+                <h4 class="font-extrabold text-xs text-indigo-700 uppercase mb-1">📈 Riwayat Optimasi AI (Kurva
+                    Objektif)</h4>
+                <p class="text-[9px] text-slate-500 font-mono mb-2">Grafik memperlihatkan penurunan skor pelanggaran
+                    dari awal hingga solver berhenti (Max 10 Menit/2GB).</p>
+                <div class="relative w-full h-[200px]">
+                    <canvas id="objCurve"></canvas>
+                </div>
+            </div>
+            @endif
+
+            {{-- TABEL HARD & SOFT CONSTRAINT FULL PERHITUNGAN MATEMATIKA --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                {{-- CSR (Hard Constraint) --}}
                 @if(session('csr') !== null)
-                <div
-                    class="p-3 bg-white/60 border border-blue-200/50 rounded-md text-[11px] text-blue-900 font-mono flex flex-col gap-1">
-                    <strong class="text-blue-700">🛡️ Detail Perhitungan CSR (Aturan Mutlak):</strong>
-                    <span>Rumus : ((Total Evaluasi - Pelanggaran) / Total Evaluasi) x 100%</span>
-                    <span>Hitung : (({{ session('total_hard_constraints') }} - {{ session('jumlah_pelanggaran_hard') }})
-                        / {{ session('total_hard_constraints') ?: 1 }}) x 100%</span>
-                    <span>Hasil : <strong class="text-[12px]">{{ session('csr') }}%</strong></span>
-                    @if(session('breakdown_csr') && count(session('breakdown_csr')) > 0)
-                    <div class="mt-2 overflow-x-auto rounded border border-blue-200/60 bg-white">
+                <div class="border border-blue-200 rounded-lg bg-blue-50/50 p-3 h-fit flex flex-col gap-3 shadow-sm">
+                    <strong class="text-xs text-blue-800 block">🎯 Evaluasi Aturan Mutlak (CSR)</strong>
+
+                    <div
+                        class="p-3 bg-white/90 border border-blue-200/50 rounded-md text-[11px] text-blue-900 font-mono flex flex-col gap-1 shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)]">
+                        <strong class="text-blue-700">🛡️ Detail Perhitungan CSR:</strong>
+                        <span>Rumus : ((Total Evaluasi - Pelanggaran) / Total Evaluasi) x 100%</span>
+                        <span>Hitung :
+                            (({{ session('total_hard_constraints', session('tahapan_proses.tahap_6.total_evaluasi', 0)) }}
+                            - {{ session('jumlah_pelanggaran_hard') }}) /
+                            {{ session('total_hard_constraints', session('tahapan_proses.tahap_6.total_evaluasi', 1)) ?: 1 }})
+                            x 100%</span>
+                        <span>Hasil : <strong
+                                class="text-[12px] bg-blue-100 px-1 rounded">{{ session('csr') }}%</strong></span>
+                    </div>
+
+                    <div class="overflow-x-auto rounded border border-blue-200/60 bg-white shadow-sm">
                         <table class="w-full text-left border-collapse min-w-full">
                             <thead class="bg-blue-50">
                                 <tr class="text-blue-800 text-[10px]">
-                                    <th class="px-2 py-1 font-bold border-b border-blue-200/60">Kategori Evaluasi</th>
-                                    <th class="px-2 py-1 font-bold text-center border-b border-blue-200/60 border-l">
+                                    <th class="px-2 py-1.5 font-bold border-b border-blue-200/60">Kategori Evaluasi</th>
+                                    <th class="px-2 py-1.5 font-bold text-center border-b border-blue-200/60 border-l">
                                         Total</th>
-                                    <th class="px-2 py-1 font-bold text-center border-b border-blue-200/60 border-l">
+                                    <th class="px-2 py-1.5 font-bold text-center border-b border-blue-200/60 border-l">
                                         Pelanggaran</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-blue-100/50 text-[10px]">
-                                @foreach(session('breakdown_csr') as $b)
+                                @foreach(session('breakdown_csr', []) as $b)
                                 <tr class="hover:bg-blue-50/50 transition-colors">
-                                    <td class="px-2 py-1"><span class="font-bold">{{ $b['kategori'] }}</span>: <span
+                                    <td class="px-2 py-1.5"><span class="font-bold">{{ $b['kategori'] }}</span>: <span
                                             class="text-[9px] text-blue-700/80">{{ $b['deskripsi'] }}</span></td>
-                                    <td class="px-2 py-1 text-center font-bold border-l border-blue-100/50">
-                                        {{ $b['total'] }}</td>
                                     <td
-                                        class="px-2 py-1 text-center font-bold border-l border-blue-100/50 {{ $b['pelanggaran'] > 0 ? 'text-rose-600' : 'text-emerald-600' }}">
+                                        class="px-2 py-1.5 text-center font-bold border-l border-blue-100/50 text-slate-600">
+                                        {{ $b['total'] ?? '-' }}</td>
+                                    <td
+                                        class="px-2 py-1.5 text-center font-bold border-l border-blue-100/50 {{ $b['pelanggaran'] > 0 ? 'text-rose-600 bg-rose-50/30' : 'text-emerald-600' }}">
                                         {{ $b['pelanggaran'] }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
+
+                    @if(session('jumlah_pelanggaran_hard') > 0)
+                    <div
+                        class="mt-1 bg-white border border-rose-100 rounded p-2 text-[10px] text-rose-700 max-h-32 overflow-y-auto custom-scrollbar shadow-inner">
+                        <ul class="list-disc list-inside space-y-1">
+                            @foreach(session('detail_pelanggaran_hard', []) as $ph) <li>{{ $ph }}</li> @endforeach
+                        </ul>
+                    </div>
                     @endif
                 </div>
                 @endif
 
+                {{-- SCFR (Soft Constraint) --}}
                 @if(session('scfr') !== null)
                 <div
-                    class="p-3 bg-white/60 border border-emerald-200/50 rounded-md text-[11px] text-emerald-900 font-mono flex flex-col gap-1">
-                    <strong class="text-emerald-700">💡 Detail Perhitungan SCFR (Preferensi):</strong>
-                    <span>Rumus : ((Total Evaluasi - Pelanggaran) / Total Evaluasi) x 100%</span>
-                    <span>Hitung : (({{ session('total_preferensi') }} - {{ session('jumlah_pelanggaran_soft') }}) /
-                        {{ session('total_preferensi') ?: 1 }}) x 100%</span>
-                    <span>Hasil : <strong class="text-[12px]">{{ session('scfr') }}%</strong></span>
-                    @if(session('breakdown_scfr') && count(session('breakdown_scfr')) > 0)
-                    <div class="mt-2 overflow-x-auto rounded border border-emerald-200/60 bg-white">
+                    class="border border-emerald-200 rounded-lg bg-emerald-50/50 p-3 h-fit flex flex-col gap-3 shadow-sm">
+                    <strong class="text-xs text-emerald-800 block">⚖️ Evaluasi Preferensi (SCFR)</strong>
+
+                    <div
+                        class="p-3 bg-white/90 border border-emerald-200/50 rounded-md text-[11px] text-emerald-900 font-mono flex flex-col gap-1 shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)]">
+                        <strong class="text-emerald-700">💡 Detail Perhitungan SCFR:</strong>
+                        <span>Rumus : ((Total Evaluasi - Pelanggaran) / Total Evaluasi) x 100%</span>
+                        <span>Hitung :
+                            (({{ session('total_preferensi', session('tahapan_proses.tahap_6.total_evaluasi', 0)) }} -
+                            {{ session('jumlah_pelanggaran_soft') }}) /
+                            {{ session('total_preferensi', session('tahapan_proses.tahap_6.total_evaluasi', 1)) ?: 1 }})
+                            x 100%</span>
+                        <span>Hasil : <strong
+                                class="text-[12px] bg-emerald-100 px-1 rounded">{{ session('scfr') }}%</strong></span>
+                    </div>
+
+                    <div class="overflow-x-auto rounded border border-emerald-200/60 bg-white shadow-sm">
                         <table class="w-full text-left border-collapse min-w-full">
                             <thead class="bg-emerald-50">
                                 <tr class="text-emerald-800 text-[10px]">
-                                    <th class="px-2 py-1 font-bold border-b border-emerald-200/60">Kategori Evaluasi
+                                    <th class="px-2 py-1.5 font-bold border-b border-emerald-200/60">Kategori Evaluasi
                                     </th>
-                                    <th class="px-2 py-1 font-bold text-center border-b border-emerald-200/60 border-l">
+                                    <th
+                                        class="px-2 py-1.5 font-bold text-center border-b border-emerald-200/60 border-l">
                                         Total</th>
-                                    <th class="px-2 py-1 font-bold text-center border-b border-emerald-200/60 border-l">
+                                    <th
+                                        class="px-2 py-1.5 font-bold text-center border-b border-emerald-200/60 border-l">
                                         Pelanggaran</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-emerald-100/50 text-[10px]">
-                                @foreach(session('breakdown_scfr') as $b)
+                                @foreach(session('breakdown_scfr', []) as $b)
                                 <tr class="hover:bg-emerald-50/50 transition-colors">
-                                    <td class="px-2 py-1"><span class="font-bold">{{ $b['kategori'] }}</span>: <span
+                                    <td class="px-2 py-1.5"><span class="font-bold">{{ $b['kategori'] }}</span>: <span
                                             class="text-[9px] text-emerald-700/80">{{ $b['deskripsi'] }}</span></td>
-                                    <td class="px-2 py-1 text-center font-bold border-l border-emerald-100/50">
-                                        {{ $b['total'] }}</td>
                                     <td
-                                        class="px-2 py-1 text-center font-bold border-l border-emerald-100/50 {{ $b['pelanggaran'] > 0 ? 'text-amber-600' : 'text-emerald-600' }}">
+                                        class="px-2 py-1.5 text-center font-bold border-l border-emerald-100/50 text-slate-600">
+                                        {{ $b['total'] ?? '-' }}</td>
+                                    <td
+                                        class="px-2 py-1.5 text-center font-bold border-l border-emerald-100/50 {{ $b['pelanggaran'] > 0 ? 'text-amber-600 bg-amber-50/30' : 'text-emerald-600' }}">
                                         {{ $b['pelanggaran'] }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
+
+                    @if(session('jumlah_pelanggaran_soft') > 0)
+                    <div
+                        class="mt-1 bg-white border border-amber-100 rounded p-2 text-[10px] text-amber-700 max-h-32 overflow-y-auto custom-scrollbar shadow-inner">
+                        <ul class="list-disc list-inside space-y-1">
+                            @foreach(session('detail_pelanggaran_soft', []) as $ps) <li>{{ $ps }}</li> @endforeach
+                        </ul>
+                    </div>
                     @endif
                 </div>
                 @endif
             </div>
-        </div>
 
-        @if(session('jumlah_pelanggaran_hard') > 0)
-        <div x-data="{ bukaDetailHard: true }"
-            class="bg-rose-50 border border-rose-200 rounded-lg shadow-sm text-sm overflow-hidden transition-all duration-300 mb-3">
-            <button @click="bukaDetailHard = !bukaDetailHard"
-                class="w-full flex items-center justify-between p-3 text-rose-700 font-bold hover:bg-rose-100 transition-colors">
-                <div class="flex items-center gap-2"><span>❌ Terdapat {{ session('jumlah_pelanggaran_hard') }}
-                        Pelanggaran Aturan Mutlak (Hard Constraint)</span></div>
-                <svg :class="{'rotate-180': bukaDetailHard}" class="w-4 h-4 transition-transform" fill="none"
-                    stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-            </button>
-            <div x-show="bukaDetailHard" class="px-5 pb-4 pt-1">
-                <ul class="list-disc list-inside text-rose-600 text-xs space-y-1">
-                    @foreach(session('detail_pelanggaran_hard') as $ph) <li>{{ $ph }}</li> @endforeach
-                </ul>
-            </div>
         </div>
-        @endif
-
-        @if(session('jumlah_pelanggaran_soft') > 0)
-        <div x-data="{ bukaDetail: false }"
-            class="bg-indigo-50/50 border border-indigo-100 rounded-lg shadow-sm text-sm overflow-hidden transition-all duration-300">
-            <button @click="bukaDetail = !bukaDetail"
-                class="w-full flex items-center justify-between p-3 text-indigo-700 font-medium hover:bg-indigo-50 transition-colors">
-                <div class="flex items-center gap-2"><span>⚠️ Terdapat {{ session('jumlah_pelanggaran_soft') }}
-                        Penyesuaian Jadwal (Soft Constraint)</span></div>
-                <svg :class="{'rotate-180': bukaDetail}" class="w-4 h-4 transition-transform" fill="none"
-                    stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-            </button>
-            <div x-show="bukaDetail" style="display: none;" class="px-5 pb-4 pt-1">
-                <ul class="list-disc list-inside text-indigo-600/80 text-xs space-y-1">
-                    @foreach(session('detail_pelanggaran_soft') as $p) <li>{{ $p }}</li> @endforeach
-                </ul>
-            </div>
-        </div>
-        @endif
     </div>
     @endif
 
@@ -176,7 +189,7 @@
     </div>
     @endif
 
-    {{-- BLOK VISUALISASI LOG SISTEM CSP (DETAIL TOTAL & HITUNGAN) --}}
+    {{-- BLOK VISUALISASI LOG SISTEM CSP --}}
     @if(session('tahapan_proses'))
     <div x-data="{ bukaTahapan: true }"
         class="mb-4 border-2 border-slate-800 rounded-xl shadow-lg overflow-hidden shrink-0 bg-slate-900">
@@ -198,7 +211,6 @@
 
         <div x-show="bukaTahapan"
             class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto custom-scrollbar bg-slate-50">
-
             {{-- 1. JSON MASUKAN --}}
             <div class="border border-slate-200 rounded p-3 bg-white shadow-sm md:col-span-2">
                 <h4 class="font-extrabold text-xs text-indigo-700 uppercase mb-2 border-b border-indigo-100 pb-1">📥 1.
@@ -289,7 +301,7 @@
             <div class="border border-slate-200 rounded p-3 bg-emerald-50/50 shadow-sm flex flex-col justify-between">
                 <div>
                     <h4 class="font-extrabold text-xs text-emerald-700 uppercase mb-2 border-b border-emerald-100 pb-1">
-                        ▼ 4. FASE 1 (SOLUSI AWAL / 25% WAKTU)</h4>
+                        ▼ 4. FASE 1 (SOLUSI AWAL)</h4>
                     <div class="flex justify-between items-center bg-white p-2 border border-emerald-200 rounded mb-2">
                         <span class="text-[10px] font-bold text-slate-600">Status Pencarian:</span>
                         <span
@@ -304,16 +316,12 @@
                     <p class="text-[9px] text-emerald-700/80 font-mono leading-tight mt-1">
                         {{ session('tahapan_proses')['tahap_4']['ket'] }}</p>
                 </div>
-                <div class="mt-3 text-center border-t border-b border-emerald-200 py-1 bg-emerald-100/50">
-                    <span class="text-[9px] font-bold text-emerald-800 uppercase tracking-widest">Injeksi AddHint() Ke
-                        Fase 2</span>
-                </div>
             </div>
 
             <div class="border border-slate-200 rounded p-3 bg-blue-50/50 shadow-sm flex flex-col justify-between">
                 <div>
                     <h4 class="font-extrabold text-xs text-blue-700 uppercase mb-2 border-b border-blue-100 pb-1">▼ 5.
-                        FASE 2 (OPTIMASI PENALTI / 75% WAKTU)</h4>
+                        FASE 2 (OPTIMASI PENALTI)</h4>
                     <div class="flex justify-between items-center bg-white p-2 border border-blue-200 rounded mb-2">
                         <span class="text-[10px] font-bold text-slate-600">Status Akhir:</span>
                         <span
@@ -342,29 +350,28 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
                     <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
                         <span
-                            class="block text-2xl font-black text-indigo-600">{{ session('tahapan_proses')['tahap_6']['total_evaluasi'] }}</span>
+                            class="block text-2xl font-black text-indigo-600">{{ session('tahapan_proses')['tahap_6']['total_evaluasi'] ?? 'N/A' }}</span>
                         <span class="text-[10px] font-bold text-slate-600">Total Evaluasi Silang</span>
                     </div>
                     <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
                         <span
-                            class="block text-2xl font-black text-emerald-600">{{ session('tahapan_proses')['tahap_6']['csr'] }}%</span>
+                            class="block text-2xl font-black text-emerald-600">{{ session('tahapan_proses')['tahap_6']['csr'] ?? session('csr') }}%</span>
                         <span class="text-[10px] font-bold text-slate-600">Tingkat Kepatuhan Aturan Mutlak (CSR)</span>
                     </div>
                     <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
                         <span
-                            class="block text-2xl font-black text-blue-600">{{ session('tahapan_proses')['tahap_6']['scfr'] }}%</span>
+                            class="block text-2xl font-black text-blue-600">{{ session('tahapan_proses')['tahap_6']['scfr'] ?? session('scfr') }}%</span>
                         <span class="text-[10px] font-bold text-slate-600">Tingkat Pemenuhan Preferensi (SCFR)</span>
                     </div>
                 </div>
                 <p class="text-[10px] text-slate-500 font-mono italic text-center mt-2">
-                    {{ session('tahapan_proses')['tahap_6']['ket'] }}</p>
+                    {{ session('tahapan_proses')['tahap_6']['ket'] ?? 'Proses verifikasi selesai.' }}</p>
             </div>
-
         </div>
     </div>
     @endif
 
-    {{-- MAIN CARD UI --}}
+    {{-- MAIN CARD UI (TABEL JADWAL) --}}
     <div class="bg-white rounded-xl border border-slate-200 shadow-md flex flex-col flex-1 overflow-hidden min-h-0">
         {{-- HEADER SECTION --}}
         <div class="px-6 py-4 bg-white shrink-0 z-20 border-b border-slate-100">
@@ -377,7 +384,6 @@
                             <p class="text-slate-500 text-xs font-medium">T.A
                                 {{ $judulTahun ?? date('Y').'/'.(date('Y')+1) }}</p>
                             <span class="text-slate-300">|</span>
-                            {{-- INI FITUR TERAKHIR GENERATE NYA --}}
                             <p
                                 class="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
                                 ⏱️ Terakhir Update: {{ $terakhirGenerate ?? 'Belum pernah' }}
@@ -427,14 +433,14 @@
             </div>
         </div>
 
-        {{-- TABLE SECTION --}}
+        {{-- TABLE SECTION (SCROLLABLE AREA) --}}
         <div class="w-full flex-1 overflow-auto custom-scrollbar relative bg-slate-50/50 z-10 flex flex-col">
             @if($kelass->isEmpty() || empty($jadwals))
             <div class="flex flex-col items-center justify-center py-20 text-center">
                 <h3 class="text-sm font-bold text-slate-600">Data Jadwal Kosong</h3>
             </div>
             @else
-            <div class="flex-1">
+            <div class="flex-1 w-full overflow-x-auto overflow-y-auto">
                 <table class="w-full min-w-max border-separate border-spacing-0 text-left" id="jadwal-tabel-main">
                     <thead>
                         <tr class="text-slate-600 bg-white shadow-sm">
@@ -482,7 +488,7 @@
 
                             @if($firstRow)
                             <td rowspan="{{ $rowSpanTotal }}"
-                                class="w-[40px] min-w-[40px] sticky left-0 z-[30] p-0 bg-white border-r border-b border-slate-200 align-middle text-center">
+                                class="w-[40px] min-w-[40px] sticky left-0 z-[30] p-0 bg-white border-r border-b border-slate-200 align-middle text-center shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                                 <div class="font-extrabold text-slate-700 uppercase tracking-widest text-[12px] h-full flex items-center justify-center py-2"
                                     style="writing-mode: vertical-lr; transform: rotate(180deg);">{{ $namaHari }}</div>
                             </td>
@@ -490,12 +496,12 @@
                             @endif
 
                             <td
-                                class="h-[45px] w-[35px] min-w-[35px] sticky left-[40px] z-[30] p-1 bg-white border-r border-b border-slate-200 text-center font-bold text-slate-700 text-[11px]">
+                                class="h-[45px] w-[35px] min-w-[35px] sticky left-[40px] z-[30] p-1 bg-white border-r border-b border-slate-200 text-center font-bold text-slate-700 text-[11px] shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                                 @if(!in_array($tipeTampil, ['Istirahat', 'Upacara', 'Senam', 'Sholat', 'Sholat Dhuha',
                                 'Jumat Bersih', 'Pramuka'])) {{ $j }} @endif
                             </td>
                             <td
-                                class="h-[45px] w-[90px] min-w-[90px] sticky left-[75px] z-[30] p-1 bg-white border-r border-b border-slate-200 text-center text-[10px] font-mono font-medium text-slate-700">
+                                class="h-[45px] w-[90px] min-w-[90px] sticky left-[75px] z-[30] p-1 bg-white border-r border-b border-slate-200 text-center text-[10px] font-mono font-medium text-slate-700 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                                 {{ $waktuTampil }}
                             </td>
 
@@ -637,6 +643,8 @@
     class="hidden fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-slate-900/70 backdrop-blur-sm transition-opacity">
     <div class="bg-white p-8 rounded-3xl shadow-2xl text-center">
         <h3 class="text-xl font-extrabold text-slate-800 mb-2">AI Sedang Menyusun...</h3>
+        <p class="text-[11px] text-slate-500 font-mono mt-2 max-w-[200px] mx-auto">Proses memakan waktu hingga 10 menit.
+            Harap bersabar.</p>
     </div>
 </div>
 @endpush
@@ -669,7 +677,68 @@ table {
 @endpush
 
 @push('scripts')
+{{-- Library Chart.js CDN (Ditambahkan) --}}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    @if(session('kurva_solver') && count(session('kurva_solver')) > 0)
+    const rawData = @json(session('kurva_solver'));
+    if (rawData && rawData.length > 0) {
+        const labels = rawData.map(d => d.t + 's');
+        const dataPoints = rawData.map(d => d.obj);
+
+        const ctx = document.getElementById('objCurve').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Skor Penalti Preferensi',
+                    data: dataPoints,
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 1,
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        ticks: {
+                            font: {
+                                size: 9
+                            }
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            font: {
+                                size: 9
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            font: {
+                                size: 10
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    @endif
+});
+
 function filterJadwalRealtime() {
     const input = document.getElementById('search-jadwal').value.toLowerCase().trim();
     const cells = document.querySelectorAll('.jadwal-cell');
