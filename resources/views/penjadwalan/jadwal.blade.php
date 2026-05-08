@@ -685,8 +685,9 @@ document.addEventListener('DOMContentLoaded', function() {
     @if(session('kurva_solver') && count(session('kurva_solver')) > 0)
     const rawData = @json(session('kurva_solver'));
     if (rawData && rawData.length > 0) {
-        const labels = rawData.map(d => d.t + 's');
-        const dataPoints = rawData.map(d => d.obj);
+        // PERBAIKAN DI SINI: Sesuaikan dengan key dari Python (waktu & objektif)
+        const labels = rawData.map(d => d.waktu + 's');
+        const dataPoints = rawData.map(d => d.objektif);
 
         const ctx = document.getElementById('objCurve').getContext('2d');
         new Chart(ctx, {
@@ -697,11 +698,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     label: 'Skor Penalti Preferensi',
                     data: dataPoints,
                     borderColor: '#4f46e5',
-                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    backgroundColor: 'rgba(79, 70, 229, 0.2)', // Warna fill sedikit ditebalkan
                     borderWidth: 2,
-                    pointRadius: 1,
+                    pointRadius: 3, // Titik diperbesar biar tidak terlalu tipis
+                    pointHoverRadius: 5,
                     fill: true,
-                    tension: 0.1
+                    tension: 0.3 // Kurva dibuat lebih smooth
                 }]
             },
             options: {
@@ -711,16 +713,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     x: {
                         ticks: {
                             font: {
-                                size: 9
+                                size: 10
                             }
-                        }
+                        },
+                        grid: {
+                            display: false
+                        } // Hilangkan garis grid vertikal biar bersih
                     },
                     y: {
                         ticks: {
                             font: {
-                                size: 9
+                                size: 10
                             }
-                        }
+                        },
+                        beginAtZero: false
                     }
                 },
                 plugins: {
@@ -728,7 +734,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         display: true,
                         labels: {
                             font: {
-                                size: 10
+                                size: 11,
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ' Penalti: ' + context.parsed.y;
                             }
                         }
                     }

@@ -18,7 +18,7 @@ BOBOT_DEVIASI      =    200
 # Pengaturan Eksekusi
 MAX_MEMORY_MB = 2048  # Maksimal 2 GB
 MAX_WORKERS   = 4     # 4 Core Processor
-MAX_TIME_SEC  = 600   # Maksimal 10 Menit
+MAX_TIME_SEC  = 200   # Maksimal 10 Menit
 
 # =============================================================================
 # CALLBACK TRACKER OBJEKTIF CHART.JS
