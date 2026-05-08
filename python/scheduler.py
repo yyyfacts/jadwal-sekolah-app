@@ -16,7 +16,7 @@ BOBOT_HARI_SOFT    =  9_000
 BOBOT_DEVIASI      =    200
 
 MAX_MEMORY_MB = 2048   # hentikan jika memori > 2 GB
-MAX_WORKERS   = 8      # jumlah thread paralel
+MAX_WORKERS   = 4    # jumlah thread paralel
 
 # =============================================================================
 # CALLBACK – mencatat kurva konvergensi tiap solusi baru ditemukan
