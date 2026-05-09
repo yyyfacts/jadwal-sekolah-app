@@ -126,10 +126,17 @@ class JadwalController extends Controller
             ? \Carbon\Carbon::parse($latestJadwal->updated_at)->translatedFormat('d F Y, H:i') . ' WIB'
             : 'Belum pernah';
 
+        // MEMBACA METRIK TERAKHIR DARI FILE JSON AGAR TIDAK HILANG SAAT REFRESH
+        $latestMetrics = [];
+        $metricsPath = storage_path('app/latest_metrics.json');
+        if (file_exists($metricsPath)) {
+            $latestMetrics = json_decode(file_get_contents($metricsPath), true);
+        }
+
         return view('penjadwalan.jadwal', compact(
             'kelass', 'jadwals', 'onlineJadwals', 'judulTahun',
             'gurusList', 'kelassList', 'reqGuru', 'reqKelas',
-            'dataHari', 'dataWaktu', 'terakhirGenerate'
+            'dataHari', 'dataWaktu', 'terakhirGenerate', 'latestMetrics'
         ));
     }
 
@@ -161,7 +168,7 @@ class JadwalController extends Controller
                 'nama'          => $guru->nama_guru,
                 'hari_mengajar' => $guru->hari_mengajar ?? [],
                 'jenis_hari'    => $guru->jenis_hari ?? 'hard', 
-                'limit_harian'  => $guru->limit_harian, // Dikirim mentah apa adanya (bisa null)
+                'limit_harian'  => $guru->limit_harian, 
             ]);
 
             $assignments = Jadwal::with('mapel')
@@ -189,11 +196,14 @@ class JadwalController extends Controller
                 'limit_jumat'  => $k->limit_jumat  ?? 7,
             ]);
 
+            $maxTimeMinutes = $request->input('max_time', 10); // Menangkap input dari web
+
             $dataInput = [
-                'hari_aktif'  => $hariAktif,
-                'gurus'       => $gurus,
-                'kelass'      => $kelassData,
-                'assignments' => $assignments,
+                'hari_aktif'       => $hariAktif,
+                'gurus'            => $gurus,
+                'kelass'           => $kelassData,
+                'assignments'      => $assignments,
+                'max_time_minutes' => $maxTimeMinutes, // Diteruskan ke Python
             ];
 
             $jsonPath   = storage_path('app/input_solver.json');
@@ -233,20 +243,24 @@ class JadwalController extends Controller
                     }
                     DB::commit();
 
-                    return redirect()->route('jadwal.index')
-                        ->with('success',                  $result['message'])
-                        ->with('status_solver',            $result['status'])
-                        ->with('status_penjelasan',        $result['status_penjelasan']       ?? null)
-                        ->with('waktu_komputasi',          $metrik['waktu_komputasi_detik']   ?? null)
-                        ->with('csr',                      $metrik['CSR']                     ?? null)
-                        ->with('scfr',                     $metrik['SCFR']                    ?? null)
-                        ->with('jumlah_pelanggaran_hard',  $metrik['jumlah_pelanggaran_hard'] ?? 0)
-                        ->with('jumlah_pelanggaran_soft',  $metrik['jumlah_pelanggaran_soft'] ?? 0)
-                        ->with('detail_pelanggaran_hard',  $metrik['detail_pelanggaran_hard'] ?? [])
-                        ->with('detail_pelanggaran_soft',  $metrik['detail_pelanggaran_soft'] ?? [])
-                        ->with('breakdown_csr',            $metrik['breakdown_csr']           ?? [])
-                        ->with('breakdown_scfr',           $metrik['breakdown_scfr']          ?? [])
-                        ->with('kurva_solver',             $metrik['kurva_solver']            ?? null);
+                    // MENYIMPAN HASIL METRIK KE FILE LOKAL AGAR TIDAK HILANG SAAT REFRESH
+                    $metricsToSave = [
+                        'status_solver'           => $result['status'],
+                        'status_penjelasan'       => $result['status_penjelasan'] ?? null,
+                        'waktu_komputasi'         => $metrik['waktu_komputasi_detik'] ?? null,
+                        'csr'                     => $metrik['CSR'] ?? null,
+                        'scfr'                    => $metrik['SCFR'] ?? null,
+                        'jumlah_pelanggaran_hard' => $metrik['jumlah_pelanggaran_hard'] ?? 0,
+                        'jumlah_pelanggaran_soft' => $metrik['jumlah_pelanggaran_soft'] ?? 0,
+                        'detail_pelanggaran_hard' => $metrik['detail_pelanggaran_hard'] ?? [],
+                        'detail_pelanggaran_soft' => $metrik['detail_pelanggaran_soft'] ?? [],
+                        'breakdown_csr'           => $metrik['breakdown_csr'] ?? [],
+                        'breakdown_scfr'          => $metrik['breakdown_scfr'] ?? [],
+                        'kurva_solver'            => $metrik['kurva_solver'] ?? null,
+                    ];
+                    file_put_contents(storage_path('app/latest_metrics.json'), json_encode($metricsToSave));
+
+                    return redirect()->route('jadwal.index')->with('success', $result['message']);
 
                 } catch (\Exception $e) {
                     DB::rollBack();

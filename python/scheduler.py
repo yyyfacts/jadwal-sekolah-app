@@ -13,13 +13,12 @@ TOLERANSI_SOFT        = 2
 BOBOT_PELANGGARAN     =  4_000
 BOBOT_BATAS_SOFT      = 12_000
 BOBOT_HARI_SOFT       =  9_000
-BOBOT_GURU_MAX_HARIAN = 15_000 # Bobot baru untuk pelanggaran SF-4
+BOBOT_GURU_MAX_HARIAN = 15_000 
 BOBOT_DEVIASI         =    200
 
-# Pengaturan Eksekusi
+# Pengaturan Eksekusi Hardware
 MAX_MEMORY_MB = 2048  # Maksimal 2 GB
-MAX_WORKERS   = 8     # 8 Core Processor
-MAX_TIME_SEC  = 600   # Maksimal 10 Menit
+MAX_WORKERS   = 4     # Diturunkan ke 4 agar aman dari Error Module 9
 
 # =============================================================================
 # CALLBACK TRACKER OBJEKTIF CHART.JS
@@ -221,7 +220,7 @@ def bangun_model(raw_assignments, kelass, gurus,
         if possible_days:
             model.AddExactlyOne(possible_days)
         else:
-            return (None,) * 15 # Disesuaikan tuple return count
+            return (None,) * 15 
 
     for k in kelass:
         k_id = k['id']
@@ -268,8 +267,7 @@ def bangun_model(raw_assignments, kelass, gurus,
 
             model.Add(sum(beban_guru) <= batas_atas)
             
-            # --- SOFT CONSTRAINT SF-4 (Batas Maksimal JP Guru di Hari Tersebut) ---
-            # Jika limit_harian bernilai kosong (Null), maka constraint ini dilewati
+            # --- SF-4 ---
             if limit_harian_raw is not None and str(limit_harian_raw).strip() != "":
                 limit_harian_guru = int(limit_harian_raw)
                 is_over_harian = model.NewBoolVar(f'over_harian_{g_id}_{h}')
@@ -282,7 +280,7 @@ def bangun_model(raw_assignments, kelass, gurus,
                     'limit': limit_harian_guru, 'beban_vars': beban_guru
                 })
             
-            # --- SF-1 (Penyebaran Beban) ---
+            # --- SF-1 ---
             if batas_atas <= 0:
                 continue
 
@@ -472,6 +470,10 @@ def main():
     kelass          = data.get('kelass', [])
     gurus           = data.get('gurus', [])
 
+    # Menarik limit waktu dari PHP (default ke 10 menit jika kosong)
+    max_time_minutes = int(data.get('max_time_minutes', 10))
+    MAX_TIME_SEC = max_time_minutes * 60
+
     raw_assignments.sort(key=lambda x: int(x['jumlah_jam']), reverse=True)
     guru_hari_map, guru_jenis_hari_map = build_guru_maps(gurus)
     kelas_limits                       = build_kelas_limits(kelass)
@@ -517,7 +519,7 @@ def main():
         model.AddDecisionStrategy(all_start_vars, cp_model.CHOOSE_FIRST, cp_model.SELECT_MIN_VALUE)
 
     solver = cp_model.CpSolver()
-    solver.parameters.num_search_workers = MAX_WORKERS
+    solver.parameters.num_search_workers = MAX_WORKERS # Kini menjadi 4
     solver.parameters.max_memory_in_mb   = MAX_MEMORY_MB
     solver.parameters.max_time_in_seconds = MAX_TIME_SEC
 
@@ -531,7 +533,7 @@ def main():
 
         if status == cp_model.OPTIMAL:
             status_label = "OPTIMAL"
-            status_penjelasan = "Pencarian solusi selesai. AI berhasil menemukan jadwal paling sempurna (Optimal) berdasarkan batasan waktu dan memori yang ada. Seluruh kombinasi preferensi (Soft Constraint) telah ditekan pada titik terbaiknya tanpa ada satupun Aturan Mutlak (Hard Constraint) yang dilanggar."
+            status_penjelasan = f"Pencarian solusi selesai. AI berhasil menemukan jadwal paling sempurna (Optimal) berdasarkan batasan waktu ({max_time_minutes} Menit) dan memori yang ada. Seluruh kombinasi preferensi telah ditekan pada titik terbaiknya tanpa ada satupun Aturan Mutlak yang dilanggar."
         else:
             gap = solver.BestObjectiveBound()
             obj = solver.ObjectiveValue()
@@ -540,10 +542,10 @@ def main():
             
             if gap_pct <= 0.5:
                 status_label = "NEAR-OPTIMAL"
-                status_penjelasan = f"Jadwal nyaris sempurna (Near-Optimal) dengan sisa Gap hanya {gap_pct:.2f}%. Proses perhitungan dihentikan karena mencapai batas maksimal memori (2GB) atau waktu (10 Menit) untuk melindungi server. Meski tidak 100% tuntas secara matematis, jadwal ini sangat layak digunakan karena perbedaannya dengan titik paling optimal praktis tidak terlihat."
+                status_penjelasan = f"Jadwal nyaris sempurna (Near-Optimal) dengan sisa Gap hanya {gap_pct:.2f}%. Proses perhitungan dihentikan karena mencapai batas maksimal memori (2GB) atau waktu ({max_time_minutes} Menit) untuk melindungi server. Jadwal ini sangat layak digunakan karena perbedaannya dengan titik paling optimal praktis tidak terlihat."
             else:
                 status_label = "FEASIBLE"
-                status_penjelasan = f"AI berhasil membuat jadwal dasar tanpa ada bentrokan sama sekali (Feasible). Namun masih terdapat margin perbaikan preferensi (Gap) sebesar {gap_pct:.2f}%. AI terpaksa berhenti mencari solusi yang lebih baik karena telah menyentuh batas perlindungan Server (2GB Memori / 10 Menit Limit). Ini adalah solusi terbaik yang dapat diselamatkan."
+                status_penjelasan = f"AI berhasil membuat jadwal dasar tanpa ada bentrokan sama sekali (Feasible). Namun masih terdapat margin perbaikan preferensi (Gap) sebesar {gap_pct:.2f}%. AI terpaksa berhenti mencari solusi yang lebih baik karena telah menyentuh batas perlindungan Server (Waktu {max_time_minutes} Menit). Ini adalah solusi terbaik yang dapat diselamatkan."
 
         CSR, total_hard, jml_hard, detail_hard, breakdown_csr = hitung_csr(
             solver, raw_assignments, kelass, gurus,
