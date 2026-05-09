@@ -13,7 +13,7 @@ TOLERANSI_SOFT        = 2
 BOBOT_PELANGGARAN     =  4_000
 BOBOT_BATAS_SOFT      = 12_000
 BOBOT_HARI_SOFT       =  9_000
-BOBOT_GURU_MAX_HARIAN = 15_000 
+BOBOT_GURU_MAX_HARIAN = 15_000 # Penalti jika guru mengajar melebihi limit hariannya
 BOBOT_DEVIASI         =    200
 
 # Pengaturan Eksekusi Hardware
@@ -220,7 +220,7 @@ def bangun_model(raw_assignments, kelass, gurus,
         if possible_days:
             model.AddExactlyOne(possible_days)
         else:
-            return (None,) * 15 
+            return (None,) * 16
 
     for k in kelass:
         k_id = k['id']
@@ -267,20 +267,28 @@ def bangun_model(raw_assignments, kelass, gurus,
 
             model.Add(sum(beban_guru) <= batas_atas)
             
-            # --- SF-4 ---
+            # --- SOFT CONSTRAINT SF-4 (Batas Maksimal JP Guru di Hari Tersebut) ---
+            # Menghindari error logika, kita convert dengan pasti ke int
             if limit_harian_raw is not None and str(limit_harian_raw).strip() != "":
-                limit_harian_guru = int(limit_harian_raw)
-                is_over_harian = model.NewBoolVar(f'over_harian_{g_id}_{h}')
-                model.Add(sum(beban_guru) <= limit_harian_guru).OnlyEnforceIf(is_over_harian.Not())
-                model.Add(sum(beban_guru) > limit_harian_guru).OnlyEnforceIf(is_over_harian)
+                try:
+                    limit_harian_guru = int(limit_harian_raw)
+                    if limit_harian_guru > 0:
+                        is_over_harian = model.NewBoolVar(f'over_harian_{g_id}_{h}')
+                        
+                        # Rumus Matematika Aman: 
+                        # Sum <= Limit (Aman) | Sum >= Limit + 1 (Melanggar)
+                        model.Add(sum(beban_guru) <= limit_harian_guru).OnlyEnforceIf(is_over_harian.Not())
+                        model.Add(sum(beban_guru) >= limit_harian_guru + 1).OnlyEnforceIf(is_over_harian)
 
-                soft_guru_harian_vars.append(is_over_harian)
-                soft_guru_harian_info.append({
-                    'g_id': g_id, 'hari': h, 'is_over': is_over_harian,
-                    'limit': limit_harian_guru, 'beban_vars': beban_guru
-                })
+                        soft_guru_harian_vars.append(is_over_harian)
+                        soft_guru_harian_info.append({
+                            'g_id': g_id, 'hari': h, 'is_over': is_over_harian,
+                            'limit': limit_harian_guru, 'beban_vars': beban_guru
+                        })
+                except ValueError:
+                    pass
             
-            # --- SF-1 ---
+            # --- SF-1 (Penyebaran Beban) ---
             if batas_atas <= 0:
                 continue
 
