@@ -178,6 +178,8 @@
                                         <span class="text-[10px] font-bold">0 Jam</span>
                                     </div>
                                     @endif
+                                    <div class="text-[9px] text-slate-400 font-medium">Batas Max/Hari: <b
+                                            class="text-indigo-500">{{ $g->limit_harian ?? 8 }} JP</b></div>
                                 </div>
                             </td>
                             <td class="px-3 py-2 text-center align-middle">
@@ -271,6 +273,23 @@
                     </select>
                 </div>
             </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sifat Hari</label>
+                    <select name="jenis_hari"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none text-xs">
+                        <option value="soft">Fleksibel</option>
+                        <option value="hard">Mutlak</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1"
+                        title="Maksimal JP Per Hari Untuk Guru Ini">Batas JP / Hari</label>
+                    <input type="number" name="limit_harian" value="8" min="1" max="20"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-xs text-center"
+                        required>
+                </div>
+            </div>
             <div>
                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Hari Mengajar</label>
                 <div class="flex flex-wrap gap-1.5 mb-2">
@@ -283,14 +302,6 @@
                     </label>
                     @endforeach
                 </div>
-            </div>
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sifat Hari</label>
-                <select name="jenis_hari"
-                    class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none text-xs">
-                    <option value="soft">Fleksibel</option>
-                    <option value="hard">Mutlak</option>
-                </select>
             </div>
             <button type="submit"
                 class="w-full bg-slate-900 hover:bg-indigo-600 text-white font-bold py-2.5 rounded-lg text-[10px] uppercase mt-2">Simpan</button>
@@ -335,6 +346,21 @@
                     </select>
                 </div>
             </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sifat Hari</label>
+                    <select name="jenis_hari" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs">
+                        <option value="soft" {{ $g->jenis_hari == 'soft' ? 'selected' : '' }}>Fleksibel</option>
+                        <option value="hard" {{ $g->jenis_hari == 'hard' ? 'selected' : '' }}>Mutlak</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Batas JP / Hari</label>
+                    <input type="number" name="limit_harian" value="{{ $g->limit_harian ?? 8 }}" min="1" max="20"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none text-xs text-center"
+                        required>
+                </div>
+            </div>
             <div>
                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Hari Mengajar</label>
                 <div class="flex flex-wrap gap-1.5 mb-2">
@@ -348,13 +374,6 @@
                     </label>
                     @endforeach
                 </div>
-            </div>
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sifat Hari</label>
-                <select name="jenis_hari" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs">
-                    <option value="soft" {{ $g->jenis_hari == 'soft' ? 'selected' : '' }}>Fleksibel</option>
-                    <option value="hard" {{ $g->jenis_hari == 'hard' ? 'selected' : '' }}>Mutlak</option>
-                </select>
             </div>
             <button type="submit"
                 class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-lg text-[10px] uppercase mt-2">Perbarui</button>

@@ -135,7 +135,6 @@ class JadwalController extends Controller
 
     public function generate(Request $request)
     {
-        // Hilangkan batas eksekusi PHP
         set_time_limit(0);
 
         try {
@@ -162,6 +161,7 @@ class JadwalController extends Controller
                 'nama'          => $guru->nama_guru,
                 'hari_mengajar' => $guru->hari_mengajar ?? [],
                 'jenis_hari'    => $guru->jenis_hari ?? 'hard', 
+                'limit_harian'  => $guru->limit_harian ?? 8, // Mengirim data limit SF-4
             ]);
 
             $assignments = Jadwal::with('mapel')
@@ -201,7 +201,6 @@ class JadwalController extends Controller
 
             $scriptPath = base_path('python/scheduler.py');
             $process    = new Process(['python', $scriptPath, $jsonPath]);
-            // Bebaskan waktu dari sisi Process agar menunggu limit 10 menit dari Python
             $process->setTimeout(null); 
             $process->run();
 

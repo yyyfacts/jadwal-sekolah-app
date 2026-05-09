@@ -15,7 +15,7 @@ class Jadwal extends Model
         'guru_id',
         'mapel_id',
         'kelas_id',
-        'master_hari_id', // <--- UBAH: dari 'hari' menjadi 'master_hari_id'
+        'master_hari_id',
         'jumlah_jam',
         'tipe_jam',
         'jam',
@@ -37,7 +37,6 @@ class Jadwal extends Model
         return $this->belongsTo(Kelas::class);
     }
 
-    // --- TAMBAHAN: Relasi ke Master Hari ---
     public function masterHari()
     {
         return $this->belongsTo(MasterHari::class, 'master_hari_id');
@@ -58,7 +57,6 @@ class Jadwal extends Model
         return $this->kelas->nama_kelas ?? '-';
     }
 
-    // --- TAMBAHAN: Accessor untuk mendapatkan nama hari (Opsional tapi berguna) ---
     public function getNamaHariAttribute()
     {
         return $this->masterHari->nama_hari ?? '-';

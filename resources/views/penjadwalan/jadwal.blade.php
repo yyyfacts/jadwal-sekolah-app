@@ -80,10 +80,10 @@
                         <table class="w-full text-left border-collapse min-w-full">
                             <thead class="bg-blue-50">
                                 <tr class="text-blue-800 text-[10px]">
-                                    <th class="px-2 py-1.5 font-bold border-b border-blue-200/60">Kategori Evaluasi</th>
-                                    <th class="px-2 py-1.5 font-bold text-center border-b border-blue-200/60 border-l">
-                                        Total</th>
-                                    <th class="px-2 py-1.5 font-bold text-center border-b border-blue-200/60 border-l">
+                                    <th class="px-2 py-1.5 font-bold border-b border-blue-200/60 w-[80%]">Kategori
+                                        Evaluasi</th>
+                                    <th
+                                        class="px-2 py-1.5 font-bold text-center border-b border-blue-200/60 border-l w-[20%]">
                                         Pelanggaran</th>
                                 </tr>
                             </thead>
@@ -92,9 +92,6 @@
                                 <tr class="hover:bg-blue-50/50 transition-colors">
                                     <td class="px-2 py-1.5"><span class="font-bold">{{ $b['kategori'] }}</span>: <span
                                             class="text-[9px] text-blue-700/80">{{ $b['deskripsi'] }}</span></td>
-                                    <td
-                                        class="px-2 py-1.5 text-center font-bold border-l border-blue-100/50 text-slate-600">
-                                        {{ $b['total'] ?? '-' }}</td>
                                     <td
                                         class="px-2 py-1.5 text-center font-bold border-l border-blue-100/50 {{ $b['pelanggaran'] > 0 ? 'text-rose-600 bg-rose-50/30' : 'text-emerald-600' }}">
                                         {{ $b['pelanggaran'] }}</td>
@@ -138,13 +135,11 @@
                         <table class="w-full text-left border-collapse min-w-full">
                             <thead class="bg-emerald-50">
                                 <tr class="text-emerald-800 text-[10px]">
-                                    <th class="px-2 py-1.5 font-bold border-b border-emerald-200/60">Kategori Evaluasi
+                                    <th class="px-2 py-1.5 font-bold border-b border-emerald-200/60 w-[80%]">Kategori
+                                        Evaluasi
                                     </th>
                                     <th
-                                        class="px-2 py-1.5 font-bold text-center border-b border-emerald-200/60 border-l">
-                                        Total</th>
-                                    <th
-                                        class="px-2 py-1.5 font-bold text-center border-b border-emerald-200/60 border-l">
+                                        class="px-2 py-1.5 font-bold text-center border-b border-emerald-200/60 border-l w-[20%]">
                                         Pelanggaran</th>
                                 </tr>
                             </thead>
@@ -153,9 +148,6 @@
                                 <tr class="hover:bg-emerald-50/50 transition-colors">
                                     <td class="px-2 py-1.5"><span class="font-bold">{{ $b['kategori'] }}</span>: <span
                                             class="text-[9px] text-emerald-700/80">{{ $b['deskripsi'] }}</span></td>
-                                    <td
-                                        class="px-2 py-1.5 text-center font-bold border-l border-emerald-100/50 text-slate-600">
-                                        {{ $b['total'] ?? '-' }}</td>
                                     <td
                                         class="px-2 py-1.5 text-center font-bold border-l border-emerald-100/50 {{ $b['pelanggaran'] > 0 ? 'text-amber-600 bg-amber-50/30' : 'text-emerald-600' }}">
                                         {{ $b['pelanggaran'] }}</td>
@@ -677,7 +669,6 @@ table {
 @endpush
 
 @push('scripts')
-{{-- Library Chart.js CDN (Ditambahkan) --}}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
@@ -685,7 +676,6 @@ document.addEventListener('DOMContentLoaded', function() {
     @if(session('kurva_solver') && count(session('kurva_solver')) > 0)
     const rawData = @json(session('kurva_solver'));
     if (rawData && rawData.length > 0) {
-        // PERBAIKAN DI SINI: Sesuaikan dengan key dari Python (waktu & objektif)
         const labels = rawData.map(d => d.waktu + 's');
         const dataPoints = rawData.map(d => d.objektif);
 
@@ -698,12 +688,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     label: 'Skor Penalti Preferensi',
                     data: dataPoints,
                     borderColor: '#4f46e5',
-                    backgroundColor: 'rgba(79, 70, 229, 0.2)', // Warna fill sedikit ditebalkan
+                    backgroundColor: 'rgba(79, 70, 229, 0.2)',
                     borderWidth: 2,
-                    pointRadius: 3, // Titik diperbesar biar tidak terlalu tipis
+                    pointRadius: 3,
                     pointHoverRadius: 5,
                     fill: true,
-                    tension: 0.3 // Kurva dibuat lebih smooth
+                    tension: 0.3
                 }]
             },
             options: {
@@ -711,6 +701,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 maintainAspectRatio: false,
                 scales: {
                     x: {
+                        title: {
+                            display: true,
+                            text: 'Waktu Komputasi (Detik)',
+                            color: '#64748b',
+                            font: {
+                                size: 10,
+                                weight: 'bold'
+                            }
+                        },
                         ticks: {
                             font: {
                                 size: 10
@@ -718,9 +717,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         grid: {
                             display: false
-                        } // Hilangkan garis grid vertikal biar bersih
+                        }
                     },
                     y: {
+                        title: {
+                            display: true,
+                            text: 'Skor Penalti Preferensi',
+                            color: '#64748b',
+                            font: {
+                                size: 10,
+                                weight: 'bold'
+                            }
+                        },
                         ticks: {
                             font: {
                                 size: 10

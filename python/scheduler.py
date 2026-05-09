@@ -9,16 +9,17 @@ from ortools.sat.python import cp_model
 # =============================================================================
 HARI_LIST = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']
 
-TOLERANSI_SOFT     = 2
-BOBOT_PELANGGARAN  =  4_000
-BOBOT_BATAS_SOFT   = 12_000
-BOBOT_HARI_SOFT    =  9_000
-BOBOT_DEVIASI      =    200
+TOLERANSI_SOFT        = 2
+BOBOT_PELANGGARAN     =  4_000
+BOBOT_BATAS_SOFT      = 12_000
+BOBOT_HARI_SOFT       =  9_000
+BOBOT_GURU_MAX_HARIAN = 15_000 # Bobot baru untuk pelanggaran SF-4
+BOBOT_DEVIASI         =    200
 
 # Pengaturan Eksekusi
 MAX_MEMORY_MB = 2048  # Maksimal 2 GB
-MAX_WORKERS   = 4     # 4 Core Processor
-MAX_TIME_SEC  = 200   # Maksimal 10 Menit
+MAX_WORKERS   = 8     # 8 Core Processor
+MAX_TIME_SEC  = 600   # Maksimal 10 Menit
 
 # =============================================================================
 # CALLBACK TRACKER OBJEKTIF CHART.JS
@@ -220,7 +221,7 @@ def bangun_model(raw_assignments, kelass, gurus,
         if possible_days:
             model.AddExactlyOne(possible_days)
         else:
-            return (None,) * 13
+            return (None,) * 15 # Disesuaikan tuple return count
 
     for k in kelass:
         k_id = k['id']
@@ -249,12 +250,16 @@ def bangun_model(raw_assignments, kelass, gurus,
     violation_vars = []
     deviasi_vars   = []
     penalti_info   = []
+    
+    soft_guru_harian_vars = []
+    soft_guru_harian_info = []
 
     for g in gurus:
         g_id       = g['id']
         batas_atas = max_jam_dinamis[g_id]
         batas_bwh  = min_jam_dinamis[g_id]
         rata_exact = target_jam_guru[g_id]
+        limit_harian_guru = int(g.get('limit_harian', 8)) # Untuk SF-4
 
         for h in HARI_LIST:
             beban_guru = durasi_per_guru_harian[g_id][h]
@@ -262,6 +267,19 @@ def bangun_model(raw_assignments, kelass, gurus,
                 continue
 
             model.Add(sum(beban_guru) <= batas_atas)
+            
+            # --- SOFT CONSTRAINT SF-4 (Batas Maksimal JP Guru di Hari Tersebut) ---
+            is_over_harian = model.NewBoolVar(f'over_harian_{g_id}_{h}')
+            model.Add(sum(beban_guru) <= limit_harian_guru).OnlyEnforceIf(is_over_harian.Not())
+            model.Add(sum(beban_guru) > limit_harian_guru).OnlyEnforceIf(is_over_harian)
+
+            soft_guru_harian_vars.append(is_over_harian)
+            soft_guru_harian_info.append({
+                'g_id': g_id, 'hari': h, 'is_over': is_over_harian,
+                'limit': limit_harian_guru, 'beban_vars': beban_guru
+            })
+            
+            # --- SF-1 (Penyebaran Beban) ---
             if batas_atas <= 0:
                 continue
 
@@ -292,7 +310,8 @@ def bangun_model(raw_assignments, kelass, gurus,
         violation_vars, deviasi_vars, penalti_info,
         tasks_per_mapel_group,
         soft_batas_violation_vars, soft_batas_info,
-        soft_hari_violation_vars, soft_hari_info
+        soft_hari_violation_vars, soft_hari_info,
+        soft_guru_harian_vars, soft_guru_harian_info
     )
 
 # =============================================================================
@@ -467,7 +486,8 @@ def main():
      violation_vars, deviasi_vars, penalti_info,
      tasks_per_mapel_group,
      soft_batas_violation_vars, soft_batas_info,
-     soft_hari_violation_vars, soft_hari_info) = result
+     soft_hari_violation_vars, soft_hari_info,
+     soft_guru_harian_vars, soft_guru_harian_info) = result
 
     if model is None:
         print(json.dumps({"status" : "INFEASIBLE", "message": "Konfigurasi data mustahil diselesaikan."}))
@@ -478,10 +498,13 @@ def main():
         obj_terms.append(BOBOT_BATAS_SOFT  * sum(soft_batas_violation_vars))
     if soft_hari_violation_vars:
         obj_terms.append(BOBOT_HARI_SOFT   * sum(soft_hari_violation_vars))
+    if soft_guru_harian_vars:
+        obj_terms.append(BOBOT_GURU_MAX_HARIAN * sum(soft_guru_harian_vars))
     if violation_vars:
         obj_terms.append(BOBOT_PELANGGARAN * sum(violation_vars))
     if deviasi_vars:
         obj_terms.append(BOBOT_DEVIASI     * sum(deviasi_vars))
+        
     if obj_terms:
         model.Minimize(sum(obj_terms))
 
@@ -526,14 +549,17 @@ def main():
         )
 
         detail_soft = []
+        
+        # --- SF-1 ---
         sf1_total, sf1_pelanggaran = len(penalti_info), 0
         for p in penalti_info:
             if solver.Value(p['is_violation']) == 1:
                 sf1_pelanggaran += 1
                 nama = get_nama_guru(gurus, p['g_id'])
                 actual_beban = sum(solver.Value(v) for v in p['beban_vars'])
-                detail_soft.append(f"[SF-1] {nama} mengajar {actual_beban} JP hari {p['hari']} (batas ideal max/min dilewati).")
+                detail_soft.append(f"[SF-1] {nama} mengajar {actual_beban} JP hari {p['hari']} (distribusi tidak merata/lewat toleransi ideal).")
 
+        # --- SF-2 ---
         tasks_sf2_ids = {sb['t_id'] for sb in soft_batas_info}
         sf2_total, sf2_pelanggaran = len(tasks_sf2_ids), 0
         sf2_reported = set()
@@ -544,6 +570,7 @@ def main():
                 slot_akhir = solver.Value(sb['end_var']) - 1
                 detail_soft.append(f"[SF-2] {sb['nama_mapel']} kelas {sb['kelas_id']} hari {sb['h']}: selesai slot {slot_akhir} (lewat batas).")
 
+        # --- SF-3 ---
         tasks_sf3_ids = {sh['t_id'] for sh in soft_hari_info}
         sf3_total, sf3_pelanggaran = len(tasks_sf3_ids), 0
         sf3_reported = set()
@@ -552,15 +579,24 @@ def main():
                 sf3_pelanggaran += 1
                 sf3_reported.add(sh['t_id'])
                 detail_soft.append(f"[SF-3] {get_nama_guru(gurus, sh['g_id'])} dijadwalkan di {sh['h']} (bukan hari preferensinya).")
+                
+        # --- SF-4 ---
+        sf4_total, sf4_pelanggaran = len(soft_guru_harian_info), 0
+        for sh in soft_guru_harian_info:
+            if solver.Value(sh['is_over']) == 1:
+                sf4_pelanggaran += 1
+                actual_beban = sum(solver.Value(v) for v in sh['beban_vars'])
+                detail_soft.append(f"[SF-4] {get_nama_guru(gurus, sh['g_id'])} mengajar {actual_beban} JP di {sh['hari']} (melewati batas maksimal {sh['limit']} JP/hari).")
 
-        total_soft = sf1_total + sf2_total + sf3_total
-        jml_soft   = sf1_pelanggaran + sf2_pelanggaran + sf3_pelanggaran
+        total_soft = sf1_total + sf2_total + sf3_total + sf4_total
+        jml_soft   = sf1_pelanggaran + sf2_pelanggaran + sf3_pelanggaran + sf4_pelanggaran
         SCFR       = 100.0 * (total_soft - jml_soft) / total_soft if total_soft > 0 else 100.0
 
         breakdown_scfr = [
-            {'kategori': 'SF-1', 'deskripsi': 'Penyebaran beban guru', 'pelanggaran': sf1_pelanggaran},
-            {'kategori': 'SF-2', 'deskripsi': 'Batas preferensi mapel', 'pelanggaran': sf2_pelanggaran},
-            {'kategori': 'SF-3', 'deskripsi': 'Guru di hari preferensinya', 'pelanggaran': sf3_pelanggaran},
+            {'kategori': 'SF-1', 'deskripsi': 'Penyebaran beban (deviasi rata-rata guru)', 'pelanggaran': sf1_pelanggaran},
+            {'kategori': 'SF-2', 'deskripsi': 'Batas preferensi slot maksimal mapel', 'pelanggaran': sf2_pelanggaran},
+            {'kategori': 'SF-3', 'deskripsi': 'Kesesuaian hari preferensi mengajar guru', 'pelanggaran': sf3_pelanggaran},
+            {'kategori': 'SF-4', 'deskripsi': 'Batas maksimal JP harian guru ditaati', 'pelanggaran': sf4_pelanggaran},
         ]
 
         print(json.dumps({

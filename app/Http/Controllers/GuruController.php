@@ -33,10 +33,16 @@ class GuruController extends Controller
             });
         }
 
-        // PENGECEKAN KOLOM BARU: status_pegawai
         if (Schema::hasTable('gurus') && !Schema::hasColumn('gurus', 'status_pegawai')) {
             Schema::table('gurus', function (Blueprint $table) {
                 $table->enum('status_pegawai', ['PNS/P3K', 'Guru Tamu', 'Guru Ngamen'])->default('PNS/P3K')->after('jenis_hari');
+            });
+        }
+
+        // PENGECEKAN KOLOM BARU: limit_harian (Untuk SF-4)
+        if (Schema::hasTable('gurus') && !Schema::hasColumn('gurus', 'limit_harian')) {
+            Schema::table('gurus', function (Blueprint $table) {
+                $table->integer('limit_harian')->default(8)->after('status_pegawai');
             });
         }
     }
@@ -62,19 +68,20 @@ class GuruController extends Controller
 
     public function store(Request $request)
     {
-        $this->checkAndFixDatabase(); // Panggil fungsi cek DB
+        $this->checkAndFixDatabase();
 
         $request->validate([
             'nama_guru'      => 'required|string',
             'kode_guru'      => 'required|string|unique:gurus',
             'hari_mengajar'  => 'nullable|array',
             'jenis_hari'     => 'nullable|in:hard,soft',
-            'status_pegawai' => 'nullable|in:PNS/P3K,Guru Tamu,Guru Ngamen' // Validasi Status
+            'status_pegawai' => 'nullable|in:PNS/P3K,Guru Tamu,Guru Ngamen',
+            'limit_harian'   => 'nullable|integer|min:1|max:20' // Validasi tambahan
         ]);
 
-        // Tangkap status_pegawai dari request form
-        $data = $request->only('nama_guru', 'kode_guru', 'jenis_hari', 'status_pegawai');
+        $data = $request->only('nama_guru', 'kode_guru', 'jenis_hari', 'status_pegawai', 'limit_harian');
         $data['hari_mengajar'] = $request->hari_mengajar ?? [];
+        $data['limit_harian'] = $request->limit_harian ?? 8; // Default 8 JP
 
         Guru::create($data);
         return redirect()->route('guru.index')->with('success', 'Guru berhasil ditambahkan.');
@@ -82,19 +89,20 @@ class GuruController extends Controller
 
     public function update(Request $request, $id)
     {
-        $this->checkAndFixDatabase(); // Panggil fungsi cek DB
+        $this->checkAndFixDatabase();
 
         $request->validate([
             'nama_guru'      => 'required|string',
             'kode_guru'      => 'required|string|unique:gurus,kode_guru,' . $id,
             'hari_mengajar'  => 'nullable|array',
             'jenis_hari'     => 'nullable|in:hard,soft',
-            'status_pegawai' => 'nullable|in:PNS/P3K,Guru Tamu,Guru Ngamen' // Validasi Status
+            'status_pegawai' => 'nullable|in:PNS/P3K,Guru Tamu,Guru Ngamen',
+            'limit_harian'   => 'nullable|integer|min:1|max:20' // Validasi tambahan
         ]);
 
-        // Tangkap status_pegawai dari request form
-        $data = $request->only('nama_guru', 'kode_guru', 'jenis_hari', 'status_pegawai');
+        $data = $request->only('nama_guru', 'kode_guru', 'jenis_hari', 'status_pegawai', 'limit_harian');
         $data['hari_mengajar'] = $request->hari_mengajar ?? [];
+        $data['limit_harian'] = $request->limit_harian ?? 8; // Default 8 JP
 
         Guru::findOrFail($id)->update($data);
         return redirect()->route('guru.index')->with('success', 'Data guru diperbarui.');
