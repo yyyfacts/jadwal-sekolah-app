@@ -20,7 +20,7 @@ class GuruController extends Controller
                 $table->string('tipe_jam')->default('single')->after('jumlah_jam');
             });
         }
-        
+
         if (Schema::hasTable('kelas') && !Schema::hasColumn('kelas', 'limit_harian')) {
             Schema::table('kelas', function (Blueprint $table) {
                 $table->integer('limit_harian')->default(10)->after('max_jam');
@@ -40,18 +40,22 @@ class GuruController extends Controller
             });
         }
 
-        // PENGECEKAN KOLOM BARU: limit_harian (Untuk SF-4)
         if (Schema::hasTable('gurus') && !Schema::hasColumn('gurus', 'limit_harian')) {
             Schema::table('gurus', function (Blueprint $table) {
                 $table->integer('limit_harian')->nullable()->after('status_pegawai');
             });
         } else {
-            // Ubah struktur kolom jika sebelumnya disetting NOT NULL
             try {
                 DB::statement('ALTER TABLE gurus MODIFY limit_harian INT NULL DEFAULT NULL');
             } catch (\Exception $e) {
-                // Abaikan jika tidak disupport oleh driver DB tertentu
             }
+        }
+
+        // PENGECEKAN KOLOM BARU UNTUK SIFAT BATAS GURU
+        if (Schema::hasTable('gurus') && !Schema::hasColumn('gurus', 'jenis_batas_guru')) {
+            Schema::table('gurus', function (Blueprint $table) {
+                $table->enum('jenis_batas_guru', ['hard', 'soft'])->default('soft')->after('limit_harian');
+            });
         }
     }
 
@@ -79,15 +83,16 @@ class GuruController extends Controller
         $this->checkAndFixDatabase();
 
         $request->validate([
-            'nama_guru'      => 'required|string',
-            'kode_guru'      => 'required|string|unique:gurus',
-            'hari_mengajar'  => 'nullable|array',
-            'jenis_hari'     => 'nullable|in:hard,soft',
+            'nama_guru' => 'required|string',
+            'kode_guru' => 'required|string|unique:gurus',
+            'hari_mengajar' => 'nullable|array',
+            'jenis_hari' => 'nullable|in:hard,soft',
             'status_pegawai' => 'nullable|in:PNS/P3K,Guru Tamu,Guru Ngamen',
-            'limit_harian'   => 'nullable|integer|min:1|max:20' // Dibuat nullable
+            'limit_harian' => 'nullable|integer|min:1|max:20',
+            'jenis_batas_guru' => 'nullable|in:hard,soft'
         ]);
 
-        $data = $request->only('nama_guru', 'kode_guru', 'jenis_hari', 'status_pegawai', 'limit_harian');
+        $data = $request->only('nama_guru', 'kode_guru', 'jenis_hari', 'status_pegawai', 'limit_harian', 'jenis_batas_guru');
         $data['hari_mengajar'] = $request->hari_mengajar ?? [];
 
         Guru::create($data);
@@ -99,15 +104,16 @@ class GuruController extends Controller
         $this->checkAndFixDatabase();
 
         $request->validate([
-            'nama_guru'      => 'required|string',
-            'kode_guru'      => 'required|string|unique:gurus,kode_guru,' . $id,
-            'hari_mengajar'  => 'nullable|array',
-            'jenis_hari'     => 'nullable|in:hard,soft',
+            'nama_guru' => 'required|string',
+            'kode_guru' => 'required|string|unique:gurus,kode_guru,' . $id,
+            'hari_mengajar' => 'nullable|array',
+            'jenis_hari' => 'nullable|in:hard,soft',
             'status_pegawai' => 'nullable|in:PNS/P3K,Guru Tamu,Guru Ngamen',
-            'limit_harian'   => 'nullable|integer|min:1|max:20' // Dibuat nullable
+            'limit_harian' => 'nullable|integer|min:1|max:20',
+            'jenis_batas_guru' => 'nullable|in:hard,soft'
         ]);
 
-        $data = $request->only('nama_guru', 'kode_guru', 'jenis_hari', 'status_pegawai', 'limit_harian');
+        $data = $request->only('nama_guru', 'kode_guru', 'jenis_hari', 'status_pegawai', 'limit_harian', 'jenis_batas_guru');
         $data['hari_mengajar'] = $request->hari_mengajar ?? [];
 
         Guru::findOrFail($id)->update($data);
@@ -126,36 +132,36 @@ class GuruController extends Controller
     {
         try {
             $this->checkAndFixDatabase();
-            
+
             $request->validate([
-                'kelas_id'   => 'required|exists:kelas,id',
-                'mapel_id'   => 'required|exists:mapels,id',
+                'kelas_id' => 'required|exists:kelas,id',
+                'mapel_id' => 'required|exists:mapels,id',
                 'jumlah_jam' => 'required|numeric|min:1',
-                'tipe_jam'   => 'required|in:single,double,triple',
-                'status'     => 'required|in:offline,online', 
+                'tipe_jam' => 'required|in:single,double,triple',
+                'status' => 'required|in:offline,online',
             ]);
 
             $kelas = Kelas::with('jadwals')->findOrFail($request->kelas_id);
             $currentTotalOffline = $kelas->jadwals->where('status', 'offline')->sum('jumlah_jam');
-            $maxJam = $kelas->max_jam; 
+            $maxJam = $kelas->max_jam;
             $tambahanBeban = ($request->status == 'offline') ? $request->jumlah_jam : 0;
 
             if (($currentTotalOffline + $tambahanBeban) > $maxJam) {
                 return response()->json([
-                    'success' => false, 
+                    'success' => false,
                     'message' => "Gagal! Slot Fisik (Offline) penuh. Terisi: $currentTotalOffline JP, Maks: $maxJam JP."
                 ], 422);
             }
 
             $jadwal = new Jadwal();
-            $jadwal->kelas_id   = $request->kelas_id;
-            $jadwal->mapel_id   = $request->mapel_id;
-            $jadwal->guru_id    = $id;
+            $jadwal->kelas_id = $request->kelas_id;
+            $jadwal->mapel_id = $request->mapel_id;
+            $jadwal->guru_id = $id;
             $jadwal->jumlah_jam = $request->jumlah_jam;
-            $jadwal->tipe_jam   = $request->tipe_jam;
-            $jadwal->status     = $request->status; 
+            $jadwal->tipe_jam = $request->tipe_jam;
+            $jadwal->status = $request->status;
             $jadwal->master_hari_id = null;
-            $jadwal->jam        = null; 
+            $jadwal->jam = null;
             $jadwal->save();
 
             $jadwal->load(['mapel', 'kelas']);
@@ -163,11 +169,11 @@ class GuruController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Berhasil Disimpan!',
-                'jadwal'  => $jadwal
+                'jadwal' => $jadwal
             ]);
 
         } catch (\Throwable $e) {
-            return response()->json(['success' => false,'message' => 'Error: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
 
@@ -178,11 +184,11 @@ class GuruController extends Controller
             $jadwal = Jadwal::findOrFail($id);
 
             $request->validate([
-                'kelas_id'   => 'required|exists:kelas,id',
-                'mapel_id'   => 'required|exists:mapels,id',
+                'kelas_id' => 'required|exists:kelas,id',
+                'mapel_id' => 'required|exists:mapels,id',
                 'jumlah_jam' => 'required|numeric|min:1',
-                'tipe_jam'   => 'required|in:single,double,triple',
-                'status'     => 'required|in:offline,online', 
+                'tipe_jam' => 'required|in:single,double,triple',
+                'status' => 'required|in:offline,online',
             ]);
 
             $kelas = Kelas::with('jadwals')->findOrFail($request->kelas_id);
@@ -198,11 +204,11 @@ class GuruController extends Controller
                 ], 422);
             }
 
-            $jadwal->kelas_id   = $request->kelas_id;
-            $jadwal->mapel_id   = $request->mapel_id;
+            $jadwal->kelas_id = $request->kelas_id;
+            $jadwal->mapel_id = $request->mapel_id;
             $jadwal->jumlah_jam = $request->jumlah_jam;
-            $jadwal->tipe_jam   = $request->tipe_jam;
-            $jadwal->status     = $request->status; 
+            $jadwal->tipe_jam = $request->tipe_jam;
+            $jadwal->status = $request->status;
             $jadwal->save();
 
             $jadwal->load(['mapel', 'kelas']);
@@ -210,11 +216,11 @@ class GuruController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Berhasil Diupdate!',
-                'jadwal'  => $jadwal
+                'jadwal' => $jadwal
             ]);
 
         } catch (\Throwable $e) {
-            return response()->json(['success' => false,'message' => 'Error: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
 
@@ -222,7 +228,8 @@ class GuruController extends Controller
     {
         try {
             $jadwal = Jadwal::find($id);
-            if ($jadwal) $jadwal->delete();
+            if ($jadwal)
+                $jadwal->delete();
             return response()->json(['success' => true, 'message' => 'Jadwal Dihapus!']);
         } catch (\Throwable $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

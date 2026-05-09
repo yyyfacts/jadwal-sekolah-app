@@ -17,7 +17,8 @@ class Guru extends Model
         'hari_mengajar',
         'jenis_hari',
         'status_pegawai',
-        'limit_harian', // Ditambahkan agar batas max JP harian bisa tersimpan
+        'limit_harian',
+        'jenis_batas_guru', // <--- DITAMBAHKAN
     ];
 
     protected $casts = [

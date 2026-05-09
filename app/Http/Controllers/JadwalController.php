@@ -126,7 +126,6 @@ class JadwalController extends Controller
             ? \Carbon\Carbon::parse($latestJadwal->updated_at)->translatedFormat('d F Y, H:i') . ' WIB'
             : 'Belum pernah';
 
-        // MEMBACA METRIK TERAKHIR DARI FILE JSON AGAR TIDAK HILANG SAAT REFRESH
         $latestMetrics = [];
         $metricsPath = storage_path('app/latest_metrics.json');
         if (file_exists($metricsPath)) {
@@ -164,11 +163,12 @@ class JadwalController extends Controller
             });
 
             $gurus = Guru::all()->map(fn ($guru) => [
-                'id'            => $guru->id,
-                'nama'          => $guru->nama_guru,
-                'hari_mengajar' => $guru->hari_mengajar ?? [],
-                'jenis_hari'    => $guru->jenis_hari ?? 'hard', 
-                'limit_harian'  => $guru->limit_harian, 
+                'id'               => $guru->id,
+                'nama'             => $guru->nama_guru,
+                'hari_mengajar'    => $guru->hari_mengajar ?? [],
+                'jenis_hari'       => $guru->jenis_hari ?? 'hard', 
+                'limit_harian'     => $guru->limit_harian, 
+                'jenis_batas_guru' => $guru->jenis_batas_guru ?? 'soft', // Diteruskan ke Python
             ]);
 
             $assignments = Jadwal::with('mapel')
@@ -196,14 +196,14 @@ class JadwalController extends Controller
                 'limit_jumat'  => $k->limit_jumat  ?? 7,
             ]);
 
-            $maxTimeMinutes = $request->input('max_time', 10); // Menangkap input dari web
+            $maxTimeMinutes = $request->input('max_time', 10); 
 
             $dataInput = [
                 'hari_aktif'       => $hariAktif,
                 'gurus'            => $gurus,
                 'kelass'           => $kelassData,
                 'assignments'      => $assignments,
-                'max_time_minutes' => $maxTimeMinutes, // Diteruskan ke Python
+                'max_time_minutes' => $maxTimeMinutes,
             ];
 
             $jsonPath   = storage_path('app/input_solver.json');
@@ -243,7 +243,6 @@ class JadwalController extends Controller
                     }
                     DB::commit();
 
-                    // MENYIMPAN HASIL METRIK KE FILE LOKAL AGAR TIDAK HILANG SAAT REFRESH
                     $metricsToSave = [
                         'status_solver'           => $result['status'],
                         'status_penjelasan'       => $result['status_penjelasan'] ?? null,
