@@ -161,7 +161,7 @@ class JadwalController extends Controller
                 'nama'          => $guru->nama_guru,
                 'hari_mengajar' => $guru->hari_mengajar ?? [],
                 'jenis_hari'    => $guru->jenis_hari ?? 'hard', 
-                'limit_harian'  => $guru->limit_harian ?? 8, // Mengirim data limit SF-4
+                'limit_harian'  => $guru->limit_harian, // Dikirim mentah apa adanya (bisa null)
             ]);
 
             $assignments = Jadwal::with('mapel')

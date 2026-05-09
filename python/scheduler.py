@@ -259,7 +259,7 @@ def bangun_model(raw_assignments, kelass, gurus,
         batas_atas = max_jam_dinamis[g_id]
         batas_bwh  = min_jam_dinamis[g_id]
         rata_exact = target_jam_guru[g_id]
-        limit_harian_guru = int(g.get('limit_harian', 8)) # Untuk SF-4
+        limit_harian_raw = g.get('limit_harian')
 
         for h in HARI_LIST:
             beban_guru = durasi_per_guru_harian[g_id][h]
@@ -269,15 +269,18 @@ def bangun_model(raw_assignments, kelass, gurus,
             model.Add(sum(beban_guru) <= batas_atas)
             
             # --- SOFT CONSTRAINT SF-4 (Batas Maksimal JP Guru di Hari Tersebut) ---
-            is_over_harian = model.NewBoolVar(f'over_harian_{g_id}_{h}')
-            model.Add(sum(beban_guru) <= limit_harian_guru).OnlyEnforceIf(is_over_harian.Not())
-            model.Add(sum(beban_guru) > limit_harian_guru).OnlyEnforceIf(is_over_harian)
+            # Jika limit_harian bernilai kosong (Null), maka constraint ini dilewati
+            if limit_harian_raw is not None and str(limit_harian_raw).strip() != "":
+                limit_harian_guru = int(limit_harian_raw)
+                is_over_harian = model.NewBoolVar(f'over_harian_{g_id}_{h}')
+                model.Add(sum(beban_guru) <= limit_harian_guru).OnlyEnforceIf(is_over_harian.Not())
+                model.Add(sum(beban_guru) > limit_harian_guru).OnlyEnforceIf(is_over_harian)
 
-            soft_guru_harian_vars.append(is_over_harian)
-            soft_guru_harian_info.append({
-                'g_id': g_id, 'hari': h, 'is_over': is_over_harian,
-                'limit': limit_harian_guru, 'beban_vars': beban_guru
-            })
+                soft_guru_harian_vars.append(is_over_harian)
+                soft_guru_harian_info.append({
+                    'g_id': g_id, 'hari': h, 'is_over': is_over_harian,
+                    'limit': limit_harian_guru, 'beban_vars': beban_guru
+                })
             
             # --- SF-1 (Penyebaran Beban) ---
             if batas_atas <= 0:

@@ -9,6 +9,7 @@ use App\Models\Jadwal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 
 class GuruController extends Controller
 {
@@ -42,8 +43,15 @@ class GuruController extends Controller
         // PENGECEKAN KOLOM BARU: limit_harian (Untuk SF-4)
         if (Schema::hasTable('gurus') && !Schema::hasColumn('gurus', 'limit_harian')) {
             Schema::table('gurus', function (Blueprint $table) {
-                $table->integer('limit_harian')->default(8)->after('status_pegawai');
+                $table->integer('limit_harian')->nullable()->after('status_pegawai');
             });
+        } else {
+            // Ubah struktur kolom jika sebelumnya disetting NOT NULL
+            try {
+                DB::statement('ALTER TABLE gurus MODIFY limit_harian INT NULL DEFAULT NULL');
+            } catch (\Exception $e) {
+                // Abaikan jika tidak disupport oleh driver DB tertentu
+            }
         }
     }
 
@@ -76,12 +84,11 @@ class GuruController extends Controller
             'hari_mengajar'  => 'nullable|array',
             'jenis_hari'     => 'nullable|in:hard,soft',
             'status_pegawai' => 'nullable|in:PNS/P3K,Guru Tamu,Guru Ngamen',
-            'limit_harian'   => 'nullable|integer|min:1|max:20' // Validasi tambahan
+            'limit_harian'   => 'nullable|integer|min:1|max:20' // Dibuat nullable
         ]);
 
         $data = $request->only('nama_guru', 'kode_guru', 'jenis_hari', 'status_pegawai', 'limit_harian');
         $data['hari_mengajar'] = $request->hari_mengajar ?? [];
-        $data['limit_harian'] = $request->limit_harian ?? 8; // Default 8 JP
 
         Guru::create($data);
         return redirect()->route('guru.index')->with('success', 'Guru berhasil ditambahkan.');
@@ -97,12 +104,11 @@ class GuruController extends Controller
             'hari_mengajar'  => 'nullable|array',
             'jenis_hari'     => 'nullable|in:hard,soft',
             'status_pegawai' => 'nullable|in:PNS/P3K,Guru Tamu,Guru Ngamen',
-            'limit_harian'   => 'nullable|integer|min:1|max:20' // Validasi tambahan
+            'limit_harian'   => 'nullable|integer|min:1|max:20' // Dibuat nullable
         ]);
 
         $data = $request->only('nama_guru', 'kode_guru', 'jenis_hari', 'status_pegawai', 'limit_harian');
         $data['hari_mengajar'] = $request->hari_mengajar ?? [];
-        $data['limit_harian'] = $request->limit_harian ?? 8; // Default 8 JP
 
         Guru::findOrFail($id)->update($data);
         return redirect()->route('guru.index')->with('success', 'Data guru diperbarui.');

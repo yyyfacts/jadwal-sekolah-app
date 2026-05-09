@@ -179,7 +179,8 @@
                                     </div>
                                     @endif
                                     <div class="text-[9px] text-slate-400 font-medium">Batas Max/Hari: <b
-                                            class="text-indigo-500">{{ $g->limit_harian ?? 8 }} JP</b></div>
+                                            class="text-indigo-500">{{ $g->limit_harian ? $g->limit_harian . ' JP' : 'Tidak Dibatasi' }}</b>
+                                    </div>
                                 </div>
                             </td>
                             <td class="px-3 py-2 text-center align-middle">
@@ -284,10 +285,9 @@
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1"
-                        title="Maksimal JP Per Hari Untuk Guru Ini">Batas JP / Hari</label>
-                    <input type="number" name="limit_harian" value="8" min="1" max="20"
-                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-xs text-center"
-                        required>
+                        title="Kosongkan jika tidak dibatasi">Batas JP / Hari</label>
+                    <input type="number" name="limit_harian" min="1" max="20" placeholder="Tidak Dibatasi"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-xs text-center">
                 </div>
             </div>
             <div>
@@ -355,10 +355,11 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Batas JP / Hari</label>
-                    <input type="number" name="limit_harian" value="{{ $g->limit_harian ?? 8 }}" min="1" max="20"
-                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none text-xs text-center"
-                        required>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1"
+                        title="Kosongkan jika tidak dibatasi">Batas JP / Hari</label>
+                    <input type="number" name="limit_harian" value="{{ $g->limit_harian }}" min="1" max="20"
+                        placeholder="Tidak Dibatasi"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none text-xs text-center">
                 </div>
             </div>
             <div>
