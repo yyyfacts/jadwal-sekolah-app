@@ -98,7 +98,7 @@
                     @php
                     $theme = $themes[$index % 4];
                     $jam = $g->total_jam_mengajar;
-                    $statusPegawai = $g->status_pegawai ?? 'PNS/P3K'; // Default fallback
+                    $statusPegawai = $g->status_pegawai ?? 'PNS/P3K';
 
                     // EVALUASI DINAMIS BERDASARKAN STATUS
                     $statusLabel = 'Kosong';
@@ -118,7 +118,7 @@
                     }
 
                     if ($statusPegawai == 'Guru Ngamen') {
-                    $statusLabel = 'Sesuai'; // Anggap sesuai selama terisi
+                    $statusLabel = 'Sesuai';
                     $statusBg = 'bg-emerald-50 text-emerald-600 border-emerald-200';
                     } else {
                     if ($jam < $min) { $statusLabel='Kurang' ; $statusBg='bg-rose-50 text-rose-600 border-rose-200' ; }
@@ -178,8 +178,14 @@
                                         <span class="text-[10px] font-bold">0 Jam</span>
                                     </div>
                                     @endif
-                                    <div class="text-[9px] text-slate-400 font-medium">Batas Max/Hari: <b
-                                            class="text-indigo-500">{{ $g->limit_harian ? $g->limit_harian . ' JP' : 'Tidak Dibatasi' }}</b>
+                                    <div
+                                        class="text-[9px] text-slate-500 font-medium mt-1 bg-slate-50 border border-slate-200 px-1.5 py-0.5 rounded">
+                                        Max Slot: <b
+                                            class="text-indigo-600">{{ $g->limit_harian ? 'Jam ke-'.$g->limit_harian : 'Bebas' }}</b>
+                                        @if($g->limit_harian)
+                                        <span
+                                            class="{{ $g->jenis_batas_guru == 'hard' ? 'text-rose-500' : 'text-emerald-500' }}">({{ $g->jenis_batas_guru == 'hard' ? 'Mutlak' : 'Fleksibel' }})</span>
+                                        @endif
                                     </div>
                                 </div>
                             </td>
@@ -274,20 +280,30 @@
                     </select>
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-3 gap-2">
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sifat Hari</label>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1"
+                        title="Aturan Hari Kerja">Sifat Hari</label>
                     <select name="jenis_hari"
-                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none text-xs">
+                        class="w-full border border-slate-300 rounded-lg px-2 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-xs">
                         <option value="soft">Fleksibel</option>
                         <option value="hard">Mutlak</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1"
-                        title="Kosongkan jika tidak dibatasi">Batas JP / Hari</label>
-                    <input type="number" name="limit_harian" min="1" max="20" placeholder="Tidak Dibatasi"
-                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-xs text-center">
+                        title="Max slot jam ngajar harian (Boleh kosong)">Batas JP</label>
+                    <input type="number" name="limit_harian" min="1" max="20" placeholder="Bebas"
+                        class="w-full border border-slate-300 rounded-lg px-2 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-xs text-center">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1"
+                        title="Sifat Pelanggaran Batas JP">Sifat Batas</label>
+                    <select name="jenis_batas_guru"
+                        class="w-full border border-slate-300 rounded-lg px-2 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-xs">
+                        <option value="soft">Fleksibel</option>
+                        <option value="hard">Mutlak</option>
+                    </select>
                 </div>
             </div>
             <div>
@@ -346,20 +362,31 @@
                     </select>
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-3 gap-2">
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sifat Hari</label>
-                    <select name="jenis_hari" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1"
+                        title="Aturan Hari Kerja">Sifat Hari</label>
+                    <select name="jenis_hari"
+                        class="w-full border border-slate-300 rounded-lg px-2 py-2 focus:ring-2 focus:ring-amber-500 outline-none text-xs">
                         <option value="soft" {{ $g->jenis_hari == 'soft' ? 'selected' : '' }}>Fleksibel</option>
                         <option value="hard" {{ $g->jenis_hari == 'hard' ? 'selected' : '' }}>Mutlak</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1"
-                        title="Kosongkan jika tidak dibatasi">Batas JP / Hari</label>
+                        title="Max slot jam ngajar harian (Boleh kosong)">Batas JP</label>
                     <input type="number" name="limit_harian" value="{{ $g->limit_harian }}" min="1" max="20"
-                        placeholder="Tidak Dibatasi"
-                        class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none text-xs text-center">
+                        placeholder="Bebas"
+                        class="w-full border border-slate-300 rounded-lg px-2 py-2 focus:ring-2 focus:ring-amber-500 outline-none text-xs text-center">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1"
+                        title="Sifat Pelanggaran Batas JP">Sifat Batas</label>
+                    <select name="jenis_batas_guru"
+                        class="w-full border border-slate-300 rounded-lg px-2 py-2 focus:ring-2 focus:ring-amber-500 outline-none text-xs">
+                        <option value="soft" {{ $g->jenis_batas_guru == 'soft' ? 'selected' : '' }}>Fleksibel</option>
+                        <option value="hard" {{ $g->jenis_batas_guru == 'hard' ? 'selected' : '' }}>Mutlak</option>
+                    </select>
                 </div>
             </div>
             <div>
