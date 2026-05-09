@@ -29,6 +29,7 @@ class ObjectiveTracker(cp_model.CpSolverSolutionCallback):
     def on_solution_callback(self):
         t = time.time() - self.start_time
         obj = self.ObjectiveValue()
+        # Harus dikirim pakai keyword "waktu" dan "objektif" agar grafik JS tidak "undefined"
         self.history.append({"waktu": round(t, 2), "objektif": obj})
 
 def load_json(path: str) -> dict:
@@ -130,7 +131,6 @@ def bangun_model(raw_assignments, kelass, gurus,
     soft_guru_batas_vars      = []
     soft_guru_batas_info      = []
 
-    # Buat dictionary map g_id ke profil guru untuk narik batas slotnya
     g_dict = {g['id']: g for g in gurus}
 
     for t in raw_assignments:
@@ -153,7 +153,6 @@ def bangun_model(raw_assignments, kelass, gurus,
         possible_days     = []
         is_guru_hari_hard = (guru_jenis_hari_map[g_id] == 'hard')
 
-        # Narik info batas slot guru (Konsep baru, bukan total durasi)
         limit_slot_guru_raw = g_dict[g_id].get('limit_harian')
         jenis_batas_guru    = g_dict[g_id].get('jenis_batas_guru', 'soft')
 
@@ -174,12 +173,11 @@ def bangun_model(raw_assignments, kelass, gurus,
             if limit_slot_guru_raw is not None and str(limit_slot_guru_raw).strip() != "":
                 try:
                     limit_slot_g = int(limit_slot_guru_raw)
-                    if jenis_batas_guru == 'hard':
+                    if limit_slot_g > 0 and jenis_batas_guru == 'hard':
                         batas_aktual_hari = min(batas_aktual_hari, limit_slot_g)
                 except ValueError:
                     pass
 
-            # Cek apakah durasi muat di slot yang tersisa
             if durasi > batas_aktual_hari:
                 continue
 
@@ -209,11 +207,11 @@ def bangun_model(raw_assignments, kelass, gurus,
                     'kelas_id': k_id, 'mapel_id': m_id,
                 })
 
-            # Guru Soft Limit (SF-4 BARU - Batas Slot Akhir)
+            # Guru Soft Limit (SF-4 BARU - Batas Slot Akhir Kepulangan)
             if limit_slot_guru_raw is not None and str(limit_slot_guru_raw).strip() != "":
                 try:
                     limit_slot_g = int(limit_slot_guru_raw)
-                    if jenis_batas_guru == 'soft':
+                    if limit_slot_g > 0 and jenis_batas_guru == 'soft':
                         is_over_g = model.NewBoolVar(f'overbatas_guru_{t_id}_{h}')
                         model.Add(end_var <= limit_slot_g + 1).OnlyEnforceIf([is_present, is_over_g.Not()])
                         model.Add(end_var >= limit_slot_g + 2).OnlyEnforceIf([is_present, is_over_g])
@@ -335,7 +333,6 @@ def hitung_csr(solver, raw_assignments, kelass, gurus,
                presences, starts, tasks_per_mapel_group):
     detail   = []
     total    = 0
-    # Ditambah HC-7 untuk Batas Jam Ke- Guru tipe HARD
     count_hc = {f'HC-{i}': {'total': 0, 'pelanggaran': 0} for i in range(1, 8)}
 
     solusi_map = {}
@@ -443,14 +440,18 @@ def hitung_csr(solver, raw_assignments, kelass, gurus,
         if jenis_batas != 'hard' or limit_raw is None or str(limit_raw).strip() == "":
             continue
             
-        limit = int(limit_raw)
-        total += 1
-        count_hc['HC-7']['total'] += 1
-        if t_id in solusi_map:
-            h, jam_mulai, durasi = solusi_map[t_id]
-            if (jam_mulai + durasi - 1) > limit:
-                count_hc['HC-7']['pelanggaran'] += 1
-                detail.append(f"[HC-7] {get_nama_guru(gurus, g_id)} mengajar di kelas {t['kelas_id']} hari {h} sampai slot {jam_mulai+durasi-1} (Batas Max Slot Mutlak: {limit}).")
+        try:
+            limit = int(limit_raw)
+            if limit > 0:
+                total += 1
+                count_hc['HC-7']['total'] += 1
+                if t_id in solusi_map:
+                    h, jam_mulai, durasi = solusi_map[t_id]
+                    if (jam_mulai + durasi - 1) > limit:
+                        count_hc['HC-7']['pelanggaran'] += 1
+                        detail.append(f"[HC-7] {get_nama_guru(gurus, g_id)} mengajar di kelas {t['kelas_id']} hari {h} sampai slot {jam_mulai+durasi-1} (Batas Max Slot Mutlak: {limit}).")
+        except ValueError:
+            pass
 
     jml = len(detail)
     CSR = 100.0 * (total - jml) / total if total > 0 else 100.0

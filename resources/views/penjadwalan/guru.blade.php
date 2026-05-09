@@ -292,7 +292,7 @@
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1"
-                        title="Max slot jam ngajar harian (Boleh kosong)">Batas JP</label>
+                        title="Max slot jam ngajar harian (Boleh kosong)">Batas Slot Ke-</label>
                     <input type="number" name="limit_harian" min="1" max="20" placeholder="Bebas"
                         class="w-full border border-slate-300 rounded-lg px-2 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-xs text-center">
                 </div>
@@ -374,7 +374,7 @@
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1"
-                        title="Max slot jam ngajar harian (Boleh kosong)">Batas JP</label>
+                        title="Max slot jam ngajar harian (Boleh kosong)">Batas Slot Ke-</label>
                     <input type="number" name="limit_harian" value="{{ $g->limit_harian }}" min="1" max="20"
                         placeholder="Bebas"
                         class="w-full border border-slate-300 rounded-lg px-2 py-2 focus:ring-2 focus:ring-amber-500 outline-none text-xs text-center">

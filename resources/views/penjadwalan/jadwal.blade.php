@@ -458,7 +458,7 @@
     <div class="bg-white p-8 rounded-3xl shadow-2xl text-center">
         <h3 class="text-xl font-extrabold text-slate-800 mb-2">AI Sedang Menyusun...</h3>
         <p class="text-[11px] text-slate-500 font-mono mt-2 max-w-[200px] mx-auto">Proses memakan waktu tergantung opsi
-            yang dipilih. Harap bersabar.</p>
+            yang dipilih (Max 10 Menit). Harap bersabar.</p>
     </div>
 </div>
 @endpush

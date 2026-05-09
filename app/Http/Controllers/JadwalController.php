@@ -168,7 +168,7 @@ class JadwalController extends Controller
                 'hari_mengajar'    => $guru->hari_mengajar ?? [],
                 'jenis_hari'       => $guru->jenis_hari ?? 'hard', 
                 'limit_harian'     => $guru->limit_harian, 
-                'jenis_batas_guru' => $guru->jenis_batas_guru ?? 'soft', // Diteruskan ke Python
+                'jenis_batas_guru' => $guru->jenis_batas_guru ?? 'soft', 
             ]);
 
             $assignments = Jadwal::with('mapel')
@@ -256,6 +256,7 @@ class JadwalController extends Controller
                         'breakdown_csr'           => $metrik['breakdown_csr'] ?? [],
                         'breakdown_scfr'          => $metrik['breakdown_scfr'] ?? [],
                         'kurva_solver'            => $metrik['kurva_solver'] ?? null,
+                        'tahapan_proses'          => $result['tahapan_proses'] ?? null,
                     ];
                     file_put_contents(storage_path('app/latest_metrics.json'), json_encode($metricsToSave));
 
