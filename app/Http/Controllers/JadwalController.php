@@ -243,6 +243,7 @@ class JadwalController extends Controller
                     }
                     DB::commit();
 
+                    // Menyimpan metrik hasil python ke JSON agar bisa dibaca di index()
                     $metricsToSave = [
                         'status_solver'           => $result['status'],
                         'status_penjelasan'       => $result['status_penjelasan'] ?? null,
@@ -256,7 +257,6 @@ class JadwalController extends Controller
                         'breakdown_csr'           => $metrik['breakdown_csr'] ?? [],
                         'breakdown_scfr'          => $metrik['breakdown_scfr'] ?? [],
                         'kurva_solver'            => $metrik['kurva_solver'] ?? null,
-                        'tahapan_proses'          => $result['tahapan_proses'] ?? null,
                     ];
                     file_put_contents(storage_path('app/latest_metrics.json'), json_encode($metricsToSave));
 
