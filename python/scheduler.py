@@ -364,7 +364,7 @@ def main():
     raw_assignments  = data.get('assignments', [])
     kelass           = data.get('kelass', [])
     gurus            = data.get('gurus', [])
-    max_time_minutes = int(data.get('max_time_minutes', 10))
+    max_time_minutes = int(data.get('max_time_minutes', 30))
     MAX_TIME_SEC     = max_time_minutes * 60
 
     # Urutkan dari durasi terbesar agar constraint propagasi lebih efektif
