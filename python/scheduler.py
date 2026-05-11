@@ -18,8 +18,8 @@ BOBOT_GURU_MAX_HARIAN = 150
 BOBOT_DEVIASI         =   2
 
 # Pengaturan Eksekusi Hardware
-MAX_MEMORY_MB = 2048
-MAX_WORKERS   = 4
+MAX_MEMORY_MB = 4096
+MAX_WORKERS   = 10
 
 class ObjectiveTracker(cp_model.CpSolverSolutionCallback):
     def __init__(self, start_time):
