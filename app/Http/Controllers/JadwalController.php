@@ -79,9 +79,9 @@ class JadwalController extends Controller
         $hariMap = MasterHari::pluck('nama_hari', 'id')->toArray();
 
         foreach ($rawJadwals as $row) {
-            $durasi       = $row->jumlah_jam;
+            $durasi        = $row->jumlah_jam;
             $hari_id_angka = $row->hari_id;
-            $hari         = $hariMap[$hari_id_angka] ?? null;
+            $hari          = $hariMap[$hari_id_angka] ?? null;
 
             if (!$hari) continue;
 
@@ -121,13 +121,13 @@ class JadwalController extends Controller
         $tahunAktif = TahunPelajaran::getActive();
         $judulTahun = $tahunAktif ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}" : date('Y') . '/' . (date('Y') + 1);
 
-        $latestJadwal = Jadwal::whereNotNull('hari_id')->whereNotNull('jam')->orderBy('updated_at', 'desc')->first();
-        $terakhirGenerate = $latestJadwal && $latestJadwal->updated_at 
+        $latestJadwal     = Jadwal::whereNotNull('hari_id')->whereNotNull('jam')->orderBy('updated_at', 'desc')->first();
+        $terakhirGenerate = $latestJadwal && $latestJadwal->updated_at
             ? \Carbon\Carbon::parse($latestJadwal->updated_at)->translatedFormat('d F Y, H:i') . ' WIB'
             : 'Belum pernah';
 
         $latestMetrics = [];
-        $metricsPath = storage_path('app/latest_metrics.json');
+        $metricsPath   = storage_path('app/latest_metrics.json');
         if (file_exists($metricsPath)) {
             $latestMetrics = json_decode(file_get_contents($metricsPath), true);
         }
@@ -166,9 +166,9 @@ class JadwalController extends Controller
                 'id'               => $guru->id,
                 'nama'             => $guru->nama_guru,
                 'hari_mengajar'    => $guru->hari_mengajar ?? [],
-                'jenis_hari'       => $guru->jenis_hari ?? 'hard', 
-                'limit_harian'     => $guru->limit_harian, 
-                'jenis_batas_guru' => $guru->jenis_batas_guru ?? 'soft', 
+                'jenis_hari'       => $guru->jenis_hari       ?? 'hard',
+                'limit_harian'     => $guru->limit_harian,
+                'jenis_batas_guru' => $guru->jenis_batas_guru ?? 'soft',
             ]);
 
             $assignments = Jadwal::with('mapel')
@@ -184,8 +184,10 @@ class JadwalController extends Controller
                         'mapel_id'           => $j->mapel_id,
                         'jumlah_jam'         => $j->jumlah_jam,
                         'nama_mapel'         => $j->mapel->nama_mapel ?? '',
-                        'batas_maksimal_jam' => isset($j->mapel->batas_maksimal_jam) ? (int) $j->mapel->batas_maksimal_jam : null,
-                        'jenis_batas'        => $j->mapel->jenis_batas ?? 'soft', 
+                        'batas_maksimal_jam' => isset($j->mapel->batas_maksimal_jam)
+                            ? (int) $j->mapel->batas_maksimal_jam
+                            : null,
+                        'jenis_batas'        => $j->mapel->jenis_batas ?? 'soft',
                     ];
                 });
 
@@ -196,7 +198,7 @@ class JadwalController extends Controller
                 'limit_jumat'  => $k->limit_jumat  ?? 7,
             ]);
 
-            $maxTimeMinutes = $request->input('max_time', 10); 
+            $maxTimeMinutes = $request->input('max_time', 10);
 
             $dataInput = [
                 'hari_aktif'       => $hariAktif,
@@ -210,8 +212,15 @@ class JadwalController extends Controller
             file_put_contents($jsonPath, json_encode($dataInput));
 
             $scriptPath = base_path('python/scheduler.py');
-            $process    = new Process(['python', $scriptPath, $jsonPath]);
-            $process->setTimeout(null); 
+
+            // -------------------------------------------------------
+            // Ambil path Python dari .env (PYTHON_PATH).
+            // Jika tidak diset, fallback ke 'python' (untuk server/linux).
+            // -------------------------------------------------------
+            $pythonBin = env('PYTHON_PATH', 'python');
+
+            $process = new Process([$pythonBin, $scriptPath, $jsonPath]);
+            $process->setTimeout(null);
             $process->run();
 
             if (!$process->isSuccessful()) throw new ProcessFailedException($process);
@@ -243,20 +252,19 @@ class JadwalController extends Controller
                     }
                     DB::commit();
 
-                    // Menyimpan metrik hasil python ke JSON agar bisa dibaca di index()
                     $metricsToSave = [
                         'status_solver'           => $result['status'],
-                        'status_penjelasan'       => $result['status_penjelasan'] ?? null,
-                        'waktu_komputasi'         => $metrik['waktu_komputasi_detik'] ?? null,
-                        'csr'                     => $metrik['CSR'] ?? null,
-                        'scfr'                    => $metrik['SCFR'] ?? null,
+                        'status_penjelasan'       => $result['status_penjelasan']       ?? null,
+                        'waktu_komputasi'         => $metrik['waktu_komputasi_detik']   ?? null,
+                        'csr'                     => $metrik['CSR']                     ?? null,
+                        'scfr'                    => $metrik['SCFR']                    ?? null,
                         'jumlah_pelanggaran_hard' => $metrik['jumlah_pelanggaran_hard'] ?? 0,
                         'jumlah_pelanggaran_soft' => $metrik['jumlah_pelanggaran_soft'] ?? 0,
                         'detail_pelanggaran_hard' => $metrik['detail_pelanggaran_hard'] ?? [],
                         'detail_pelanggaran_soft' => $metrik['detail_pelanggaran_soft'] ?? [],
-                        'breakdown_csr'           => $metrik['breakdown_csr'] ?? [],
-                        'breakdown_scfr'          => $metrik['breakdown_scfr'] ?? [],
-                        'kurva_solver'            => $metrik['kurva_solver'] ?? null,
+                        'breakdown_csr'           => $metrik['breakdown_csr']           ?? [],
+                        'breakdown_scfr'          => $metrik['breakdown_scfr']          ?? [],
+                        'kurva_solver'            => $metrik['kurva_solver']             ?? null,
                     ];
                     file_put_contents(storage_path('app/latest_metrics.json'), json_encode($metricsToSave));
 
