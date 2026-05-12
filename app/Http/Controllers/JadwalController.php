@@ -141,6 +141,7 @@ class JadwalController extends Controller
 
     public function generate(Request $request)
     {
+        // Izinkan proses berjalan lama
         set_time_limit(0);
 
         try {
@@ -223,7 +224,9 @@ class JadwalController extends Controller
             $process->setTimeout(null);
             $process->run();
 
-            if (!$process->isSuccessful()) throw new ProcessFailedException($process);
+            if (!$process->isSuccessful()) {
+                throw new ProcessFailedException($process);
+            }
 
             $result = json_decode($process->getOutput(), true);
             $metrik = $result['metrik'] ?? [];
@@ -264,7 +267,7 @@ class JadwalController extends Controller
                         'detail_pelanggaran_soft' => $metrik['detail_pelanggaran_soft'] ?? [],
                         'breakdown_csr'           => $metrik['breakdown_csr']           ?? [],
                         'breakdown_scfr'          => $metrik['breakdown_scfr']          ?? [],
-                        'kurva_solver'            => $metrik['kurva_solver']             ?? null,
+                        'kurva_solver'            => $metrik['kurva_solver']            ?? null,
                     ];
                     file_put_contents(storage_path('app/latest_metrics.json'), json_encode($metricsToSave));
 
