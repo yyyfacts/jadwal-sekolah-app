@@ -141,7 +141,6 @@ class JadwalController extends Controller
 
     public function generate(Request $request)
     {
-        // Izinkan proses berjalan lama
         set_time_limit(0);
 
         try {
@@ -199,6 +198,7 @@ class JadwalController extends Controller
                 'limit_jumat'  => $k->limit_jumat  ?? 7,
             ]);
 
+            // Ambil input waktu yang diketik user
             $maxTimeMinutes = $request->input('max_time', 10);
 
             $dataInput = [
@@ -214,10 +214,6 @@ class JadwalController extends Controller
 
             $scriptPath = base_path('python/scheduler.py');
 
-            // -------------------------------------------------------
-            // Ambil path Python dari .env (PYTHON_PATH).
-            // Jika tidak diset, fallback ke 'python' (untuk server/linux).
-            // -------------------------------------------------------
             $pythonBin = env('PYTHON_PATH', 'python');
 
             $process = new Process([$pythonBin, $scriptPath, $jsonPath]);
