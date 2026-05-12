@@ -221,10 +221,10 @@
                             <select name="max_time"
                                 class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent appearance-none cursor-pointer"
                                 title="Batas Maksimal Waktu AI Berpikir">
-                                <option value="1">⏱️ 5Menit</option>
-                                <option value="3">⏱️ 10 Menit</option>
-                                <option value="5">⏱️ 25 Menit</option>
-                                <option value="10" selected>⏱️ 30 Menit</option>
+                                <option value="5">⏱️ 5Menit</option>
+                                <option value="10">⏱️ 10 Menit</option>
+                                <option value="25">⏱️ 25 Menit</option>
+                                <option value="30" selected>⏱️ 30 Menit</option>
                             </select>
                         </div>
                         <button type="button"
