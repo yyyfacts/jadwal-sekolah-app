@@ -18,7 +18,7 @@ BOBOT_DEVIASI         =   2
 
 # Pengaturan Eksekusi Hardware
 MAX_MEMORY_MB = 4096
-MAX_WORKERS   = 1
+MAX_WORKERS   = 10
 
 
 class ObjectiveTracker(cp_model.CpSolverSolutionCallback):
