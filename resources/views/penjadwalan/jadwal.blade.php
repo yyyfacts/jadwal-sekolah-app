@@ -110,6 +110,9 @@
                         <span>Total Nilai Penalti (Z) : <strong
                                 class="text-[12px] bg-emerald-100 px-1 rounded">{{ $latestMetrics['total_penalti'] ?? 0 }}
                                 Poin</strong></span>
+                        <span>Batas Bawah Teoritis (Z_bound) : <strong
+                                class="text-[12px] bg-emerald-100 px-1 rounded">{{ $latestMetrics['z_bound'] ?? 0 }}
+                                Poin</strong></span>
                         <span>Optimality Gap : <strong
                                 class="text-[12px] bg-emerald-100 px-1 rounded">{{ $latestMetrics['gap_pct'] ?? 0 }}%</strong></span>
                     </div>

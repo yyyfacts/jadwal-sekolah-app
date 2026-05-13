@@ -255,6 +255,7 @@ class JadwalController extends Controller
                         'status_penjelasan'       => $result['status_penjelasan']       ?? null,
                         'waktu_komputasi'         => $metrik['waktu_komputasi_detik']   ?? null,
                         'total_penalti'           => $metrik['total_penalti']           ?? null,
+                        'z_bound'                 => $metrik['z_bound']                 ?? null, // ---> BARIS INI DITAMBAHKAN
                         'gap_pct'                 => $metrik['gap_pct']                 ?? null,
                         'jumlah_pelanggaran_hard' => $metrik['jumlah_pelanggaran_hard'] ?? 0,
                         'jumlah_pelanggaran_soft' => $metrik['jumlah_pelanggaran_soft'] ?? 0,

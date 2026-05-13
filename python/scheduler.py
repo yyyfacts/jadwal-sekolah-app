@@ -529,6 +529,7 @@ def main():
         "metrik"           : {
             "waktu_komputasi_detik"  : round(T, 4),
             "total_penalti"          : int(obj_val),
+            "z_bound"                : int(obj_bound),  # ---> BARIS INI DITAMBAHKAN
             "gap_pct"                : round(gap_pct, 4),
             "jumlah_pelanggaran_hard": 0,
             "detail_pelanggaran_hard": [],
