@@ -413,18 +413,9 @@ def main():
     # ---- Konfigurasi solver ----
     solver = cp_model.CpSolver()
 
-    # [FIX 1] Core-guided optimization: teknik terbaik untuk weighted sum of booleans.
-    # Ini yang paling berpengaruh untuk menutup gap dari 4% → mendekati 0%.
     solver.parameters.optimize_with_core = True
-
-    # [FIX 2] Linearization level 2: solver membuat relaxasi linear yang lebih ketat
-    # sehingga lower bound lebih cepat naik dan gap lebih cepat menutup.
     solver.parameters.linearization_level = 2
-
-    # [FIX 3] Symmetry breaking otomatis: memangkas ruang pencarian yang simetris.
     solver.parameters.symmetry_level = 2
-
-    # [FIX 4] Worker dan memori
     solver.parameters.num_search_workers  = MAX_WORKERS
     solver.parameters.max_memory_in_mb    = MAX_MEMORY_MB
     solver.parameters.max_time_in_seconds = MAX_TIME_SEC
@@ -442,33 +433,34 @@ def main():
         return
 
     solusi  = ekstrak_solusi(solver, raw_assignments, presences, starts)
-    gap_pct = 0.0
+    
+    # Ekstraksi Penalti dan Gap
+    obj_val   = solver.ObjectiveValue() if status in (cp_model.OPTIMAL, cp_model.FEASIBLE) else 0
+    obj_bound = solver.BestObjectiveBound() if status in (cp_model.OPTIMAL, cp_model.FEASIBLE) else 0
+    gap_pct   = 0.0
 
     if status == cp_model.OPTIMAL:
         status_label      = "OPTIMAL"
         status_penjelasan = (
-            f"Pencarian solusi selesai. AI berhasil menemukan jadwal paling sempurna (Optimal) "
-            f"dalam {round(T, 2)} detik. Seluruh preferensi ditekan pada titik terbaiknya "
-            f"tanpa ada satu pun Aturan Mutlak yang dilanggar."
+            f"Pencarian solusi selesai. AI berhasil menemukan jadwal optimal "
+            f"dalam {round(T, 2)} detik. Seluruh preferensi ditekankan pada total penalti terendah: {int(obj_val)}."
         )
     else:
-        obj_val   = solver.ObjectiveValue()
-        obj_bound = solver.BestObjectiveBound()
         if obj_val > 0:
             gap_pct = abs(obj_val - obj_bound) / max(1.0, abs(obj_val)) * 100
 
         if gap_pct <= 0.5:
             status_label      = "NEAR-OPTIMAL"
             status_penjelasan = (
-                f"Jadwal nyaris sempurna (Near-Optimal) dengan sisa Gap hanya {gap_pct:.2f}%. "
-                f"Proses dihentikan karena mencapai batas waktu ({max_time_minutes} menit). "
-                f"Jadwal ini sangat layak digunakan."
+                f"Jadwal berada pada titik ekuilibrium (Near-Optimal) dengan sisa Gap hanya {gap_pct:.2f}%. "
+                f"Total Penalti ditekan hingga angka {int(obj_val)}. "
+                f"Proses dihentikan karena mencapai batas waktu ({max_time_minutes} menit)."
             )
         else:
             status_label      = "FEASIBLE"
             status_penjelasan = (
                 f"AI berhasil membuat jadwal tanpa bentrok (Feasible). "
-                f"Masih ada margin perbaikan preferensi (Gap) sebesar {gap_pct:.2f}%. "
+                f"Total Penalti yang dicapai adalah {int(obj_val)} poin dengan Optimality Gap sebesar {gap_pct:.2f}%. "
                 f"Proses dihentikan setelah {max_time_minutes} menit."
             )
 
@@ -476,7 +468,6 @@ def main():
     detail_soft = []
 
     # SF-1
-    sf1_total        = len(penalti_info)
     sf1_pelanggaran  = 0
     for p in penalti_info:
         if solver.Value(p['is_violation']) == 1:
@@ -487,7 +478,6 @@ def main():
 
     # SF-2
     sf2_reported    = set()
-    sf2_total       = len({sb['t_id'] for sb in soft_batas_info})
     sf2_pelanggaran = 0
     for sb in soft_batas_info:
         if (solver.Value(sb['is_present']) == 1
@@ -503,7 +493,6 @@ def main():
 
     # SF-3
     sf3_reported    = set()
-    sf3_total       = len({sh['t_id'] for sh in soft_hari_info})
     sf3_pelanggaran = 0
     for sh in soft_hari_info:
         if (solver.Value(sh['is_present']) == 1
@@ -518,7 +507,6 @@ def main():
 
     # SF-4
     sf4_reported    = set()
-    sf4_total       = len({sg['t_id'] for sg in soft_guru_batas_info})
     sf4_pelanggaran = 0
     for sg in soft_guru_batas_info:
         if (solver.Value(sg['is_present']) == 1
@@ -532,9 +520,7 @@ def main():
                 f"selesai slot {slot_akhir} (melewati batas Max Slot Preferensi: {sg['limit']})."
             )
 
-    total_sf = sf1_total + sf2_total + sf3_total + sf4_total
     jml_soft = sf1_pelanggaran + sf2_pelanggaran + sf3_pelanggaran + sf4_pelanggaran
-    SCFR     = 100.0 * (total_sf - jml_soft) / total_sf if total_sf > 0 else 100.0
 
     print(json.dumps({
         "status"           : status_label,
@@ -542,10 +528,11 @@ def main():
         "solution"         : solusi,
         "metrik"           : {
             "waktu_komputasi_detik"  : round(T, 4),
-            "CSR"                    : 100.0,
+            "total_penalti"          : int(obj_val),
+            "gap_pct"                : round(gap_pct, 4),
             "jumlah_pelanggaran_hard": 0,
             "detail_pelanggaran_hard": [],
-            "breakdown_csr"          : [
+            "breakdown_hard"         : [
                 {'kategori': 'HC-1', 'deskripsi': 'JP harian kelas terpenuhi',           'pelanggaran': 0},
                 {'kategori': 'HC-2', 'deskripsi': 'Tidak bentrok slot guru',              'pelanggaran': 0},
                 {'kategori': 'HC-3', 'deskripsi': 'Tidak bentrok slot kelas',             'pelanggaran': 0},
@@ -554,16 +541,14 @@ def main():
                 {'kategori': 'HC-6', 'deskripsi': 'Mapel tidak muncul ganda per kelas',   'pelanggaran': 0},
                 {'kategori': 'HC-7', 'deskripsi': 'Batas slot maksimal guru hard',        'pelanggaran': 0},
             ],
-            "SCFR"                   : round(SCFR, 2),
             "jumlah_pelanggaran_soft": jml_soft,
             "detail_pelanggaran_soft": detail_soft,
-            "breakdown_scfr"         : [
-                {'kategori': 'SF-1', 'deskripsi': 'Penyebaran beban (deviasi rata-rata guru)',  'pelanggaran': sf1_pelanggaran},
+            "breakdown_soft"         : [
+                {'kategori': 'SF-1', 'deskripsi': 'Penyebaran beban harian (diluar batas)',     'pelanggaran': sf1_pelanggaran},
                 {'kategori': 'SF-2', 'deskripsi': 'Batas preferensi slot maksimal mapel',       'pelanggaran': sf2_pelanggaran},
                 {'kategori': 'SF-3', 'deskripsi': 'Kesesuaian hari preferensi mengajar guru',   'pelanggaran': sf3_pelanggaran},
                 {'kategori': 'SF-4', 'deskripsi': 'Batas slot maksimal harian guru ditaati',    'pelanggaran': sf4_pelanggaran},
             ],
-            "gap_pct"                : round(gap_pct, 4),
             "kurva_solver"           : tracker.history,
         },
         "message": "Selesai memproses penjadwalan.",

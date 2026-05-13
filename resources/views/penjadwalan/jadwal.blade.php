@@ -48,8 +48,8 @@
             <div class="w-full border border-slate-200 bg-slate-50 rounded-lg p-3">
                 <h4 class="font-extrabold text-xs text-indigo-700 uppercase mb-1">📈 Riwayat Optimasi AI (Kurva
                     Objektif)</h4>
-                <p class="text-[9px] text-slate-500 font-mono mb-2">Grafik memperlihatkan penurunan skor pelanggaran
-                    preferensi dari awal hingga solver berhenti.</p>
+                <p class="text-[9px] text-slate-500 font-mono mb-2">Grafik memperlihatkan penurunan skor penalti dari
+                    awal pencarian hingga solver berhenti.</p>
                 <div class="relative w-full h-[200px]">
                     <canvas id="objCurve"></canvas>
                 </div>
@@ -59,18 +59,16 @@
             {{-- TABEL HARD & SOFT CONSTRAINT FULL PERHITUNGAN MATEMATIKA --}}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                {{-- CSR (Hard Constraint) --}}
-                @if(isset($latestMetrics['csr']))
+                {{-- Hard Constraint --}}
+                @if(isset($latestMetrics['breakdown_hard']))
                 <div class="border border-blue-200 rounded-lg bg-blue-50/50 p-3 h-fit flex flex-col gap-3 shadow-sm">
-                    <strong class="text-xs text-blue-800 block">🎯 Evaluasi Aturan Mutlak (CSR)</strong>
+                    <strong class="text-xs text-blue-800 block">🎯 Evaluasi Aturan Mutlak (Hard Constraints)</strong>
 
                     <div
                         class="p-3 bg-white/90 border border-blue-200/50 rounded-md text-[11px] text-blue-900 font-mono flex flex-col gap-1 shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)]">
                         <strong class="text-blue-700">🛡️ Jaminan Mutlak (CP-SAT Solver):</strong>
-                        <span>Status : <strong class="text-emerald-600">Bebas Bentrok 100% (Mathematically
-                                Proven)</strong></span>
-                        <span>Hasil : <strong
-                                class="text-[12px] bg-blue-100 px-1 rounded">{{ $latestMetrics['csr'] }}%</strong></span>
+                        <span>Seluruh aturan mutlak terpenuhi sempurna secara matematis. Jadwal dipastikan bebas
+                            bentrok.</span>
                     </div>
 
                     <div class="overflow-x-auto rounded border border-blue-200/60 bg-white shadow-sm">
@@ -85,7 +83,7 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-blue-100/50 text-[10px]">
-                                @foreach($latestMetrics['breakdown_csr'] ?? [] as $b)
+                                @foreach($latestMetrics['breakdown_hard'] ?? [] as $b)
                                 <tr class="hover:bg-blue-50/50 transition-colors">
                                     <td class="px-2 py-1.5"><span class="font-bold">{{ $b['kategori'] }}</span>: <span
                                             class="text-[9px] text-blue-700/80">{{ $b['deskripsi'] }}</span></td>
@@ -100,18 +98,20 @@
                 </div>
                 @endif
 
-                {{-- SCFR (Soft Constraint) --}}
-                @if(isset($latestMetrics['scfr']))
+                {{-- Soft Constraint --}}
+                @if(isset($latestMetrics['breakdown_soft']))
                 <div
                     class="border border-emerald-200 rounded-lg bg-emerald-50/50 p-3 h-fit flex flex-col gap-3 shadow-sm">
-                    <strong class="text-xs text-emerald-800 block">⚖️ Evaluasi Preferensi (SCFR)</strong>
+                    <strong class="text-xs text-emerald-800 block">⚖️ Evaluasi Preferensi (Soft Constraints)</strong>
 
                     <div
                         class="p-3 bg-white/90 border border-emerald-200/50 rounded-md text-[11px] text-emerald-900 font-mono flex flex-col gap-1 shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)]">
-                        <strong class="text-emerald-700">💡 Tingkat Kepuasan Preferensi (SCFR):</strong>
-                        <span>Penilaian : Berdasarkan perhitungan penalti yang dikonversi</span>
-                        <span>Hasil : <strong
-                                class="text-[12px] bg-emerald-100 px-1 rounded">{{ $latestMetrics['scfr'] }}%</strong></span>
+                        <strong class="text-emerald-700">💡 Kualitas Preferensi (Fungsi Objektif):</strong>
+                        <span>Total Nilai Penalti (Z) : <strong
+                                class="text-[12px] bg-emerald-100 px-1 rounded">{{ $latestMetrics['total_penalti'] ?? 0 }}
+                                Poin</strong></span>
+                        <span>Optimality Gap : <strong
+                                class="text-[12px] bg-emerald-100 px-1 rounded">{{ $latestMetrics['gap_pct'] ?? 0 }}%</strong></span>
                     </div>
 
                     <div class="overflow-x-auto rounded border border-emerald-200/60 bg-white shadow-sm">
@@ -126,7 +126,7 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-emerald-100/50 text-[10px]">
-                                @foreach($latestMetrics['breakdown_scfr'] ?? [] as $b)
+                                @foreach($latestMetrics['breakdown_soft'] ?? [] as $b)
                                 <tr class="hover:bg-emerald-50/50 transition-colors">
                                     <td class="px-2 py-1.5"><span class="font-bold">{{ $b['kategori'] }}</span>: <span
                                             class="text-[9px] text-emerald-700/80">{{ $b['deskripsi'] }}</span></td>

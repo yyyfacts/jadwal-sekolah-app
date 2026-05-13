@@ -198,7 +198,6 @@ class JadwalController extends Controller
                 'limit_jumat'  => $k->limit_jumat  ?? 7,
             ]);
 
-            // Ambil input waktu yang diketik user
             $maxTimeMinutes = $request->input('max_time', 10);
 
             $dataInput = [
@@ -255,14 +254,14 @@ class JadwalController extends Controller
                         'status_solver'           => $result['status'],
                         'status_penjelasan'       => $result['status_penjelasan']       ?? null,
                         'waktu_komputasi'         => $metrik['waktu_komputasi_detik']   ?? null,
-                        'csr'                     => $metrik['CSR']                     ?? null,
-                        'scfr'                    => $metrik['SCFR']                    ?? null,
+                        'total_penalti'           => $metrik['total_penalti']           ?? null,
+                        'gap_pct'                 => $metrik['gap_pct']                 ?? null,
                         'jumlah_pelanggaran_hard' => $metrik['jumlah_pelanggaran_hard'] ?? 0,
                         'jumlah_pelanggaran_soft' => $metrik['jumlah_pelanggaran_soft'] ?? 0,
                         'detail_pelanggaran_hard' => $metrik['detail_pelanggaran_hard'] ?? [],
                         'detail_pelanggaran_soft' => $metrik['detail_pelanggaran_soft'] ?? [],
-                        'breakdown_csr'           => $metrik['breakdown_csr']           ?? [],
-                        'breakdown_scfr'          => $metrik['breakdown_scfr']          ?? [],
+                        'breakdown_hard'          => $metrik['breakdown_hard']          ?? [],
+                        'breakdown_soft'          => $metrik['breakdown_soft']          ?? [],
                         'kurva_solver'            => $metrik['kurva_solver']            ?? null,
                     ];
                     file_put_contents(storage_path('app/latest_metrics.json'), json_encode($metricsToSave));
