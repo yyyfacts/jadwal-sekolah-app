@@ -228,7 +228,7 @@
                         <button type="button"
                             onclick="if(confirm('Peringatan: AI akan menyusun jadwal sesuai batas waktu yang Anda ketik. Lanjut?')) this.form.submit()"
                             class="flex items-center gap-2 px-5 py-2 bg-slate-900 hover:bg-indigo-600 text-white font-bold text-xs uppercase rounded-xl shadow-md transition-all h-[36px]">
-                            Generate AI
+                            Jalankan Solver
                         </button>
                     </form>
                 </div>
