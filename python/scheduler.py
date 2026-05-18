@@ -16,9 +16,9 @@ BOBOT_HARI_SOFT       =  90
 BOBOT_GURU_MAX_HARIAN = 150
 BOBOT_DEVIASI         =   2
 
-# Pengaturan Eksekusi Hardware
-MAX_MEMORY_MB = 4096
-MAX_WORKERS   = 10
+# Pengaturan Eksekusi Hardware (Server Friendly)
+MAX_MEMORY_MB = 400  # Maksimal 400 MB
+MAX_WORKERS   = 1    # 1 Core Worker agar tidak CPU 100%
 
 
 class ObjectiveTracker(cp_model.CpSolverSolutionCallback):
@@ -326,8 +326,8 @@ def bangun_model(raw_assignments, kelass, gurus,
         violation_vars, deviasi_vars, penalti_info,
         tasks_per_mapel_group,
         soft_batas_violation_vars, soft_batas_info,
-        soft_hari_violation_vars, soft_hari_info,
-        soft_guru_batas_vars, soft_guru_batas_info,
+        soft_hari_violation_vars,  soft_hari_info,
+        soft_guru_batas_vars,      soft_guru_batas_info,
     )
 
 
@@ -364,7 +364,9 @@ def main():
     raw_assignments  = data.get('assignments', [])
     kelass           = data.get('kelass', [])
     gurus            = data.get('gurus', [])
-    max_time_minutes = int(data.get('max_time_minutes', 30))
+    
+    # Default ke 5 menit untuk VPS
+    max_time_minutes = int(data.get('max_time_minutes', 5))
     MAX_TIME_SEC     = max_time_minutes * 60
 
     # Urutkan dari durasi terbesar agar constraint propagasi lebih efektif
@@ -529,7 +531,7 @@ def main():
         "metrik"           : {
             "waktu_komputasi_detik"  : round(T, 4),
             "total_penalti"          : int(obj_val),
-            "z_bound"                : int(obj_bound),  # ---> BARIS INI DITAMBAHKAN
+            "z_bound"                : int(obj_bound),
             "gap_pct"                : round(gap_pct, 4),
             "jumlah_pelanggaran_hard": 0,
             "detail_pelanggaran_hard": [],

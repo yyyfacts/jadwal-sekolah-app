@@ -198,7 +198,7 @@ class JadwalController extends Controller
                 'limit_jumat'  => $k->limit_jumat  ?? 7,
             ]);
 
-            $maxTimeMinutes = $request->input('max_time', 10);
+            $maxTimeMinutes = $request->input('max_time', 5); // Default ke 5 Menit di Controller
 
             $dataInput = [
                 'hari_aktif'       => $hariAktif,
@@ -213,10 +213,12 @@ class JadwalController extends Controller
 
             $scriptPath = base_path('python/scheduler.py');
 
-            $pythonBin = env('PYTHON_PATH', 'python');
+            // --- INI BAGIAN PENTING UNTUK HOSTING / VPS ---
+            // Membaca path python dari file .env, default fallback ke python3
+            $pythonBin = env('PYTHON_PATH', 'python3');
 
             $process = new Process([$pythonBin, $scriptPath, $jsonPath]);
-            $process->setTimeout(null);
+            $process->setTimeout(null); // Mematikan timeout bawaan PHP Process
             $process->run();
 
             if (!$process->isSuccessful()) {
@@ -255,7 +257,7 @@ class JadwalController extends Controller
                         'status_penjelasan'       => $result['status_penjelasan']       ?? null,
                         'waktu_komputasi'         => $metrik['waktu_komputasi_detik']   ?? null,
                         'total_penalti'           => $metrik['total_penalti']           ?? null,
-                        'z_bound'                 => $metrik['z_bound']                 ?? null, // ---> BARIS INI DITAMBAHKAN
+                        'z_bound'                 => $metrik['z_bound']                 ?? null,
                         'gap_pct'                 => $metrik['gap_pct']                 ?? null,
                         'jumlah_pelanggaran_hard' => $metrik['jumlah_pelanggaran_hard'] ?? 0,
                         'jumlah_pelanggaran_soft' => $metrik['jumlah_pelanggaran_soft'] ?? 0,
