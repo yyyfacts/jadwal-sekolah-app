@@ -110,11 +110,6 @@
                         <span>Total Nilai Penalti (Z) : <strong
                                 class="text-[12px] bg-emerald-100 px-1 rounded">{{ $latestMetrics['total_penalti'] ?? 0 }}
                                 Poin</strong></span>
-                        <span>Batas Bawah Teoritis (Z_bound) : <strong
-                                class="text-[12px] bg-emerald-100 px-1 rounded">{{ $latestMetrics['z_bound'] ?? 0 }}
-                                Poin</strong></span>
-                        <span>Optimality Gap : <strong
-                                class="text-[12px] bg-emerald-100 px-1 rounded">{{ $latestMetrics['gap_pct'] ?? 0 }}%</strong></span>
                     </div>
 
                     <div class="overflow-x-auto rounded border border-emerald-200/60 bg-white shadow-sm">
@@ -475,7 +470,6 @@ table {
     border-radius: 4px;
 }
 
-/* Menyembunyikan panah up/down pada input number agar terlihat lebih rapi */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
     -webkit-appearance: none;
@@ -497,12 +491,10 @@ input[type=number] {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Membaca dari data permanen (latestMetrics)
     @if(!empty($latestMetrics['kurva_solver']) && count($latestMetrics['kurva_solver']) > 0)
     const rawData = @json($latestMetrics['kurva_solver']);
     if (rawData && rawData.length > 0) {
 
-        // FORMAT WAKTU KE MENIT & DETIK
         const labels = rawData.map(d => {
             let m = Math.floor(d.waktu / 60);
             let s = Math.round(d.waktu % 60);
