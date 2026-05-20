@@ -15,8 +15,10 @@ BOBOT_BATAS_SOFT      = 120
 BOBOT_HARI_SOFT       =  90
 BOBOT_GURU_MAX_HARIAN = 150
 BOBOT_DEVIASI         =   2
+BOBOT_UNDERFILL       =  30   # ← kunci penyebaran ke 5 hari
 
-MAX_MEMORY_MB = 256
+# Pengaturan Eksekusi (Hemat RAM — dari V1, model fix — dari V2)
+MAX_MEMORY_MB = 200
 MAX_WORKERS   = 1
 
 
@@ -109,22 +111,21 @@ def hitung_batas_dinamis_guru(gurus, raw_assignments, guru_hari_map):
 
 
 # =============================================================================
-# DIAGNOSA INFEASIBLE — jelaskan task mana yang tidak bisa dijadwalkan
+# DIAGNOSA INFEASIBLE
 # =============================================================================
 def diagnosa_infeasible(raw_assignments, kelass, gurus,
                         kelas_limits, guru_hari_map, guru_jenis_hari_map):
-    g_dict      = {g['id']: g for g in gurus}
-    masalah     = []
+    g_dict  = {g['id']: g for g in gurus}
+    masalah = []
 
     for t in raw_assignments:
         durasi = int(t['jumlah_jam'])
         if durasi <= 0:
             continue
 
-        t_id   = t['id']
-        g_id   = t['guru_id']
-        k_id   = t['kelas_id']
-
+        t_id           = t['id']
+        g_id           = t['guru_id']
+        k_id           = t['kelas_id']
         batas_maks     = t.get('batas_maksimal_jam')
         nama_mapel     = str(t.get('nama_mapel', f'ID:{t_id}'))
         is_batas_wajib = (t.get('jenis_batas', 'soft') == 'hard')
@@ -167,7 +168,7 @@ def diagnosa_infeasible(raw_assignments, kelass, gurus,
 
 
 # =============================================================================
-# BANGUN MODEL
+# BANGUN MODEL  (HC-1 pakai <= bukan ==, ditambah underfill penalty)
 # =============================================================================
 def bangun_model(raw_assignments, kelass, gurus,
                  kelas_limits, guru_hari_map, guru_jenis_hari_map,
@@ -178,16 +179,25 @@ def bangun_model(raw_assignments, kelass, gurus,
     presences = {}
     end_vars  = {}
 
+    # ── Variabel bantu beban ────────────────────────────────────────────────
+    # Ukuran kecil (n_kelas*5 + n_guru*5 IntVar), tidak signifikan ke RAM,
+    # tapi membantu solver menyebarkan ke 5 hari lewat underfill penalty.
+    max_slot_global = max(
+        (get_max_jam(kelas_limits, k['id'], h) for k in kelass for h in HARI_LIST),
+        default=10
+    )
     beban_kelas = {
-        k['id']: {h: model.NewIntVar(0, get_max_jam(kelas_limits, k['id'], h), f'bk_{k["id"]}_{h}')
-                  for h in HARI_LIST}
+        k['id']: {
+            h: model.NewIntVar(0, get_max_jam(kelas_limits, k['id'], h), f'bk_{k["id"]}_{h}')
+            for h in HARI_LIST
+        }
         for k in kelass
     }
-    # Batas atas beban guru: pakai kelas limit terbesar agar tidak memotong ruang solusi
-    max_slot_global = max((get_max_jam(kelas_limits, k['id'], h) for k in kelass for h in HARI_LIST), default=10)
     beban_guru = {
-        g['id']: {h: model.NewIntVar(0, max_slot_global, f'bg_{g["id"]}_{h}')
-                  for h in HARI_LIST}
+        g['id']: {
+            h: model.NewIntVar(0, max_slot_global, f'bg_{g["id"]}_{h}')
+            for h in HARI_LIST
+        }
         for g in gurus
     }
 
@@ -201,17 +211,9 @@ def bangun_model(raw_assignments, kelass, gurus,
     soft_batas_violation_vars, soft_batas_info = [], []
     soft_hari_violation_vars,  soft_hari_info  = [], []
     soft_guru_batas_vars,      soft_guru_batas_info = [], []
-
-    # Penalti kelas tidak penuh setiap hari (soft)
     underfill_vars = []
 
     g_dict = {g['id']: g for g in gurus}
-
-    # Hitung total JP per kelas dari assignments
-    total_jp_per_kelas = {}
-    for t in raw_assignments:
-        k = t['kelas_id']
-        total_jp_per_kelas[k] = total_jp_per_kelas.get(k, 0) + int(t['jumlah_jam'])
 
     infeasible_tasks = []
 
@@ -232,8 +234,8 @@ def bangun_model(raw_assignments, kelass, gurus,
         group_key = (k_id, m_id if m_id else f"guru_{g_id}")
         tasks_per_mapel_group.setdefault(group_key, []).append(t_id)
 
-        possible_days     = []
-        is_guru_hari_hard = (guru_jenis_hari_map[g_id] == 'hard')
+        possible_days       = []
+        is_guru_hari_hard   = (guru_jenis_hari_map[g_id] == 'hard')
         limit_slot_guru_raw = g_dict[g_id].get('limit_harian')
         jenis_batas_guru    = g_dict[g_id].get('jenis_batas_guru', 'soft')
 
@@ -268,7 +270,7 @@ def bangun_model(raw_assignments, kelass, gurus,
                 start_var, durasi, end_var, is_present, f'iv_{t_id}_{h}'
             )
 
-            # SF-2
+            # SF-2: batas_maks mapel (soft)
             if batas_maks is not None and not is_batas_wajib:
                 batas_int = int(batas_maks)
                 is_over   = model.NewBoolVar(f'overbatas_{t_id}_{h}')
@@ -282,7 +284,7 @@ def bangun_model(raw_assignments, kelass, gurus,
                     'nama_mapel': nama_mapel, 'kelas_id': k_id,
                 })
 
-            # SF-4
+            # SF-4: batas max harian guru (soft)
             if limit_slot_guru_raw is not None and str(limit_slot_guru_raw).strip() != "":
                 try:
                     limit_slot_g = int(limit_slot_guru_raw)
@@ -300,7 +302,7 @@ def bangun_model(raw_assignments, kelass, gurus,
                 except ValueError:
                     pass
 
-            # SF-3
+            # SF-3: hari preferensi guru (soft)
             if not is_preferred_day:
                 viol_hari = model.NewBoolVar(f'viol_hari_{t_id}_{h}')
                 model.Add(viol_hari == 1).OnlyEnforceIf(is_present)
@@ -324,14 +326,12 @@ def bangun_model(raw_assignments, kelass, gurus,
         if possible_days:
             model.AddExactlyOne(possible_days)
         else:
-            # Catat task yang tidak bisa dijadwalkan, jangan langsung crash
             infeasible_tasks.append(t_id)
 
-    # Jika ada task yang benar-benar tidak bisa dijadwalkan → kembalikan info
     if infeasible_tasks:
         return (None, infeasible_tasks) + (None,) * 11
 
-    # Ikat beban_kelas & beban_guru
+    # ── Ikat beban_kelas & beban_guru ───────────────────────────────────────
     for k in kelass:
         k_id = k['id']
         for h in HARI_LIST:
@@ -353,27 +353,26 @@ def bangun_model(raw_assignments, kelass, gurus,
     del beban_kelas_terms
     del beban_guru_terms
 
-    # ---- HC: JP harian kelas TIDAK BOLEH MELEBIHI batas (<=), bukan harus tepat ----
-    # Constraint == terlalu ketat dan menjadi sumber utama INFEASIBLE.
-    # Kita jadikan "underfill" sebagai penalti soft saja.
-    BOBOT_UNDERFILL = 30
+    # ── HC-1: beban kelas <= batas harian  +  underfill sebagai penalti soft ─
+    # PERBEDAAN UTAMA DARI V1: pakai <= bukan ==
+    # Ini yang menyebabkan solver tidak "memadatkan" hari tertentu.
     for k in kelass:
         k_id = k['id']
         for h in HARI_LIST:
             cap = get_max_jam(kelas_limits, k_id, h)
             model.Add(beban_kelas[k_id][h] <= cap)
-            # Soft: dorong agar mendekati penuh
+            # Dorong solver agar mendekati penuh (5 hari semua terisi)
             kurang = model.NewIntVar(0, cap, f'kurang_{k_id}_{h}')
             model.Add(kurang == cap - beban_kelas[k_id][h])
             underfill_vars.append(kurang)
 
-    # ---- HC: NoOverlap kelas ----
+    # ── HC-2: NoOverlap kelas ───────────────────────────────────────────────
     for k_id in intervals_per_kelas:
         for h in HARI_LIST:
             if intervals_per_kelas[k_id][h]:
                 model.AddNoOverlap(intervals_per_kelas[k_id][h])
 
-    # ---- HC: NoOverlap guru ----
+    # ── HC-3: NoOverlap guru ────────────────────────────────────────────────
     for g_id in intervals_per_guru:
         for h in HARI_LIST:
             if intervals_per_guru[g_id][h]:
@@ -382,15 +381,15 @@ def bangun_model(raw_assignments, kelass, gurus,
     del intervals_per_kelas
     del intervals_per_guru
 
-    # ---- HC: Mapel tidak ganda per hari per kelas ----
+    # ── HC-6: Mapel tidak ganda per hari per kelas ──────────────────────────
     for group_key, task_ids in tasks_per_mapel_group.items():
         if len(task_ids) > 1:
             for h in HARI_LIST:
-                presences_for_h = [presences[(t, h)] for t in task_ids if (t, h) in presences]
-                if len(presences_for_h) > 1:
-                    model.Add(sum(presences_for_h) <= 1)
+                pres_h = [presences[(t, h)] for t in task_ids if (t, h) in presences]
+                if len(pres_h) > 1:
+                    model.Add(sum(pres_h) <= 1)
 
-    # ---- SF-1: Deviasi beban harian guru ----
+    # ── SF-1: Deviasi beban harian guru ─────────────────────────────────────
     violation_vars, deviasi_vars, penalti_info = [], [], []
 
     for g in gurus:
@@ -486,17 +485,16 @@ def main():
         max_jam_dinamis, min_jam_dinamis, target_jam_guru,
     )
 
-    # result[0] = model atau None, result[1] = infeasible_task_ids atau None
     if result[0] is None:
-        infeasible_ids  = result[1] or []
-        detail_masalah  = diagnosa_infeasible(
+        infeasible_ids = result[1] or []
+        detail_masalah = diagnosa_infeasible(
             raw_assignments, kelass, gurus,
             kelas_limits, guru_hari_map, guru_jenis_hari_map
         )
         pesan = (
             f"Terdapat {len(infeasible_ids)} tugas yang tidak dapat dijadwalkan "
             f"karena konflik aturan hard constraint. Periksa data berikut: "
-            + " || ".join(detail_masalah[:5])  # tampilkan maks 5 item
+            + " || ".join(detail_masalah[:5])
         )
         print(json.dumps({"status": "INFEASIBLE", "message": pesan, "detail": detail_masalah}))
         return
@@ -509,8 +507,7 @@ def main():
      soft_guru_batas_vars,      soft_guru_batas_info,
      underfill_vars) = result
 
-    # ---- Fungsi objektif ----
-    BOBOT_UNDERFILL = 30
+    # ── Fungsi objektif ─────────────────────────────────────────────────────
     obj_terms = []
     if underfill_vars:
         obj_terms.append(BOBOT_UNDERFILL       * sum(underfill_vars))
@@ -528,21 +525,20 @@ def main():
     if obj_terms:
         model.Minimize(sum(obj_terms))
 
-    # ---- Konfigurasi solver ----
+    # ── Konfigurasi solver (HEMAT RAM dari V1, model bagus dari V2) ──────────
     solver = cp_model.CpSolver()
-    solver.parameters.optimize_with_core    = True
-    solver.parameters.linearization_level   = 2
-    solver.parameters.symmetry_level        = 2
-    solver.parameters.num_search_workers    = MAX_WORKERS
-    solver.parameters.max_memory_in_mb      = MAX_MEMORY_MB
-    solver.parameters.max_time_in_seconds   = MAX_TIME_SEC
+    solver.parameters.optimize_with_core  = False  # Hemat RAM (V1)
+    solver.parameters.linearization_level = 0      # Hemat RAM ekstrim (V1)
+    solver.parameters.symmetry_level      = 1      # Ringan (V1)
+    solver.parameters.num_search_workers  = MAX_WORKERS
+    solver.parameters.max_memory_in_mb    = MAX_MEMORY_MB
+    solver.parameters.max_time_in_seconds = MAX_TIME_SEC
 
     tracker = ObjectiveTracker(T_mulai)
     status  = solver.Solve(model, tracker)
     T       = time.time() - T_mulai
 
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-        # Coba diagnosa lebih lanjut
         detail_masalah = diagnosa_infeasible(
             raw_assignments, kelass, gurus,
             kelas_limits, guru_hari_map, guru_jenis_hari_map
@@ -570,7 +566,7 @@ def main():
             f"Proses dihentikan setelah {max_time_minutes} menit."
         )
 
-    # ---- Hitung soft constraint violations ----
+    # ── Hitung soft constraint violations ───────────────────────────────────
     detail_soft = []
 
     sf1_pelanggaran = 0
