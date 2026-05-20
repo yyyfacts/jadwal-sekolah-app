@@ -424,20 +424,24 @@ def main():
     solusi  = ekstrak_solusi(solver, raw_assignments, presences, starts)
     obj_val = solver.ObjectiveValue()
 
+    # Hitung konversi waktu ke Menit dan Detik
+    menit_berhenti = int(T // 60)
+    detik_berhenti = int(T % 60)
+    teks_waktu = f"{menit_berhenti} menit {detik_berhenti} detik" if menit_berhenti > 0 else f"{detik_berhenti} detik"
+
     # --- PENENTUAN STATUS (DENGAN LOGIKA REM DARURAT & TANPA GAP) ---
     if status == cp_model.OPTIMAL or (status == cp_model.FEASIBLE and obj_val == 0):
         status_label      = "OPTIMAL"
         status_penjelasan = (
-            f"Pencarian selesai! AI berhasil menemukan jadwal paling sempurna (Optimal) "
-            f"dalam waktu super cepat ({round(T, 2)} detik). Proses dihentikan otomatis "
-            f"karena total penalti sudah mencapai 0."
+            f"Pencarian selesai! AI berhasil menemukan jadwal paling sempurna (Optimal). "
+            f"Proses otomatis berhenti pada {teks_waktu} karena total penalti sudah mencapai 0."
         )
     else:
         status_label      = "FEASIBLE"
         status_penjelasan = (
             f"AI berhasil membuat jadwal yang valid dan bebas bentrok (Feasible). "
             f"Total penalti preferensi berhasil ditekan menjadi {int(obj_val)} poin. "
-            f"Status belum Optimal karena AI dihentikan oleh batas waktu ({max_time_minutes} menit)."
+            f"Proses dihentikan pada {teks_waktu} karena mencapai batas waktu maksimal."
         )
 
     # ---- Hitung soft constraint violations ----
@@ -532,12 +536,10 @@ def main():
             "total_penalti"          : int(obj_val),
             "jumlah_pelanggaran_hard": 0,
             "detail_pelanggaran_hard": [],
-            # Kirim dengan 2 nama variabel sekaligus biar aman di Blade dan Controller
             "breakdown_hard"         : tabel_evaluasi_hard,
             "breakdown_csr"          : tabel_evaluasi_hard,
             "jumlah_pelanggaran_soft": jml_soft,
             "detail_pelanggaran_soft": detail_soft,
-            # Kirim dengan 2 nama variabel sekaligus biar aman di Blade dan Controller
             "breakdown_soft"         : tabel_evaluasi_soft,
             "breakdown_scfr"         : tabel_evaluasi_soft,
             "kurva_solver"           : tracker.history,

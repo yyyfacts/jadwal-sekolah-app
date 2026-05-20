@@ -22,9 +22,15 @@
                     </span>
                     @endif
                     @if(!empty($latestMetrics['waktu_komputasi']))
+                    @php
+                    $wk = $latestMetrics['waktu_komputasi'];
+                    $m = floor($wk / 60);
+                    $s = round($wk % 60);
+                    $waktuTampil = $m > 0 ? "{$m} Menit {$s} Detik" : "{$s} Detik";
+                    @endphp
                     <span
                         class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[9px] font-bold uppercase border border-slate-200">
-                        ⏱️ Waktu: {{ round($latestMetrics['waktu_komputasi'], 1) }} Detik
+                        ⏱️ Waktu Berhenti: {{ $waktuTampil }}
                     </span>
                     @endif
                 </div>
