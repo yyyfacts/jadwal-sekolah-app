@@ -198,8 +198,8 @@ class JadwalController extends Controller
                 'limit_jumat'  => $k->limit_jumat  ?? 7,
             ]);
 
-            // Ambil dari input form, validasi min 1 menit
-            $maxTimeMinutes = max(1, (int) $request->input('max_time', 5));
+            // Ambil input waktu yang diketik user
+            $maxTimeMinutes = $request->input('max_time', 10);
 
             $dataInput = [
                 'hari_aktif'       => $hariAktif,
@@ -213,7 +213,8 @@ class JadwalController extends Controller
             file_put_contents($jsonPath, json_encode($dataInput));
 
             $scriptPath = base_path('python/scheduler.py');
-            $pythonBin  = env('PYTHON_PATH', 'python3');
+
+            $pythonBin = env('PYTHON_PATH', 'python');
 
             $process = new Process([$pythonBin, $scriptPath, $jsonPath]);
             $process->setTimeout(null);
@@ -226,7 +227,7 @@ class JadwalController extends Controller
             $result = json_decode($process->getOutput(), true);
             $metrik = $result['metrik'] ?? [];
 
-            if (isset($result['status']) && in_array($result['status'], ['OPTIMAL', 'FEASIBLE'])) {
+            if (isset($result['status']) && in_array($result['status'], ['OPTIMAL', 'NEAR-OPTIMAL', 'FEASIBLE'])) {
                 DB::beginTransaction();
                 try {
                     $hariIdMap = MasterHari::pluck('id', 'nama_hari')->toArray();
@@ -254,13 +255,14 @@ class JadwalController extends Controller
                         'status_solver'           => $result['status'],
                         'status_penjelasan'       => $result['status_penjelasan']       ?? null,
                         'waktu_komputasi'         => $metrik['waktu_komputasi_detik']   ?? null,
-                        'total_penalti'           => $metrik['total_penalti']           ?? null,
+                        'csr'                     => $metrik['CSR']                     ?? null,
+                        'scfr'                    => $metrik['SCFR']                    ?? null,
                         'jumlah_pelanggaran_hard' => $metrik['jumlah_pelanggaran_hard'] ?? 0,
                         'jumlah_pelanggaran_soft' => $metrik['jumlah_pelanggaran_soft'] ?? 0,
                         'detail_pelanggaran_hard' => $metrik['detail_pelanggaran_hard'] ?? [],
                         'detail_pelanggaran_soft' => $metrik['detail_pelanggaran_soft'] ?? [],
-                        'breakdown_hard'          => $metrik['breakdown_hard']          ?? [],
-                        'breakdown_soft'          => $metrik['breakdown_soft']          ?? [],
+                        'breakdown_csr'           => $metrik['breakdown_csr']           ?? [],
+                        'breakdown_scfr'          => $metrik['breakdown_scfr']          ?? [],
                         'kurva_solver'            => $metrik['kurva_solver']            ?? null,
                     ];
                     file_put_contents(storage_path('app/latest_metrics.json'), json_encode($metricsToSave));
