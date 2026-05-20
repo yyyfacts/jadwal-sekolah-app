@@ -110,8 +110,6 @@
                         <span>Total Nilai Penalti (Z) : <strong
                                 class="text-[12px] bg-emerald-100 px-1 rounded">{{ $latestMetrics['total_penalti'] ?? 0 }}
                                 Poin</strong></span>
-                        <span>Optimality Gap : <strong
-                                class="text-[12px] bg-emerald-100 px-1 rounded">{{ $latestMetrics['gap_pct'] ?? 0 }}%</strong></span>
                     </div>
 
                     <div class="overflow-x-auto rounded border border-emerald-200/60 bg-white shadow-sm">
