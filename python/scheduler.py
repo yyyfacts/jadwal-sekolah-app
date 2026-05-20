@@ -356,7 +356,7 @@ def main():
     raw_assignments  = data.get('assignments', [])
     kelass           = data.get('kelass', [])
     gurus            = data.get('gurus', [])
-    max_time_minutes = int(data.get('max_time_minutes', 30))
+    max_time_minutes = int(data.get('max_time_minutes', 5))
     MAX_TIME_SEC     = max_time_minutes * 60
 
     raw_assignments.sort(key=lambda x: int(x['jumlah_jam']), reverse=True)
