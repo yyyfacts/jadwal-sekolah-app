@@ -16,9 +16,9 @@ BOBOT_HARI_SOFT       =  90
 BOBOT_GURU_MAX_HARIAN = 150
 BOBOT_DEVIASI         =   2
 
-# Pengaturan Eksekusi Hardware (Server Friendly)
-MAX_MEMORY_MB = 400  # Maksimal 400 MB
-MAX_WORKERS   = 1    # 1 Core Worker agar tidak CPU 100%
+# Pengaturan Eksekusi Hardware (Mode Super Hemat RAM & CPU)
+MAX_MEMORY_MB = 200  # Turunkan jadi 200MB agar Laravel & OS server punya sisa RAM
+MAX_WORKERS   = 1    # Kunci di 1 Core agar tidak menyentuh limit CPU server
 
 
 class ObjectiveTracker(cp_model.CpSolverSolutionCallback):
@@ -121,7 +121,6 @@ def bangun_model(raw_assignments, kelass, gurus,
     presences = {}
     end_vars  = {}
 
-    # Kumpulkan semua var untuk laporan / debugging
     all_presence_vars = []
     all_start_vars    = []
 
@@ -166,11 +165,9 @@ def bangun_model(raw_assignments, kelass, gurus,
 
             batas_aktual_hari = get_max_jam(kelas_limits, k_id, h)
 
-            # HC: Potong batas mapel hard
             if batas_maks is not None and is_batas_wajib:
                 batas_aktual_hari = min(batas_aktual_hari, int(batas_maks))
 
-            # HC: Potong batas guru hard
             if limit_slot_guru_raw is not None and str(limit_slot_guru_raw).strip() != "":
                 try:
                     limit_slot_g = int(limit_slot_guru_raw)
@@ -192,7 +189,6 @@ def bangun_model(raw_assignments, kelass, gurus,
                 start_var, durasi, end_var, is_present, f'iv_{t_id}_{h}'
             )
 
-            # ---- SF-2: Batas slot mapel (soft) ----
             if batas_maks is not None and not is_batas_wajib:
                 batas_int = int(batas_maks)
                 is_over   = model.NewBoolVar(f'overbatas_{t_id}_{h}')
@@ -206,7 +202,6 @@ def bangun_model(raw_assignments, kelass, gurus,
                     'nama_mapel': nama_mapel, 'kelas_id': k_id,
                 })
 
-            # ---- SF-4: Batas slot guru (soft) ----
             if limit_slot_guru_raw is not None and str(limit_slot_guru_raw).strip() != "":
                 try:
                     limit_slot_g = int(limit_slot_guru_raw)
@@ -224,7 +219,6 @@ def bangun_model(raw_assignments, kelass, gurus,
                 except ValueError:
                     pass
 
-            # ---- SF-3: Hari preferensi guru (soft) ----
             if not is_preferred_day:
                 viol_hari = model.NewBoolVar(f'viol_hari_{t_id}_{h}')
                 model.Add(viol_hari == 1).OnlyEnforceIf(is_present)
@@ -250,10 +244,8 @@ def bangun_model(raw_assignments, kelass, gurus,
         if possible_days:
             model.AddExactlyOne(possible_days)
         else:
-            # Tidak ada hari yang bisa menampung tugas ini → infeasible
             return (None,) * 12
 
-    # ---- HARD CONSTRAINT: JP harian kelas ----
     for k in kelass:
         k_id = k['id']
         for h in HARI_LIST:
@@ -261,19 +253,16 @@ def bangun_model(raw_assignments, kelass, gurus,
             if beban:
                 model.Add(sum(beban) == get_max_jam(kelas_limits, k_id, h))
 
-    # ---- HARD CONSTRAINT: NoOverlap kelas ----
     for k_id in intervals_per_kelas:
         for h in HARI_LIST:
             if intervals_per_kelas[k_id][h]:
                 model.AddNoOverlap(intervals_per_kelas[k_id][h])
 
-    # ---- HARD CONSTRAINT: NoOverlap guru ----
     for g_id in intervals_per_guru:
         for h in HARI_LIST:
             if intervals_per_guru[g_id][h]:
                 model.AddNoOverlap(intervals_per_guru[g_id][h])
 
-    # ---- HARD CONSTRAINT: Mapel tidak ganda per hari per kelas ----
     for group_key, task_ids in tasks_per_mapel_group.items():
         if len(task_ids) > 1:
             for h in HARI_LIST:
@@ -281,7 +270,6 @@ def bangun_model(raw_assignments, kelass, gurus,
                 if len(presences_for_h) > 1:
                     model.Add(sum(presences_for_h) <= 1)
 
-    # ---- SF-1: Deviasi beban harian guru ----
     violation_vars, deviasi_vars, penalti_info = [], [], []
 
     for g in gurus:
@@ -365,11 +353,9 @@ def main():
     kelass           = data.get('kelass', [])
     gurus            = data.get('gurus', [])
     
-    # Default ke 5 menit untuk VPS
     max_time_minutes = int(data.get('max_time_minutes', 5))
     MAX_TIME_SEC     = max_time_minutes * 60
 
-    # Urutkan dari durasi terbesar agar constraint propagasi lebih efektif
     raw_assignments.sort(key=lambda x: int(x['jumlah_jam']), reverse=True)
 
     guru_hari_map, guru_jenis_hari_map = build_guru_maps(gurus)
@@ -396,7 +382,6 @@ def main():
      soft_hari_violation_vars,  soft_hari_info,
      soft_guru_batas_vars,      soft_guru_batas_info) = result
 
-    # ---- Fungsi objektif ----
     obj_terms = []
     if soft_batas_violation_vars:
         obj_terms.append(BOBOT_BATAS_SOFT      * sum(soft_batas_violation_vars))
@@ -412,17 +397,16 @@ def main():
     if obj_terms:
         model.Minimize(sum(obj_terms))
 
-    # ---- Konfigurasi solver ----
+    # ---- Konfigurasi solver (ANTI OOM MODE) ----
     solver = cp_model.CpSolver()
 
-    solver.parameters.optimize_with_core = True
-    solver.parameters.linearization_level = 2
-    solver.parameters.symmetry_level = 2
+    solver.parameters.optimize_with_core  = False # Matikan fitur berat ini
+    solver.parameters.linearization_level = 0     # 0 = Hemat memori ekstrim
+    solver.parameters.symmetry_level      = 1     # Kurangi beban pencarian
     solver.parameters.num_search_workers  = MAX_WORKERS
     solver.parameters.max_memory_in_mb    = MAX_MEMORY_MB
     solver.parameters.max_time_in_seconds = MAX_TIME_SEC
 
-    # ---- Solve ----
     tracker = ObjectiveTracker(T_mulai)
     status  = solver.Solve(model, tracker)
     T       = time.time() - T_mulai
@@ -430,41 +414,27 @@ def main():
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
         print(json.dumps({
             "status" : "INFEASIBLE",
-            "message": "Solusi mustahil ditemukan. Data terlalu padat atau saling bertabrakan.",
+            "message": "Solusi mustahil ditemukan. Waktu habis atau memori server tidak kuat.",
         }))
         return
 
     solusi  = ekstrak_solusi(solver, raw_assignments, presences, starts)
-    
-    # Ekstraksi Penalti dan Gap
-    obj_val   = solver.ObjectiveValue() if status in (cp_model.OPTIMAL, cp_model.FEASIBLE) else 0
-    obj_bound = solver.BestObjectiveBound() if status in (cp_model.OPTIMAL, cp_model.FEASIBLE) else 0
-    gap_pct   = 0.0
+    obj_val = solver.ObjectiveValue()
 
+    # --- PENENTUAN STATUS (TANPA GAP) ---
     if status == cp_model.OPTIMAL:
         status_label      = "OPTIMAL"
         status_penjelasan = (
-            f"Pencarian solusi selesai. AI berhasil menemukan jadwal optimal "
-            f"dalam {round(T, 2)} detik. Seluruh preferensi ditekankan pada total penalti terendah: {int(obj_val)}."
+            f"AI berhasil menyusun jadwal dengan sangat baik (Optimal). "
+            f"Seluruh jadwal dijamin bebas bentrok. "
+            f"Total penalti berhasil ditekan ke angka {int(obj_val)}."
         )
     else:
-        if obj_val > 0:
-            gap_pct = abs(obj_val - obj_bound) / max(1.0, abs(obj_val)) * 100
-
-        if gap_pct <= 0.5:
-            status_label      = "NEAR-OPTIMAL"
-            status_penjelasan = (
-                f"Jadwal berada pada titik ekuilibrium (Near-Optimal) dengan sisa Gap hanya {gap_pct:.2f}%. "
-                f"Total Penalti ditekan hingga angka {int(obj_val)}. "
-                f"Proses dihentikan karena mencapai batas waktu ({max_time_minutes} menit)."
-            )
-        else:
-            status_label      = "FEASIBLE"
-            status_penjelasan = (
-                f"AI berhasil membuat jadwal tanpa bentrok (Feasible). "
-                f"Total Penalti yang dicapai adalah {int(obj_val)} poin dengan Optimality Gap sebesar {gap_pct:.2f}%. "
-                f"Proses dihentikan setelah {max_time_minutes} menit."
-            )
+        status_label      = "FEASIBLE"
+        status_penjelasan = (
+            f"AI berhasil membuat jadwal yang valid dan bebas bentrok (Feasible). "
+            f"Total penalti preferensi berhasil ditekan menjadi {int(obj_val)} poin dalam batas waktu {max_time_minutes} menit."
+        )
 
     # ---- Hitung soft constraint violations ----
     detail_soft = []
@@ -531,8 +501,6 @@ def main():
         "metrik"           : {
             "waktu_komputasi_detik"  : round(T, 4),
             "total_penalti"          : int(obj_val),
-            "z_bound"                : int(obj_bound),
-            "gap_pct"                : round(gap_pct, 4),
             "jumlah_pelanggaran_hard": 0,
             "detail_pelanggaran_hard": [],
             "breakdown_hard"         : [
