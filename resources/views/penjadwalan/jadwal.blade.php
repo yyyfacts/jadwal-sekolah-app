@@ -110,6 +110,11 @@
                         <span>Total Nilai Penalti (Z) : <strong
                                 class="text-[12px] bg-emerald-100 px-1 rounded">{{ $latestMetrics['total_penalti'] ?? 0 }}
                                 Poin</strong></span>
+                        <span>Batas Bawah Teoritis (Z_bound) : <strong
+                                class="text-[12px] bg-emerald-100 px-1 rounded">{{ $latestMetrics['z_bound'] ?? 0 }}
+                                Poin</strong></span>
+                        <span>Optimality Gap : <strong
+                                class="text-[12px] bg-emerald-100 px-1 rounded">{{ $latestMetrics['gap_pct'] ?? 0 }}%</strong></span>
                     </div>
 
                     <div class="overflow-x-auto rounded border border-emerald-200/60 bg-white shadow-sm">
@@ -211,22 +216,23 @@
                         Export Excel
                     </a>
 
-                    {{-- FROM GENERATE DENGAN INPUT NUMBER BEBAS --}}
+                    {{-- FROM GENERATE DENGAN DROPDOWN WAKTU (Maksimal 5 Menit untuk Server) --}}
                     <form action="{{ route('jadwal.generate') }}" method="POST" onsubmit="showLoading()"
                         class="m-0 p-0 flex items-center gap-2">
                         @csrf
-                        <div
-                            class="relative flex items-center bg-white border border-slate-300 rounded-xl px-2 py-1 text-xs focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent transition-all h-[36px]">
-                            <span class="mr-1 opacity-70">⏱️</span>
-                            <input type="number" name="max_time" min="1" max="30" value="10" required
-                                class="w-8 text-center font-bold text-slate-800 focus:outline-none bg-transparent"
-                                title="Ketik angka antara 1 sampai 30">
-                            <span class="ml-1 text-slate-500 font-medium">Menit</span>
+                        <div class="relative">
+                            <select name="max_time"
+                                class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent appearance-none cursor-pointer"
+                                title="Batas Maksimal Waktu AI Berpikir">
+                                <option value="1">⏱️ 1 Menit</option>
+                                <option value="3">⏱️ 3 Menit</option>
+                                <option value="5" selected>⏱️ 5 Menit</option>
+                            </select>
                         </div>
                         <button type="button"
-                            onclick="if(confirm('Peringatan: AI akan menyusun jadwal sesuai batas waktu yang Anda ketik. Lanjut?')) this.form.submit()"
+                            onclick="if(confirm('Peringatan: AI akan menyusun jadwal sesuai batas waktu yang dipilih. Lanjut?')) this.form.submit()"
                             class="flex items-center gap-2 px-5 py-2 bg-slate-900 hover:bg-indigo-600 text-white font-bold text-xs uppercase rounded-xl shadow-md transition-all h-[36px]">
-                            Jalankan Solver
+                            Generate AI
                         </button>
                     </form>
                 </div>
@@ -443,8 +449,8 @@
     class="hidden fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-slate-900/70 backdrop-blur-sm transition-opacity">
     <div class="bg-white p-8 rounded-3xl shadow-2xl text-center">
         <h3 class="text-xl font-extrabold text-slate-800 mb-2">AI Sedang Menyusun...</h3>
-        <p class="text-[11px] text-slate-500 font-mono mt-2 max-w-[200px] mx-auto">Proses memakan waktu sesuai yang Anda
-            ketik. Harap bersabar.</p>
+        <p class="text-[11px] text-slate-500 font-mono mt-2 max-w-[200px] mx-auto">Proses memakan waktu hingga Max 5
+            Menit. Harap bersabar.</p>
     </div>
 </div>
 @endpush
@@ -470,16 +476,6 @@ table {
     border-radius: 4px;
 }
 
-input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-input[type=number] {
-    -moz-appearance: textfield;
-}
-
 [x-cloak] {
     display: none !important;
 }
@@ -491,10 +487,12 @@ input[type=number] {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Membaca dari data permanen (latestMetrics)
     @if(!empty($latestMetrics['kurva_solver']) && count($latestMetrics['kurva_solver']) > 0)
     const rawData = @json($latestMetrics['kurva_solver']);
     if (rawData && rawData.length > 0) {
 
+        // FORMAT WAKTU KE MENIT & DETIK
         const labels = rawData.map(d => {
             let m = Math.floor(d.waktu / 60);
             let s = Math.round(d.waktu % 60);
