@@ -15,12 +15,10 @@ BOBOT_BATAS_SOFT      = 120
 BOBOT_HARI_SOFT       =  90
 BOBOT_GURU_MAX_HARIAN = 150
 BOBOT_DEVIASI         =   2
-# Dorong solver isi semua hari (minimasi underfill) — TANPA IntVar tambahan
-BOBOT_UNDERFILL       =  25
 
-# Pengaturan Eksekusi (Hemat RAM)
-MAX_MEMORY_MB = 200
-MAX_WORKERS   = 1
+# Pengaturan Eksekusi Hardware (Mode Medium - Taruhan OOM)
+MAX_MEMORY_MB = 250  # Mentok di 250MB buat Render
+MAX_WORKERS   = 1    # Tetap 1 Core agar CPU tidak meledak
 
 
 class ObjectiveTracker(cp_model.CpSolverSolutionCallback):
@@ -46,7 +44,7 @@ def load_json(path: str) -> dict:
 def build_guru_maps(gurus: list) -> tuple:
     guru_hari_map, guru_jenis_hari_map = {}, {}
     for g in gurus:
-        g_id    = g['id']
+        g_id  = g['id']
         allowed = g.get('hari_mengajar', [])
         if not allowed:
             allowed = HARI_LIST[:]
@@ -112,78 +110,14 @@ def hitung_batas_dinamis_guru(gurus, raw_assignments, guru_hari_map):
 
 
 # =============================================================================
-# DIAGNOSA INFEASIBLE
-# =============================================================================
-def diagnosa_infeasible(raw_assignments, kelass, gurus,
-                        kelas_limits, guru_hari_map, guru_jenis_hari_map):
-    g_dict  = {g['id']: g for g in gurus}
-    masalah = []
-
-    for t in raw_assignments:
-        durasi = int(t['jumlah_jam'])
-        if durasi <= 0:
-            continue
-
-        t_id           = t['id']
-        g_id           = t['guru_id']
-        k_id           = t['kelas_id']
-        batas_maks     = t.get('batas_maksimal_jam')
-        nama_mapel     = str(t.get('nama_mapel', f'ID:{t_id}'))
-        is_batas_wajib = (t.get('jenis_batas', 'soft') == 'hard')
-
-        is_guru_hari_hard   = (guru_jenis_hari_map.get(g_id) == 'hard')
-        limit_slot_guru_raw = g_dict.get(g_id, {}).get('limit_harian')
-        jenis_batas_guru    = g_dict.get(g_id, {}).get('jenis_batas_guru', 'soft')
-        nama_guru           = get_nama_guru(gurus, g_id)
-
-        hari_valid = []
-        for h in HARI_LIST:
-            is_preferred = (h in guru_hari_map.get(g_id, HARI_LIST))
-            if is_guru_hari_hard and not is_preferred:
-                continue
-
-            batas_aktual = get_max_jam(kelas_limits, k_id, h)
-
-            if batas_maks is not None and is_batas_wajib:
-                batas_aktual = min(batas_aktual, int(batas_maks))
-
-            if limit_slot_guru_raw is not None and str(limit_slot_guru_raw).strip() != "":
-                try:
-                    lg = int(limit_slot_guru_raw)
-                    if lg > 0 and jenis_batas_guru == 'hard':
-                        batas_aktual = min(batas_aktual, lg)
-                except ValueError:
-                    pass
-
-            if durasi <= batas_aktual and (batas_aktual - durasi + 1) >= 1:
-                hari_valid.append(h)
-
-        if not hari_valid:
-            masalah.append(
-                f"Task ID {t_id} [{nama_mapel} | {nama_guru} | Kelas {k_id}] "
-                f"durasi={durasi}JP tidak dapat dijadwalkan di hari manapun. "
-                f"Periksa: limit_harian guru, batas_maksimal_jam mapel, atau hari_mengajar guru."
-            )
-
-    return masalah
-
-
-# =============================================================================
 # BANGUN MODEL
-#
-# Strategi gabungan:
-#   - Struktur & variabel dari file V3 (stabil, RAM-aman)
-#   - HC-1: beban kelas <= cap  (BUKAN ==, agar tidak infeasible)
-#   - Underfill penalty pakai ekspresi linear langsung dari durasi_per_kelas_harian
-#     yang sudah ada — TANPA IntVar tambahan.
-#     Ini mendorong penyebaran ke semua hari tanpa meledak RAM.
 # =============================================================================
 def bangun_model(raw_assignments, kelass, gurus,
                  kelas_limits, guru_hari_map, guru_jenis_hari_map,
                  max_jam_dinamis, min_jam_dinamis, target_jam_guru):
 
-    model     = cp_model.CpModel()
-    starts    = {}
+    model    = cp_model.CpModel()
+    starts   = {}
     presences = {}
     end_vars  = {}
 
@@ -195,23 +129,22 @@ def bangun_model(raw_assignments, kelass, gurus,
     durasi_per_kelas_harian = {k['id']: {h: [] for h in HARI_LIST} for k in kelass}
     durasi_per_guru_harian  = {g['id']: {h: [] for h in HARI_LIST} for g in gurus}
 
-    tasks_per_mapel_group                      = {}
+    tasks_per_mapel_group                     = {}
     soft_batas_violation_vars, soft_batas_info = [], []
     soft_hari_violation_vars,  soft_hari_info  = [], []
     soft_guru_batas_vars,      soft_guru_batas_info = [], []
 
-    g_dict           = {g['id']: g for g in gurus}
-    infeasible_tasks = []
+    g_dict = {g['id']: g for g in gurus}
 
     for t in raw_assignments:
         durasi = int(t['jumlah_jam'])
         if durasi <= 0:
             continue
 
-        t_id = t['id']
-        g_id = t['guru_id']
-        k_id = t['kelas_id']
-        m_id = t.get('mapel_id')
+        t_id   = t['id']
+        g_id   = t['guru_id']
+        k_id   = t['kelas_id']
+        m_id   = t.get('mapel_id')
 
         batas_maks     = t.get('batas_maksimal_jam')
         nama_mapel     = str(t.get('nama_mapel', ''))
@@ -220,8 +153,8 @@ def bangun_model(raw_assignments, kelass, gurus,
         group_key = (k_id, m_id if m_id else f"guru_{g_id}")
         tasks_per_mapel_group.setdefault(group_key, []).append(t_id)
 
-        possible_days       = []
-        is_guru_hari_hard   = (guru_jenis_hari_map[g_id] == 'hard')
+        possible_days     = []
+        is_guru_hari_hard = (guru_jenis_hari_map[g_id] == 'hard')
         limit_slot_guru_raw = g_dict[g_id].get('limit_harian')
         jenis_batas_guru    = g_dict[g_id].get('jenis_batas_guru', 'soft')
 
@@ -256,7 +189,6 @@ def bangun_model(raw_assignments, kelass, gurus,
                 start_var, durasi, end_var, is_present, f'iv_{t_id}_{h}'
             )
 
-            # SF-2: batas_maks mapel (soft)
             if batas_maks is not None and not is_batas_wajib:
                 batas_int = int(batas_maks)
                 is_over   = model.NewBoolVar(f'overbatas_{t_id}_{h}')
@@ -270,7 +202,6 @@ def bangun_model(raw_assignments, kelass, gurus,
                     'nama_mapel': nama_mapel, 'kelas_id': k_id,
                 })
 
-            # SF-4: batas max harian guru (soft)
             if limit_slot_guru_raw is not None and str(limit_slot_guru_raw).strip() != "":
                 try:
                     limit_slot_g = int(limit_slot_guru_raw)
@@ -288,7 +219,6 @@ def bangun_model(raw_assignments, kelass, gurus,
                 except ValueError:
                     pass
 
-            # SF-3: hari preferensi guru (soft)
             if not is_preferred_day:
                 viol_hari = model.NewBoolVar(f'viol_hari_{t_id}_{h}')
                 model.Add(viol_hari == 1).OnlyEnforceIf(is_present)
@@ -314,39 +244,25 @@ def bangun_model(raw_assignments, kelass, gurus,
         if possible_days:
             model.AddExactlyOne(possible_days)
         else:
-            infeasible_tasks.append(t_id)
-
-    if infeasible_tasks:
-        return (None, infeasible_tasks) + (None,) * 13
-
-    # ── HC-1: beban kelas <= cap  (BUKAN ==, kunci agar tidak infeasible) ──
-    # ── Kumpulkan sum beban untuk underfill penalty di objective ────────────
-    underfill_obj_terms = []
+            return (None,) * 12
 
     for k in kelass:
         k_id = k['id']
         for h in HARI_LIST:
             beban = durasi_per_kelas_harian[k_id][h]
             if beban:
-                beban_sum = sum(beban)
-                # Hard cap: tidak boleh melebihi limit harian
-                model.Add(beban_sum <= get_max_jam(kelas_limits, k_id, h))
-                # Kumpulkan untuk underfill: semakin besar beban_sum, semakin kecil penalti
-                underfill_obj_terms.append(beban_sum)
+                model.Add(sum(beban) == get_max_jam(kelas_limits, k_id, h))
 
-    # ── HC-2: NoOverlap kelas ───────────────────────────────────────────────
     for k_id in intervals_per_kelas:
         for h in HARI_LIST:
             if intervals_per_kelas[k_id][h]:
                 model.AddNoOverlap(intervals_per_kelas[k_id][h])
 
-    # ── HC-3: NoOverlap guru ────────────────────────────────────────────────
     for g_id in intervals_per_guru:
         for h in HARI_LIST:
             if intervals_per_guru[g_id][h]:
                 model.AddNoOverlap(intervals_per_guru[g_id][h])
 
-    # ── HC-6: Mapel tidak ganda per hari per kelas ──────────────────────────
     for group_key, task_ids in tasks_per_mapel_group.items():
         if len(task_ids) > 1:
             for h in HARI_LIST:
@@ -354,7 +270,6 @@ def bangun_model(raw_assignments, kelass, gurus,
                 if len(presences_for_h) > 1:
                     model.Add(sum(presences_for_h) <= 1)
 
-    # ── SF-1: Deviasi beban harian guru ─────────────────────────────────────
     violation_vars, deviasi_vars, penalti_info = [], [], []
 
     for g in gurus:
@@ -387,24 +302,20 @@ def bangun_model(raw_assignments, kelass, gurus,
             violation_vars.append(is_violation)
             deviasi_vars.append(deviasi)
             penalti_info.append({
-                'g_id'        : g_id,
-                'hari'        : h,
+                'g_id': g_id, 'hari': h,
                 'is_violation': is_violation,
-                'deviasi'     : deviasi,
-                'beban_vars'  : beban_guru,
+                'deviasi': deviasi,
+                'beban_vars': beban_guru,
             })
 
     return (
-        model,
-        None,           # slot infeasible_tasks (None = semua OK)
-        starts, presences, end_vars,
+        model, starts, presences, end_vars,
         all_presence_vars, all_start_vars,
         violation_vars, deviasi_vars, penalti_info,
         tasks_per_mapel_group,
         soft_batas_violation_vars, soft_batas_info,
         soft_hari_violation_vars,  soft_hari_info,
         soft_guru_batas_vars,      soft_guru_batas_info,
-        underfill_obj_terms,
     )
 
 
@@ -441,6 +352,7 @@ def main():
     raw_assignments  = data.get('assignments', [])
     kelass           = data.get('kelass', [])
     gurus            = data.get('gurus', [])
+    
     max_time_minutes = int(data.get('max_time_minutes', 5))
     MAX_TIME_SEC     = max_time_minutes * 60
 
@@ -459,34 +371,18 @@ def main():
     )
 
     if result[0] is None:
-        infeasible_ids = result[1] or []
-        detail_masalah = diagnosa_infeasible(
-            raw_assignments, kelass, gurus,
-            kelas_limits, guru_hari_map, guru_jenis_hari_map
-        )
-        pesan = (
-            f"Terdapat {len(infeasible_ids)} tugas yang tidak dapat dijadwalkan "
-            f"karena konflik aturan hard constraint. Periksa data berikut: "
-            + " || ".join(detail_masalah[:5])
-        )
-        print(json.dumps({"status": "INFEASIBLE", "message": pesan, "detail": detail_masalah}))
+        print(json.dumps({"status": "INFEASIBLE", "message": "Konfigurasi data mustahil diselesaikan."}))
         return
 
-    (model, _, starts, presences, end_vars,
+    (model, starts, presences, end_vars,
      all_presence_vars, all_start_vars,
      violation_vars, deviasi_vars, penalti_info,
      tasks_per_mapel_group,
      soft_batas_violation_vars, soft_batas_info,
      soft_hari_violation_vars,  soft_hari_info,
-     soft_guru_batas_vars,      soft_guru_batas_info,
-     underfill_obj_terms) = result
+     soft_guru_batas_vars,      soft_guru_batas_info) = result
 
-    # ── Fungsi objektif ─────────────────────────────────────────────────────
     obj_terms = []
-    # Underfill: MAKSIMALKAN total beban harian → minimasi slot kosong sia-sia
-    # Tanpa IntVar tambahan — pakai ekspresi linear dari durasi_per_kelas_harian
-    if underfill_obj_terms:
-        obj_terms.append(-BOBOT_UNDERFILL * sum(underfill_obj_terms))
     if soft_batas_violation_vars:
         obj_terms.append(BOBOT_BATAS_SOFT      * sum(soft_batas_violation_vars))
     if soft_hari_violation_vars:
@@ -501,13 +397,14 @@ def main():
     if obj_terms:
         model.Minimize(sum(obj_terms))
 
-    # ── Konfigurasi solver (Hemat RAM) ───────────────────────────────────────
+    # ---- Konfigurasi solver (MODE MEDIUM - RISIKO OOM) ----
     solver = cp_model.CpSolver()
-    solver.parameters.optimize_with_core  = False
-    solver.parameters.linearization_level = 0
-    solver.parameters.symmetry_level      = 1
+
+    solver.parameters.optimize_with_core  = True  # Dinyalakan biar AI pinter
+    solver.parameters.linearization_level = 1     # Setengah pinter (Level 1)
+    solver.parameters.symmetry_level      = 2     # Efisiensi jalur pencarian
     solver.parameters.num_search_workers  = MAX_WORKERS
-    solver.parameters.max_memory_in_mb    = MAX_MEMORY_MB
+    solver.parameters.max_memory_in_mb    = MAX_MEMORY_MB # Mentok 250MB
     solver.parameters.max_time_in_seconds = MAX_TIME_SEC
 
     tracker = ObjectiveTracker(T_mulai)
@@ -515,37 +412,35 @@ def main():
     T       = time.time() - T_mulai
 
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-        detail_masalah = diagnosa_infeasible(
-            raw_assignments, kelass, gurus,
-            kelas_limits, guru_hari_map, guru_jenis_hari_map
-        )
-        pesan = "Solusi tidak ditemukan dalam batas waktu/memori."
-        if detail_masalah:
-            pesan += " Kemungkinan penyebab: " + " || ".join(detail_masalah[:3])
-        print(json.dumps({"status": "INFEASIBLE", "message": pesan, "detail": detail_masalah}))
+        print(json.dumps({
+            "status" : "INFEASIBLE",
+            "message": "Solusi mustahil ditemukan. Waktu habis atau memori server tidak kuat.",
+        }))
         return
 
     solusi  = ekstrak_solusi(solver, raw_assignments, presences, starts)
     obj_val = solver.ObjectiveValue()
 
+    # --- PENENTUAN STATUS (TANPA GAP) ---
     if status == cp_model.OPTIMAL:
         status_label      = "OPTIMAL"
         status_penjelasan = (
-            f"Pencarian solusi selesai. AI berhasil menemukan jadwal optimal "
-            f"dalam {round(T, 2)} detik. Total penalti: {int(obj_val)}."
+            f"AI berhasil menyusun jadwal dengan sangat baik (Optimal). "
+            f"Seluruh jadwal dijamin bebas bentrok. "
+            f"Total penalti berhasil ditekan ke angka {int(obj_val)}."
         )
     else:
         status_label      = "FEASIBLE"
         status_penjelasan = (
-            f"AI berhasil membuat jadwal tanpa bentrok (Feasible). "
-            f"Total Penalti yang dicapai adalah {int(obj_val)} poin. "
-            f"Proses dihentikan setelah {max_time_minutes} menit."
+            f"AI berhasil membuat jadwal yang valid dan bebas bentrok (Feasible). "
+            f"Total penalti preferensi berhasil ditekan menjadi {int(obj_val)} poin dalam batas waktu {max_time_minutes} menit."
         )
 
-    # ── Hitung soft constraint violations ───────────────────────────────────
+    # ---- Hitung soft constraint violations ----
     detail_soft = []
 
-    sf1_pelanggaran = 0
+    # SF-1
+    sf1_pelanggaran  = 0
     for p in penalti_info:
         if solver.Value(p['is_violation']) == 1:
             sf1_pelanggaran += 1
@@ -553,6 +448,7 @@ def main():
                 f"[SF-1] {get_nama_guru(gurus, p['g_id'])} deviasi JP tidak rata hari {p['hari']}."
             )
 
+    # SF-2
     sf2_reported    = set()
     sf2_pelanggaran = 0
     for sb in soft_batas_info:
@@ -567,6 +463,7 @@ def main():
                 f"selesai slot {slot_akhir} (lewat batas)."
             )
 
+    # SF-3
     sf3_reported    = set()
     sf3_pelanggaran = 0
     for sh in soft_hari_info:
@@ -580,6 +477,7 @@ def main():
                 f"(bukan hari preferensinya)."
             )
 
+    # SF-4
     sf4_reported    = set()
     sf4_pelanggaran = 0
     for sg in soft_guru_batas_info:
@@ -591,7 +489,7 @@ def main():
             slot_akhir = solver.Value(sg['end_var']) - 1
             detail_soft.append(
                 f"[SF-4] {get_nama_guru(gurus, sg['g_id'])} hari {sg['h']} "
-                f"selesai slot {slot_akhir} (melewati batas Max Slot: {sg['limit']})."
+                f"selesai slot {slot_akhir} (melewati batas Max Slot Preferensi: {sg['limit']})."
             )
 
     jml_soft = sf1_pelanggaran + sf2_pelanggaran + sf3_pelanggaran + sf4_pelanggaran
@@ -606,23 +504,23 @@ def main():
             "jumlah_pelanggaran_hard": 0,
             "detail_pelanggaran_hard": [],
             "breakdown_hard"         : [
-                {'kategori': 'HC-1', 'deskripsi': 'JP harian kelas tidak melebihi batas', 'pelanggaran': 0},
-                {'kategori': 'HC-2', 'deskripsi': 'Tidak bentrok slot guru',               'pelanggaran': 0},
-                {'kategori': 'HC-3', 'deskripsi': 'Tidak bentrok slot kelas',              'pelanggaran': 0},
-                {'kategori': 'HC-4', 'deskripsi': 'Guru hard di hari yang diizinkan',      'pelanggaran': 0},
-                {'kategori': 'HC-5', 'deskripsi': 'Batas slot maksimal mapel hard',        'pelanggaran': 0},
-                {'kategori': 'HC-6', 'deskripsi': 'Mapel tidak muncul ganda per kelas',    'pelanggaran': 0},
-                {'kategori': 'HC-7', 'deskripsi': 'Batas slot maksimal guru hard',         'pelanggaran': 0},
+                {'kategori': 'HC-1', 'deskripsi': 'JP harian kelas terpenuhi',           'pelanggaran': 0},
+                {'kategori': 'HC-2', 'deskripsi': 'Tidak bentrok slot guru',              'pelanggaran': 0},
+                {'kategori': 'HC-3', 'deskripsi': 'Tidak bentrok slot kelas',             'pelanggaran': 0},
+                {'kategori': 'HC-4', 'deskripsi': 'Guru hard di hari yang diizinkan',     'pelanggaran': 0},
+                {'kategori': 'HC-5', 'deskripsi': 'Batas slot maksimal mapel hard',       'pelanggaran': 0},
+                {'kategori': 'HC-6', 'deskripsi': 'Mapel tidak muncul ganda per kelas',   'pelanggaran': 0},
+                {'kategori': 'HC-7', 'deskripsi': 'Batas slot maksimal guru hard',        'pelanggaran': 0},
             ],
             "jumlah_pelanggaran_soft": jml_soft,
             "detail_pelanggaran_soft": detail_soft,
             "breakdown_soft"         : [
-                {'kategori': 'SF-1', 'deskripsi': 'Penyebaran beban harian (diluar batas)',   'pelanggaran': sf1_pelanggaran},
-                {'kategori': 'SF-2', 'deskripsi': 'Batas preferensi slot maksimal mapel',     'pelanggaran': sf2_pelanggaran},
-                {'kategori': 'SF-3', 'deskripsi': 'Kesesuaian hari preferensi mengajar guru', 'pelanggaran': sf3_pelanggaran},
-                {'kategori': 'SF-4', 'deskripsi': 'Batas slot maksimal harian guru ditaati',  'pelanggaran': sf4_pelanggaran},
+                {'kategori': 'SF-1', 'deskripsi': 'Penyebaran beban harian (diluar batas)',     'pelanggaran': sf1_pelanggaran},
+                {'kategori': 'SF-2', 'deskripsi': 'Batas preferensi slot maksimal mapel',       'pelanggaran': sf2_pelanggaran},
+                {'kategori': 'SF-3', 'deskripsi': 'Kesesuaian hari preferensi mengajar guru',   'pelanggaran': sf3_pelanggaran},
+                {'kategori': 'SF-4', 'deskripsi': 'Batas slot maksimal harian guru ditaati',    'pelanggaran': sf4_pelanggaran},
             ],
-            "kurva_solver": tracker.history,
+            "kurva_solver"           : tracker.history,
         },
         "message": "Selesai memproses penjadwalan.",
     }))
