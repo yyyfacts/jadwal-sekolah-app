@@ -198,8 +198,8 @@ class JadwalController extends Controller
                 'limit_jumat'  => $k->limit_jumat  ?? 7,
             ]);
 
-            // Ambil input waktu yang diketik user
-            $maxTimeMinutes = $request->input('max_time', 10);
+            // Batas maksimal dikunci di 30 menit (otomatis stop jika penalti 0 sebelum waktunya)
+            $maxTimeMinutes = 30;
 
             $dataInput = [
                 'hari_aktif'       => $hariAktif,
@@ -251,7 +251,6 @@ class JadwalController extends Controller
                     }
                     DB::commit();
 
-                    // Simpan data metrik terbaru dengan aman
                     $metricsToSave = [
                         'status_solver'           => $result['status'],
                         'status_penjelasan'       => $result['status_penjelasan']       ?? null,

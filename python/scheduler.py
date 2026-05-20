@@ -31,6 +31,10 @@ class ObjectiveTracker(cp_model.CpSolverSolutionCallback):
         t   = time.time() - self.start_time
         obj = self.ObjectiveValue()
         self.history.append({"waktu": round(t, 2), "objektif": obj})
+        
+        # [FITUR BARU] Rem Darurat: Kalau penalti udah 0, langsung stop pencarian!
+        if obj == 0:
+            self.StopSearch()
 
 
 # =============================================================================
@@ -396,7 +400,7 @@ def main():
     if obj_terms:
         model.Minimize(sum(obj_terms))
 
-    # ---- Konfigurasi solver (MODE DEWA - KEMBALI KE ASAL) ----
+    # ---- Konfigurasi solver (MODE DEWA) ----
     solver = cp_model.CpSolver()
 
     solver.parameters.optimize_with_core  = True 
@@ -420,13 +424,13 @@ def main():
     solusi  = ekstrak_solusi(solver, raw_assignments, presences, starts)
     obj_val = solver.ObjectiveValue()
 
-    # --- PENENTUAN STATUS (TANPA MENGHINTUNG GAP SAMA SEKALI) ---
-    if status == cp_model.OPTIMAL:
+    # --- PENENTUAN STATUS (DENGAN LOGIKA REM DARURAT & TANPA GAP) ---
+    if status == cp_model.OPTIMAL or (status == cp_model.FEASIBLE and obj_val == 0):
         status_label      = "OPTIMAL"
         status_penjelasan = (
-            f"Pencarian selesai. AI berhasil menemukan jadwal paling sempurna (Optimal) "
-            f"dalam {round(T, 2)} detik. Seluruh preferensi ditekan pada titik terbaiknya "
-            f"tanpa ada satu pun Aturan Mutlak yang dilanggar."
+            f"Pencarian selesai! AI berhasil menemukan jadwal paling sempurna (Optimal) "
+            f"dalam waktu super cepat ({round(T, 2)} detik). Proses dihentikan otomatis "
+            f"karena total penalti sudah mencapai 0."
         )
     else:
         status_label      = "FEASIBLE"
