@@ -198,7 +198,8 @@ class JadwalController extends Controller
                 'limit_jumat'  => $k->limit_jumat  ?? 7,
             ]);
 
-            $maxTimeMinutes = $request->input('max_time', 5); // Default ke 5 Menit di Controller
+            // Ambil dari input form, validasi min 1 menit
+            $maxTimeMinutes = max(1, (int) $request->input('max_time', 5));
 
             $dataInput = [
                 'hari_aktif'       => $hariAktif,
@@ -212,13 +213,10 @@ class JadwalController extends Controller
             file_put_contents($jsonPath, json_encode($dataInput));
 
             $scriptPath = base_path('python/scheduler.py');
-
-            // --- INI BAGIAN PENTING UNTUK HOSTING / VPS ---
-            // Membaca path python dari file .env, default fallback ke python3
-            $pythonBin = env('PYTHON_PATH', 'python3');
+            $pythonBin  = env('PYTHON_PATH', 'python3');
 
             $process = new Process([$pythonBin, $scriptPath, $jsonPath]);
-            $process->setTimeout(null); // Mematikan timeout bawaan PHP Process
+            $process->setTimeout(null);
             $process->run();
 
             if (!$process->isSuccessful()) {
@@ -228,7 +226,7 @@ class JadwalController extends Controller
             $result = json_decode($process->getOutput(), true);
             $metrik = $result['metrik'] ?? [];
 
-            if (isset($result['status']) && in_array($result['status'], ['OPTIMAL', 'NEAR-OPTIMAL', 'FEASIBLE'])) {
+            if (isset($result['status']) && in_array($result['status'], ['OPTIMAL', 'FEASIBLE'])) {
                 DB::beginTransaction();
                 try {
                     $hariIdMap = MasterHari::pluck('id', 'nama_hari')->toArray();
@@ -257,8 +255,6 @@ class JadwalController extends Controller
                         'status_penjelasan'       => $result['status_penjelasan']       ?? null,
                         'waktu_komputasi'         => $metrik['waktu_komputasi_detik']   ?? null,
                         'total_penalti'           => $metrik['total_penalti']           ?? null,
-                        'z_bound'                 => $metrik['z_bound']                 ?? null,
-                        'gap_pct'                 => $metrik['gap_pct']                 ?? null,
                         'jumlah_pelanggaran_hard' => $metrik['jumlah_pelanggaran_hard'] ?? 0,
                         'jumlah_pelanggaran_soft' => $metrik['jumlah_pelanggaran_soft'] ?? 0,
                         'detail_pelanggaran_hard' => $metrik['detail_pelanggaran_hard'] ?? [],
