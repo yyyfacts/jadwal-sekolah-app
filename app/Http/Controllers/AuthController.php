@@ -30,8 +30,8 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
-            // Redirect ke halaman utama jika sukses
-            return redirect()->intended(route('guru.index'));
+            // Redirect ke halaman DAHBOARD jika sukses
+            return redirect()->intended(route('dashboard'));
         }
 
         // 3. Kembali ke login jika gagal (Email diganti Username)

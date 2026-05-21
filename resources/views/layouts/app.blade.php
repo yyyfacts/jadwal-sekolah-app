@@ -164,11 +164,11 @@
                                 <div class="px-4 py-2 border-b border-slate-100 bg-slate-50/50">
                                     <p class="text-xs text-slate-500">Login sebagai:</p>
                                     <p class="text-sm font-bold text-slate-800 truncate">
-                                        {{ Auth::user()->email ?? 'admin@sman1sampang.sch.id' }}</p>
+                                        {{ Auth::user()->username ?? 'zain' }}</p>
                                 </div>
 
                                 <a href="{{ route('profile.edit') }}"
-                                    class="block px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition">Edit
+                                    class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition">Edit
                                     Profil</a>
 
                                 <form method="POST" action="{{ route('logout') }}">
@@ -252,7 +252,7 @@
                             {{ substr(Auth::user()->name ?? 'A', 0, 1) }}</div>
                         <div>
                             <div class="text-white font-medium">{{ Auth::user()->name ?? 'Admin' }}</div>
-                            <div class="text-xs text-slate-400">{{ Auth::user()->email ?? 'admin' }}</div>
+                            <div class="text-xs text-slate-400">{{ Auth::user()->username ?? 'zain' }}</div>
                         </div>
                     </div>
 

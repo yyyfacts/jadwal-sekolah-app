@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 
 // Controllers
+use App\Http\Controllers\DashboardController; // <-- TAMBAHAN BARU
 use App\Http\Controllers\GuruController;
 use App\Http\Controllers\MapelController;
 use App\Http\Controllers\KelasController;
@@ -81,10 +82,17 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 // ==================================================================
 Route::middleware(['auth'])->group(function () {
 
-    // Dashboard Redirect
+    // --------------------------------------------------------------
+    // GROUP: DASHBOARD (HALAMAN UTAMA BARU)
+    // --------------------------------------------------------------
+    // Kalau user buka '/' langsung dilempar ke '/dashboard'
     Route::get('/', function () {
-        return redirect()->route('guru.index');
+        return redirect()->route('dashboard');
     })->name('home');
+
+    // Halaman Dashboard sesungguhnya
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
 
     // --------------------------------------------------------------
     // GROUP: DATA MASTER (TAHUN PELAJARAN)
@@ -93,7 +101,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [TahunPelajaranController::class, 'index'])->name('index');
         Route::post('/', [TahunPelajaranController::class, 'store'])->name('store');
         
-        // Tambahan Edit dan Update Tahun Pelajaran
         Route::get('/{id}/edit', [TahunPelajaranController::class, 'edit'])->name('edit');
         Route::put('/{id}', [TahunPelajaranController::class, 'update'])->name('update');
         
