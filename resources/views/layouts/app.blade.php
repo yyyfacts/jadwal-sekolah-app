@@ -93,6 +93,12 @@
                 {{-- B. MENU DESKTOP (Hidden on Mobile) --}}
                 <div class="hidden lg:flex items-center gap-1 bg-white/5 px-2 py-1.5 rounded-xl border border-white/5">
 
+                    {{-- 0. DASHBOARD --}}
+                    <a href="{{ route('dashboard') }}"
+                        class="px-3 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs('dashboard') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
+                        Dashboard
+                    </a>
+
                     {{-- 1. DATA GURU --}}
                     <a href="{{ route('guru.index') }}"
                         class="px-3 py-2 rounded-lg text-sm font-medium transition-all {{ request()->routeIs('guru.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
@@ -167,9 +173,7 @@
                                         {{ Auth::user()->username ?? 'zain' }}</p>
                                 </div>
 
-                                <a href="{{ route('profile.edit') }}"
-                                    class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition">Edit
-                                    Profil</a>
+                                {{-- Edit Profil Dihapus Sesuai Permintaan --}}
 
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
@@ -209,6 +213,11 @@
 
             <div class="px-4 py-6 space-y-2">
 
+                <a href="{{ route('dashboard') }}"
+                    class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('dashboard') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                    <span class="text-xl">📊</span> Dashboard
+                </a>
+
                 <a href="{{ route('guru.index') }}"
                     class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('guru.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                     <span class="text-xl">👨‍🏫</span> Data Guru
@@ -240,7 +249,7 @@
                 </a>
 
                 <a href="{{ route('user.index') }}"
-                    class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('user.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                    class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->request->routeIs('user.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                     <span class="text-xl">⚙️</span> Admin User
                 </a>
 
@@ -256,9 +265,7 @@
                         </div>
                     </div>
 
-                    <a href="{{ route('profile.edit') }}"
-                        class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white mb-2">Edit
-                        Profil</a>
+                    {{-- Edit Profil Dihapus Sesuai Permintaan --}}
 
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
