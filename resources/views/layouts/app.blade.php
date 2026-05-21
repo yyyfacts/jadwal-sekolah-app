@@ -248,8 +248,9 @@
                     <span class="text-xl">📅</span> Jadwal Pelajaran
                 </a>
 
+                {{-- TYPO UDAH DIBENERIN DI BAWAH INI --}}
                 <a href="{{ route('user.index') }}"
-                    class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->request->routeIs('user.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                    class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-all {{ request()->routeIs('user.*') ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                     <span class="text-xl">⚙️</span> Admin User
                 </a>
 
