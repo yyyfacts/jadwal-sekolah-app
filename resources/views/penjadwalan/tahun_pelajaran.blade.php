@@ -88,6 +88,7 @@
                                     <button
                                         @click="openEditModal({{ $t->id }}, '{{ $t->tahun }}', '{{ $t->semester }}')"
                                         class="text-amber-500 font-bold text-[10px] border px-2 py-1 rounded hover:bg-amber-50">Edit</button>
+
                                     @if(!$t->is_active)
                                     <form action="{{ route('tahun-pelajaran.activate', $t->id) }}" method="POST"
                                         class="m-0 inline">@csrf @method('PATCH')<button type="submit"
@@ -98,6 +99,12 @@
                                         @method('DELETE')<button type="submit"
                                             class="text-red-500 font-bold text-[10px] border border-red-200 px-2 py-1 rounded hover:bg-red-50">Hapus</button>
                                     </form>
+                                    @else
+                                    {{-- Tombol Hapus Abu-Abu untuk Status Aktif --}}
+                                    <button type="button"
+                                        onclick="alert('Tahun ajaran yang sedang aktif TIDAK BISA dihapus! Silakan aktifkan tahun ajaran yang lain terlebih dahulu.')"
+                                        class="text-slate-400 font-bold text-[10px] border border-slate-200 bg-slate-50 px-2 py-1 rounded cursor-not-allowed"
+                                        title="Tahun aktif tidak bisa dihapus">Hapus</button>
                                     @endif
                                 </div>
                             </td>
