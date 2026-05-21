@@ -198,8 +198,8 @@ class JadwalController extends Controller
                 'limit_jumat'  => $k->limit_jumat  ?? 7,
             ]);
 
-            // Batas maksimal dikunci di 30 menit (otomatis stop jika penalti 0 sebelum waktunya)
-            $maxTimeMinutes = 30;
+            // BATAS WAKTU MAKSIMAL DIKUNCI 5 MENIT
+            $maxTimeMinutes = 5;
 
             $dataInput = [
                 'hari_aktif'       => $hariAktif,

@@ -16,9 +16,9 @@ BOBOT_HARI_SOFT       =  90
 BOBOT_GURU_MAX_HARIAN = 150
 BOBOT_DEVIASI         =   2
 
-# Pengaturan Eksekusi Hardware (MODE DEWA / LOKAL)
+# Pengaturan Eksekusi Hardware (MODE DEWA EKSTRA KERAS)
 MAX_MEMORY_MB = 4096 # Pakai RAM 4GB
-MAX_WORKERS   = 0    # 0 = Gunakan seluruh core CPU laptop secara maksimal
+MAX_WORKERS   = 0    # 0 = Gunakan seluruh core CPU laptop secara maksimal tanpa sisa
 
 
 class ObjectiveTracker(cp_model.CpSolverSolutionCallback):
@@ -356,6 +356,8 @@ def main():
     raw_assignments  = data.get('assignments', [])
     kelass           = data.get('kelass', [])
     gurus            = data.get('gurus', [])
+    
+    # Ambil batas waktu (kini pasti 5 menit dari Controller)
     max_time_minutes = int(data.get('max_time_minutes', 5))
     MAX_TIME_SEC     = max_time_minutes * 60
 
@@ -400,12 +402,13 @@ def main():
     if obj_terms:
         model.Minimize(sum(obj_terms))
 
-    # ---- Konfigurasi solver (MODE DEWA) ----
+    # ---- Konfigurasi solver (MODE DEWA EXTRA KERAS) ----
     solver = cp_model.CpSolver()
 
     solver.parameters.optimize_with_core  = True 
     solver.parameters.linearization_level = 2    
-    solver.parameters.symmetry_level      = 2    
+    solver.parameters.symmetry_level      = 2
+    solver.parameters.use_lns             = True # Rahasia biar AI lebih kreatif mencari jalan pintas
     solver.parameters.num_search_workers  = MAX_WORKERS
     solver.parameters.max_memory_in_mb    = MAX_MEMORY_MB
     solver.parameters.max_time_in_seconds = MAX_TIME_SEC
@@ -441,7 +444,7 @@ def main():
         status_penjelasan = (
             f"AI berhasil membuat jadwal yang valid dan bebas bentrok (Feasible). "
             f"Total penalti preferensi berhasil ditekan menjadi {int(obj_val)} poin. "
-            f"Proses dihentikan pada {teks_waktu} karena mencapai batas waktu maksimal."
+            f"Proses dihentikan pada {teks_waktu} karena sudah mencapai batas waktu maksimal ({max_time_minutes} menit)."
         )
 
     # ---- Hitung soft constraint violations ----
