@@ -3,10 +3,11 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth; // <-- Pastikan facade Auth ini di-import
 use App\Models\User;
 
 // Controllers
-use App\Http\Controllers\DashboardController; // <-- TAMBAHAN BARU
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuruController;
 use App\Http\Controllers\MapelController;
 use App\Http\Controllers\KelasController;
@@ -67,8 +68,17 @@ Route::get('/fix-storage', function () {
 });
 
 // ==================================================================
-// 2. AUTHENTICATION (GUEST)
+// 2. PUBLIC LANDING & AUTHENTICATION (GUEST)
 // ==================================================================
+
+// Pintu utama aplikasi: Cek login secara eksplisit agar aman dari error loop
+Route::get('/', function () {
+    if (Auth::check()) {
+        return redirect()->route('dashboard');
+    }
+    return redirect()->route('login');
+})->name('home');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
@@ -82,17 +92,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 // ==================================================================
 Route::middleware(['auth'])->group(function () {
 
-    // --------------------------------------------------------------
-    // GROUP: DASHBOARD (HALAMAN UTAMA BARU)
-    // --------------------------------------------------------------
-    // Kalau user buka '/' langsung dilempar ke '/dashboard'
-    Route::get('/', function () {
-        return redirect()->route('dashboard');
-    })->name('home');
-
-    // Halaman Dashboard sesungguhnya
+    // Halaman Utama setelah sukses login
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
 
     // --------------------------------------------------------------
     // GROUP: DATA MASTER (TAHUN PELAJARAN)
