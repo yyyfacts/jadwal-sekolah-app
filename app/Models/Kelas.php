@@ -17,7 +17,8 @@ class Kelas extends Model
         'max_jam',
         'limit_harian', 
         'limit_jumat',
-        'wali_guru_id' // <--- Tambahan untuk wali kelas
+        'wali_guru_id',
+        'blocked_slots' // <--- Tambahan untuk wali kelas
     ];
 
     public function jadwals()
