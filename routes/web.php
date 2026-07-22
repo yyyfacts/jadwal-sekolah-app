@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth; // <-- Pastikan facade Auth ini di-import
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 
 // Controllers
@@ -71,7 +71,6 @@ Route::get('/fix-storage', function () {
 // 2. PUBLIC LANDING & AUTHENTICATION (GUEST)
 // ==================================================================
 
-// Pintu utama aplikasi: Cek login secara eksplisit agar aman dari error loop
 Route::get('/', function () {
     if (Auth::check()) {
         return redirect()->route('dashboard');
@@ -118,7 +117,6 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{id}', [MasterHariController::class, 'update'])->name('update');
         Route::delete('/{id}', [MasterHariController::class, 'destroy'])->name('destroy');
 
-        // Rute khusus pop-up waktu
         Route::get('/{id}/waktu', [MasterHariController::class, 'getWaktu']);
         Route::post('/{id}/waktu', [MasterHariController::class, 'simpanWaktu'])->name('waktu');
     });
@@ -127,12 +125,10 @@ Route::middleware(['auth'])->group(function () {
     // GROUP: DATA MASTER (GURU)
     // --------------------------------------------------------------
     Route::prefix('guru')->name('guru.')->group(function () {
-        // Fitur Jadwal (Ajax)
         Route::post('/{id}/jadwal', [GuruController::class, 'simpanJadwal'])->name('simpanJadwal');
         Route::put('/jadwal/{id}', [GuruController::class, 'updateJadwal'])->name('updateJadwal');
         Route::delete('/jadwal/{id}', [GuruController::class, 'hapusJadwal'])->name('hapusJadwal');
 
-        // CRUD Guru Utama
         Route::get('/', [GuruController::class, 'index'])->name('index');
         Route::post('/', [GuruController::class, 'store'])->name('store');
         Route::put('/{id}', [GuruController::class, 'update'])->name('update');
@@ -143,16 +139,13 @@ Route::middleware(['auth'])->group(function () {
     // GROUP: DATA MASTER (MAPEL)
     // --------------------------------------------------------------
     Route::prefix('mapel')->name('mapel.')->group(function () {
-        // CRUD Mapel
         Route::get('/', [MapelController::class, 'index'])->name('index');
         Route::post('/', [MapelController::class, 'store'])->name('store');
         Route::put('/{id}', [MapelController::class, 'update'])->name('update');
         Route::delete('/{id}', [MapelController::class, 'destroy'])->name('destroy');
 
-        // Fitur Ganti Status (Online/Offline)
         Route::post('/{id}/status', [MapelController::class, 'updateStatus'])->name('updateStatus');
 
-        // Rute Jadwal Mapel
         Route::post('/{id}/jadwal', [MapelController::class, 'simpanJadwal'])->name('simpanJadwal');
         Route::put('/jadwal/{id}', [MapelController::class, 'updateJadwal'])->name('updateJadwal');
         Route::delete('/jadwal/{id}', [MapelController::class, 'hapusJadwal'])->name('hapusJadwal');
@@ -163,23 +156,19 @@ Route::middleware(['auth'])->group(function () {
     // --------------------------------------------------------------
     Route::prefix('kelas')->name('kelas.')->group(function () {
 
-        // --- TAMBAHAN RUTE SINKRONISASI JAM ---
         Route::post('/sinkronisasi-jam', [KelasController::class, 'sinkronisasiMaxJam'])->name('sinkronisasi');
-        // --------------------------------------
 
-        // CRUD Kelas
         Route::get('/', [KelasController::class, 'index'])->name('index');
         Route::post('/', [KelasController::class, 'store'])->name('store');
         Route::put('/{id}', [KelasController::class, 'update'])->name('update');
         Route::delete('/{id}', [KelasController::class, 'destroy'])->name('destroy');
 
-        // Rute Khusus Kelas (Jadwal)
         Route::post('/{id}/jadwal', [KelasController::class, 'simpanJadwal'])->name('simpanJadwal');
         Route::put('/jadwal/{id}', [KelasController::class, 'updateJadwal'])->name('updateJadwal');
         Route::delete('/jadwal/{id}', [KelasController::class, 'hapusJadwal'])->name('hapusJadwal');
 
         // Rute khusus pop-up Jam Kosong / Blokir Kelas (kelas_waktu_khusus)
-        Route::get('/{id}/waktu-khusus', [KelasController::class, 'getWaktuKhusus']);
+        Route::get('/{id}/waktu-khusus', [KelasController::class, 'getWaktuKhusus'])->name('waktu-khusus.get');
         Route::post('/{id}/waktu-khusus', [KelasController::class, 'simpanWaktuKhusus'])->name('waktu-khusus');
     });
 
@@ -199,7 +188,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');
         Route::post('/', [UserController::class, 'store'])->name('store');
 
-        // Tambahan Edit dan Update User
         Route::get('/{id}/edit', [UserController::class, 'edit'])->name('edit');
         Route::put('/{id}', [UserController::class, 'update'])->name('update');
 
