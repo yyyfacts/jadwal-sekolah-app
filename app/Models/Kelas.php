@@ -18,7 +18,8 @@ class Kelas extends Model
         'limit_harian', 
         'limit_jumat',
         'wali_guru_id',
-        'blocked_slots' // <--- Tambahan untuk wali kelas
+        // 'blocked_slots' sengaja dihapus dari sini -> udah gak dipake lagi,
+        // diganti tabel kelas_waktu_khusus (lihat relasi waktuKhusus() di bawah)
     ];
 
     public function jadwals()
@@ -31,4 +32,12 @@ class Kelas extends Model
     {
         return $this->belongsTo(Guru::class, 'wali_guru_id');
     }
+
+    // [BARU] Daftar pengecualian jam kelas ini (jam yang tipe-nya selain 'Belajar')
+    public function waktuKhusus()
+    {
+        return $this->hasMany(KelasWaktuKhusus::class, 'kelas_id');
+    }
+
+
 }

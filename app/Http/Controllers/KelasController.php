@@ -6,6 +6,8 @@ use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Mapel;
 use App\Models\Jadwal;
+use App\Models\MasterHari;
+use App\Models\KelasWaktuKhusus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
@@ -28,7 +30,10 @@ class KelasController extends Controller
             });
         }
 
-        // [FITUR BARU] Buat kolom otomatis untuk Jam Kosong / Blokir Kelas
+        // [LEGACY - GAK DIPAKE LAGI] Kolom ini dulu buat Jam Kosong/Blokir versi text bebas,
+        // sekarang udah digantiin tabel kelas_waktu_khusus. Dibiarin di sini (gak dihapus)
+        // biar gak ganggu kalau kolomnya udah kadung ada di DB, tapi gak dibaca/ditulis lagi
+        // di controller manapun.
         if (Schema::hasTable('kelas') && !Schema::hasColumn('kelas', 'blocked_slots')) {
             Schema::table('kelas', function (Blueprint $table) {
                 $table->string('blocked_slots', 255)->nullable()->after('limit_jumat');
@@ -37,13 +42,13 @@ class KelasController extends Controller
     }
 
     /**
-     * [BARU] Hitung kapasitas fisik mingguan kelas (dalam JP) berdasarkan
-     * limit_harian, limit_jumat, dan jumlah slot yang diblokir.
-     * Senin-Kamis pakai limit_harian, Jumat pakai limit_jumat.
-     * Logikanya disamakan persis dengan build_kelas_limits() di scheduler.py
-     * biar hasil hitungannya konsisten sama yang dipakai solver.
+     * [DIUBAH] Hitung kapasitas fisik mingguan kelas (dalam JP) berdasarkan
+     * limit_harian, limit_jumat, dan jumlah jam yang dikecualikan (bukan 'Belajar')
+     * di tabel kelas_waktu_khusus. Senin-Kamis pakai limit_harian, Jumat pakai limit_jumat.
+     *
+     * $kelasId null artinya kelas baru (belum punya pengecualian sama sekali).
      */
-    private function hitungKapasitasMingguan($limitHarian, $limitJumat, $blockedSlotsRaw)
+    private function hitungKapasitasMingguan($limitHarian, $limitJumat, $kelasId = null)
     {
         $limitHarian = (int) $limitHarian;
         $limitJumat = (int) $limitJumat;
@@ -51,23 +56,16 @@ class KelasController extends Controller
         $hariBiasa = ['Senin', 'Selasa', 'Rabu', 'Kamis']; // pakai limit_harian
         $totalKapasitas = (count($hariBiasa) * $limitHarian) + $limitJumat;
 
-        if (!$blockedSlotsRaw) {
+        if (!$kelasId) {
             return $totalKapasitas;
         }
 
-        // Hitung berapa slot diblokir per hari, format: "Selasa:3, Rabu:3"
-        $blokirPerHari = [];
-        $parts = explode(',', str_replace(';', ',', $blockedSlotsRaw));
-        foreach ($parts as $p) {
-            if (strpos($p, ':') === false)
-                continue;
-            [$hari, $jam] = explode(':', $p, 2);
-            $hari = ucfirst(strtolower(trim($hari)));
-            $jam = trim($jam);
-            if ($jam === '' || !is_numeric($jam))
-                continue;
-            $blokirPerHari[$hari] = ($blokirPerHari[$hari] ?? 0) + 1;
-        }
+        // Hitung berapa jam dikecualikan per hari dari tabel kelas_waktu_khusus
+        $blokirPerHari = KelasWaktuKhusus::where('kelas_id', $kelasId)
+            ->join('master_haris', 'kelas_waktu_khusus.master_hari_id', '=', 'master_haris.id')
+            ->selectRaw('master_haris.nama_hari as nama_hari, COUNT(*) as jumlah')
+            ->groupBy('master_haris.nama_hari')
+            ->pluck('jumlah', 'nama_hari');
 
         foreach ($blokirPerHari as $hari => $jumlahBlokir) {
             $batasHari = ($hari === 'Jumat') ? $limitJumat : $limitHarian;
@@ -82,7 +80,7 @@ class KelasController extends Controller
     {
         $this->checkAndFixDatabase();
 
-        $kelass = Kelas::with(['jadwals.mapel', 'jadwals.guru', 'waliKelas'])
+        $kelass = Kelas::with(['jadwals.mapel', 'jadwals.guru', 'waliKelas', 'waktuKhusus'])
             ->orderBy('nama_kelas')
             ->get();
 
@@ -107,26 +105,24 @@ class KelasController extends Controller
             'wali_guru_id' => 'nullable|exists:gurus,id',
             'limit_harian' => 'required|integer|min:1',
             'limit_jumat' => 'required|integer|min:1',
-            'blocked_slots' => 'nullable|string|max:255', // <-- Pastikan ini ada
         ]);
 
-        // [BARU] Kelas baru belum punya distribusi jadwal (0 JP), tapi tetap
-        // dicek jaga-jaga kalau blocked_slots yang diisi bikin kapasitas jadi negatif/aneh.
+        // Kelas baru belum punya pengecualian jam (kelas_waktu_khusus) sama sekali,
+        // jadi kapasitasnya cuma dihitung dari limit_harian & limit_jumat murni.
         $kapasitasBaru = $this->hitungKapasitasMingguan(
             $request->limit_harian,
             $request->limit_jumat,
-            $request->blocked_slots
+            null
         );
 
         if ($kapasitasBaru < 0) {
             return redirect()->back()->withInput()->with(
                 'error',
-                "Gagal! Kombinasi Limit Harian/Jumat dan Jam Kosong/Blokir yang lu isi gak masuk akal (kapasitas mingguan jadi negatif)."
+                "Gagal! Kombinasi Limit Harian/Jumat yang lu isi gak masuk akal (kapasitas mingguan jadi negatif)."
             );
         }
 
-        // <-- Pastikan 'blocked_slots' ada di dalam array only()
-        Kelas::create($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'wali_guru_id', 'limit_harian', 'limit_jumat', 'blocked_slots'));
+        Kelas::create($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'wali_guru_id', 'limit_harian', 'limit_jumat'));
         return redirect()->route('kelas.index')->with('success', 'Kelas berhasil ditambahkan.');
     }
 
@@ -139,17 +135,17 @@ class KelasController extends Controller
             'wali_guru_id' => 'nullable|exists:gurus,id',
             'limit_harian' => 'required|integer|min:1',
             'limit_jumat' => 'required|integer|min:1',
-            'blocked_slots' => 'nullable|string|max:255', // <-- Pastikan ini ada
         ]);
 
         $kelas = Kelas::findOrFail($id);
 
-        // [BARU] Validasi kapasitas mingguan vs total jam yang UDAH didistribusikan.
+        // Validasi kapasitas mingguan (limit harian/jumat dikurangi jam yang dikecualikan
+        // di kelas_waktu_khusus) vs total jam yang UDAH didistribusikan.
         // Ini yang bikin kegagalan "Solusi mustahil ditemukan" kejadian kalau gak dicek dari awal.
         $kapasitasBaru = $this->hitungKapasitasMingguan(
             $request->limit_harian,
             $request->limit_jumat,
-            $request->blocked_slots
+            $id
         );
 
         $totalOfflineSaatIni = $kelas->jadwals()->where('status', 'offline')->sum('jumlah_jam');
@@ -159,14 +155,13 @@ class KelasController extends Controller
             return redirect()->back()->withInput()->with(
                 'error',
                 "Gagal! Total jam yang sudah didistribusikan ke {$kelas->nama_kelas} adalah {$totalOfflineSaatIni} JP, " .
-                "tapi kapasitas mingguan setelah pengaturan Limit Harian/Jumat & Blokir ini cuma {$kapasitasBaru} JP. " .
+                "tapi kapasitas mingguan setelah pengaturan Limit Harian/Jumat & Jam Kosong/Blokir ini cuma {$kapasitasBaru} JP. " .
                 "Kurangi distribusi mapel kelas ini sebanyak {$selisih} JP, atau longgarkan blokir/limit hariannya. " .
                 "Kalau ini gak dibenerin dulu, tombol Jalankan Solver bakal selalu gagal (Infeasible)."
             );
         }
 
-        // <-- Pastikan 'blocked_slots' ada di dalam array only()
-        $kelas->update($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'wali_guru_id', 'limit_harian', 'limit_jumat', 'blocked_slots'));
+        $kelas->update($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'wali_guru_id', 'limit_harian', 'limit_jumat'));
 
         return redirect()->route('kelas.index')->with('success', 'Data kelas berhasil diperbarui.');
     }
@@ -286,6 +281,93 @@ class KelasController extends Controller
             return response()->json(['success' => true, 'message' => 'Berhasil Dihapus!']);
         } catch (\Throwable $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * [BARU] Ambil daftar slot 'Belajar' (global) buat semua hari aktif, dibarengin
+     * sama tipe khusus punya kelas ini (kalau ada override di kelas_waktu_khusus).
+     * Dipake buat isi modal "Jam Kosong / Blokir Kelas".
+     */
+    public function getWaktuKhusus($id)
+    {
+        $kelas = Kelas::findOrFail($id);
+
+        $dataHari = MasterHari::with(['waktuHaris' => function ($q) {
+            $q->where('tipe', 'Belajar')->orderBy('waktu_mulai');
+        }])->where('is_active', true)->orderBy('id')->get();
+
+        $existing = KelasWaktuKhusus::where('kelas_id', $id)
+            ->get()
+            ->keyBy(fn($row) => $row->master_hari_id . '_' . $row->jam_ke);
+
+        $hariResult = [];
+        foreach ($dataHari as $hari) {
+            $slots = [];
+            foreach ($hari->waktuHaris as $w) {
+                $override = $existing->get($hari->id . '_' . $w->jam_ke);
+                $slots[] = [
+                    'jam_ke'        => $w->jam_ke,
+                    'waktu_mulai'   => $w->waktu_mulai,
+                    'waktu_selesai' => $w->waktu_selesai,
+                    'tipe_khusus'   => $override->tipe ?? 'Belajar',
+                    'keterangan'    => $override->keterangan ?? null,
+                ];
+            }
+            $hariResult[] = [
+                'master_hari_id' => $hari->id,
+                'nama_hari'      => $hari->nama_hari,
+                'slots'          => $slots,
+            ];
+        }
+
+        return response()->json([
+            'kelas' => ['id' => $kelas->id, 'nama_kelas' => $kelas->nama_kelas],
+            'hari'  => $hariResult,
+        ]);
+    }
+
+    /**
+     * [BARU] Simpan pengecualian jam kelas. Slot bertipe 'Belajar' gak disimpan
+     * (artinya normal, jadwal boleh diisi solver). Slot selain 'Belajar' disimpan
+     * sebagai row baru dan otomatis di-skip pas generate jadwal.
+     */
+    public function simpanWaktuKhusus(Request $request, $id)
+    {
+        Kelas::findOrFail($id);
+
+        $request->validate([
+            'items'                  => 'array',
+            'items.*.master_hari_id' => 'required|exists:master_haris,id',
+            'items.*.jam_ke'         => 'required|integer',
+            'items.*.tipe'           => 'required|string|in:Belajar,Kosong,Ujian,Ekstrakurikuler,Kegiatan Khusus',
+            'items.*.keterangan'     => 'nullable|string|max:255',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Hapus semua pengecualian lama punya kelas ini, insert ulang yang bukan 'Belajar'.
+            // Lebih simpel & aman daripada nyari row satu-satu buat di-upsert/dihapus.
+            KelasWaktuKhusus::where('kelas_id', $id)->delete();
+
+            foreach ($request->input('items', []) as $item) {
+                if ($item['tipe'] === 'Belajar') {
+                    continue;
+                }
+                KelasWaktuKhusus::create([
+                    'kelas_id'       => $id,
+                    'master_hari_id' => $item['master_hari_id'],
+                    'jam_ke'         => $item['jam_ke'],
+                    'tipe'           => $item['tipe'],
+                    'keterangan'     => $item['keterangan'] ?? null,
+                ]);
+            }
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Jam kosong/blokir kelas berhasil disimpan!']);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
 

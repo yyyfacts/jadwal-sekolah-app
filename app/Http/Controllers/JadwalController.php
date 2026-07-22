@@ -9,6 +9,7 @@ use App\Models\Mapel;
 use App\Models\TahunPelajaran;
 use App\Models\MasterHari;
 use App\Models\WaktuHari;
+use App\Models\KelasWaktuKhusus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Process;
@@ -210,14 +211,40 @@ class JadwalController extends Controller
                     ];
                 });
 
-            // [FITUR BARU] Kirim kolom blocked_slots ke Python
-            $kelassData = Kelas::all()->map(fn($k) => [
-                'id' => $k->id,
-                'nama_kelas' => $k->nama_kelas,
-                'limit_harian' => $k->limit_harian ?? 10,
-                'limit_jumat' => $k->limit_jumat ?? 7,
-                'blocked_slots' => $k->blocked_slots ?? null,
-            ]);
+            // [DIUBAH] blocked_slots sekarang dihitung dari tabel kelas_waktu_khusus
+            // (slot yang tipe-nya SELAIN 'Belajar'), bukan dari text bebas lagi.
+            // jam_ke di tabel itu FISIK (sama kaya di modal "Atur Jam & Istirahat"),
+            // makanya di sini dikonversi dulu ke slot LOGIS (urutan ke berapa di antara
+            // slot 'Belajar' hari itu) pakai $slotMapping, karena itu jugalah bahasa
+            // yang dipake solver Python (lihat build_kelas_limits() -> parse_blocked_slots()).
+            $kelasKhususPerKelas = KelasWaktuKhusus::with('masterHari')
+                ->get()
+                ->groupBy('kelas_id');
+
+            $kelassData = Kelas::all()->map(function ($k) use ($slotMapping, $kelasKhususPerKelas) {
+                $blocked = [];
+
+                foreach ($kelasKhususPerKelas->get($k->id, []) as $wk) {
+                    $namaHari = $wk->masterHari->nama_hari ?? null;
+                    if (!$namaHari || !isset($slotMapping[$namaHari])) {
+                        continue;
+                    }
+
+                    // Cari posisi/slot logis yang jam_ke fisiknya cocok
+                    $slotLogis = array_search($wk->jam_ke, $slotMapping[$namaHari]);
+                    if ($slotLogis !== false) {
+                        $blocked[$namaHari][] = $slotLogis;
+                    }
+                }
+
+                return [
+                    'id' => $k->id,
+                    'nama_kelas' => $k->nama_kelas,
+                    'limit_harian' => $k->limit_harian ?? 10,
+                    'limit_jumat' => $k->limit_jumat ?? 7,
+                    'blocked_slots' => $blocked,
+                ];
+            });
 
             $maxTimeMinutes = 5;
 

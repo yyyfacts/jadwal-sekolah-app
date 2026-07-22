@@ -15,7 +15,7 @@ use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\TahunPelajaranController; 
+use App\Http\Controllers\TahunPelajaranController;
 use App\Http\Controllers\MasterHariController;
 
 // ==================================================================
@@ -28,7 +28,7 @@ Route::get('/tembak-db', function () {
         Artisan::call('route:clear');
         Artisan::call('config:clear');
         Artisan::call('view:clear');
-        
+
         return '<h1>SUKSES! <br>✅ Database Migrated. <br>✅ Route Cache DIBERSIHKAN. <br>✅ View Cache DIBERSIHKAN.</h1>';
     } catch (\Exception $e) {
         return 'Gagal: ' . $e->getMessage();
@@ -36,7 +36,7 @@ Route::get('/tembak-db', function () {
 });
 
 Route::get('/fix-zain', function () {
-    $username = 'zain'; 
+    $username = 'zain';
     $password_baru = 'zain1234';
     try {
         $user = User::where('username', $username)->first();
@@ -101,10 +101,10 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('tahun-pelajaran')->name('tahun-pelajaran.')->group(function () {
         Route::get('/', [TahunPelajaranController::class, 'index'])->name('index');
         Route::post('/', [TahunPelajaranController::class, 'store'])->name('store');
-        
+
         Route::get('/{id}/edit', [TahunPelajaranController::class, 'edit'])->name('edit');
         Route::put('/{id}', [TahunPelajaranController::class, 'update'])->name('update');
-        
+
         Route::patch('/{id}/activate', [TahunPelajaranController::class, 'activate'])->name('activate');
         Route::delete('/{id}', [TahunPelajaranController::class, 'destroy'])->name('destroy');
     });
@@ -117,7 +117,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', [MasterHariController::class, 'store'])->name('store');
         Route::put('/{id}', [MasterHariController::class, 'update'])->name('update');
         Route::delete('/{id}', [MasterHariController::class, 'destroy'])->name('destroy');
-        
+
         // Rute khusus pop-up waktu
         Route::get('/{id}/waktu', [MasterHariController::class, 'getWaktu']);
         Route::post('/{id}/waktu', [MasterHariController::class, 'simpanWaktu'])->name('waktu');
@@ -131,7 +131,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/{id}/jadwal', [GuruController::class, 'simpanJadwal'])->name('simpanJadwal');
         Route::put('/jadwal/{id}', [GuruController::class, 'updateJadwal'])->name('updateJadwal');
         Route::delete('/jadwal/{id}', [GuruController::class, 'hapusJadwal'])->name('hapusJadwal');
-        
+
         // CRUD Guru Utama
         Route::get('/', [GuruController::class, 'index'])->name('index');
         Route::post('/', [GuruController::class, 'store'])->name('store');
@@ -148,10 +148,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', [MapelController::class, 'store'])->name('store');
         Route::put('/{id}', [MapelController::class, 'update'])->name('update');
         Route::delete('/{id}', [MapelController::class, 'destroy'])->name('destroy');
-        
+
         // Fitur Ganti Status (Online/Offline)
         Route::post('/{id}/status', [MapelController::class, 'updateStatus'])->name('updateStatus');
-        
+
         // Rute Jadwal Mapel
         Route::post('/{id}/jadwal', [MapelController::class, 'simpanJadwal'])->name('simpanJadwal');
         Route::put('/jadwal/{id}', [MapelController::class, 'updateJadwal'])->name('updateJadwal');
@@ -162,7 +162,7 @@ Route::middleware(['auth'])->group(function () {
     // GROUP: DATA MASTER (KELAS)
     // --------------------------------------------------------------
     Route::prefix('kelas')->name('kelas.')->group(function () {
-        
+
         // --- TAMBAHAN RUTE SINKRONISASI JAM ---
         Route::post('/sinkronisasi-jam', [KelasController::class, 'sinkronisasiMaxJam'])->name('sinkronisasi');
         // --------------------------------------
@@ -177,6 +177,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/{id}/jadwal', [KelasController::class, 'simpanJadwal'])->name('simpanJadwal');
         Route::put('/jadwal/{id}', [KelasController::class, 'updateJadwal'])->name('updateJadwal');
         Route::delete('/jadwal/{id}', [KelasController::class, 'hapusJadwal'])->name('hapusJadwal');
+
+        // Rute khusus pop-up Jam Kosong / Blokir Kelas (kelas_waktu_khusus)
+        Route::get('/{id}/waktu-khusus', [KelasController::class, 'getWaktuKhusus']);
+        Route::post('/{id}/waktu-khusus', [KelasController::class, 'simpanWaktuKhusus'])->name('waktu-khusus');
     });
 
     // --------------------------------------------------------------
@@ -194,11 +198,11 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('users')->name('user.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');
         Route::post('/', [UserController::class, 'store'])->name('store');
-        
+
         // Tambahan Edit dan Update User
         Route::get('/{id}/edit', [UserController::class, 'edit'])->name('edit');
         Route::put('/{id}', [UserController::class, 'update'])->name('update');
-        
+
         Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
     });
 
