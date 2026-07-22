@@ -158,6 +158,10 @@ Route::middleware(['auth'])->group(function () {
 
         Route::post('/sinkronisasi-jam', [KelasController::class, 'sinkronisasiMaxJam'])->name('sinkronisasi');
 
+        // Rute statis (ditaruh di atas rute dengan parameter {id} agar tidak bentrok)
+        Route::get('/waktu-khusus/template', [KelasController::class, 'templateWaktuKhusus'])->name('waktu-khusus.template');
+        Route::post('/waktu-khusus/massal', [KelasController::class, 'simpanWaktuKhususMassal'])->name('waktu-khusus.massal');
+
         Route::get('/', [KelasController::class, 'index'])->name('index');
         Route::post('/', [KelasController::class, 'store'])->name('store');
         Route::put('/{id}', [KelasController::class, 'update'])->name('update');

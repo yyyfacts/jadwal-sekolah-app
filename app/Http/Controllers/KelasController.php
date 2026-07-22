@@ -293,9 +293,11 @@ class KelasController extends Controller
     {
         $kelas = Kelas::findOrFail($id);
 
-        $dataHari = MasterHari::with(['waktuHaris' => function ($q) {
-            $q->where('tipe', 'Belajar')->orderBy('waktu_mulai');
-        }])->where('is_active', true)->orderBy('id')->get();
+        $dataHari = MasterHari::with([
+            'waktuHaris' => function ($q) {
+                $q->where('tipe', 'Belajar')->orderBy('waktu_mulai');
+            }
+        ])->where('is_active', true)->orderBy('id')->get();
 
         $existing = KelasWaktuKhusus::where('kelas_id', $id)
             ->get()
@@ -307,24 +309,57 @@ class KelasController extends Controller
             foreach ($hari->waktuHaris as $w) {
                 $override = $existing->get($hari->id . '_' . $w->jam_ke);
                 $slots[] = [
-                    'jam_ke'        => $w->jam_ke,
-                    'waktu_mulai'   => $w->waktu_mulai,
+                    'jam_ke' => $w->jam_ke,
+                    'waktu_mulai' => $w->waktu_mulai,
                     'waktu_selesai' => $w->waktu_selesai,
-                    'tipe_khusus'   => $override->tipe ?? 'Belajar',
-                    'keterangan'    => $override->keterangan ?? null,
+                    'tipe_khusus' => $override->tipe ?? 'Belajar',
+                    'keterangan' => $override->keterangan ?? null,
                 ];
             }
             $hariResult[] = [
                 'master_hari_id' => $hari->id,
-                'nama_hari'      => $hari->nama_hari,
-                'slots'          => $slots,
+                'nama_hari' => $hari->nama_hari,
+                'slots' => $slots,
             ];
         }
 
         return response()->json([
             'kelas' => ['id' => $kelas->id, 'nama_kelas' => $kelas->nama_kelas],
-            'hari'  => $hariResult,
+            'hari' => $hariResult,
         ]);
+    }
+
+    /**
+     * [BARU] Ambil daftar slot 'Belajar' (global) TANPA override kelas manapun —
+     * dipake sebagai template kosong buat form Blokir Massal (multi-kelas).
+     */
+    public function templateWaktuKhusus()
+    {
+        $dataHari = MasterHari::with([
+            'waktuHaris' => function ($q) {
+                $q->where('tipe', 'Belajar')->orderBy('waktu_mulai');
+            }
+        ])->where('is_active', true)->orderBy('id')->get();
+
+        $hariResult = [];
+        foreach ($dataHari as $hari) {
+            $slots = [];
+            foreach ($hari->waktuHaris as $w) {
+                $slots[] = [
+                    'jam_ke' => $w->jam_ke,
+                    'waktu_mulai' => $w->waktu_mulai,
+                    'waktu_selesai' => $w->waktu_selesai,
+                    'tipe_khusus' => 'Belajar',
+                ];
+            }
+            $hariResult[] = [
+                'master_hari_id' => $hari->id,
+                'nama_hari' => $hari->nama_hari,
+                'slots' => $slots,
+            ];
+        }
+
+        return response()->json(['hari' => $hariResult]);
     }
 
     /**
@@ -337,11 +372,11 @@ class KelasController extends Controller
         Kelas::findOrFail($id);
 
         $request->validate([
-            'items'                  => 'array',
+            'items' => 'array',
             'items.*.master_hari_id' => 'required|exists:master_hari,id',
-            'items.*.jam_ke'         => 'required|integer',
-            'items.*.tipe'           => 'required|string|in:Belajar,Kosong,Ujian,Ekstrakurikuler,Kegiatan Khusus',
-            'items.*.keterangan'     => 'nullable|string|max:255',
+            'items.*.jam_ke' => 'required|integer',
+            'items.*.tipe' => 'required|string|in:Belajar,Kosong,Ujian,Ekstrakurikuler,Kegiatan Khusus',
+            'items.*.keterangan' => 'nullable|string|max:255',
         ]);
 
         DB::beginTransaction();
@@ -355,16 +390,63 @@ class KelasController extends Controller
                     continue;
                 }
                 KelasWaktuKhusus::create([
-                    'kelas_id'       => $id,
+                    'kelas_id' => $id,
                     'master_hari_id' => $item['master_hari_id'],
-                    'jam_ke'         => $item['jam_ke'],
-                    'tipe'           => $item['tipe'],
-                    'keterangan'     => $item['keterangan'] ?? null,
+                    'jam_ke' => $item['jam_ke'],
+                    'tipe' => $item['tipe'],
+                    'keterangan' => $item['keterangan'] ?? null,
                 ]);
             }
 
             DB::commit();
             return response()->json(['success' => true, 'message' => 'Jam kosong/blokir kelas berhasil disimpan!']);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * [BARU] Terapkan pengecualian jam yang SAMA ke beberapa kelas sekaligus
+     * (mis. semua kelas XII). Bersifat replace-total per kelas yang dipilih,
+     * sama seperti simpanWaktuKhusus tunggal.
+     */
+    public function simpanWaktuKhususMassal(Request $request)
+    {
+        $request->validate([
+            'kelas_ids' => 'required|array|min:1',
+            'kelas_ids.*' => 'required|exists:kelas,id',
+            'items' => 'array',
+            'items.*.master_hari_id' => 'required|exists:master_hari,id',
+            'items.*.jam_ke' => 'required|integer',
+            'items.*.tipe' => 'required|string|in:Belajar,Kosong,Ujian,Ekstrakurikuler,Kegiatan Khusus',
+            'items.*.keterangan' => 'nullable|string|max:255',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            foreach ($request->kelas_ids as $kelasId) {
+                KelasWaktuKhusus::where('kelas_id', $kelasId)->delete();
+
+                foreach ($request->input('items', []) as $item) {
+                    if ($item['tipe'] === 'Belajar') {
+                        continue;
+                    }
+                    KelasWaktuKhusus::create([
+                        'kelas_id' => $kelasId,
+                        'master_hari_id' => $item['master_hari_id'],
+                        'jam_ke' => $item['jam_ke'],
+                        'tipe' => $item['tipe'],
+                        'keterangan' => $item['keterangan'] ?? null,
+                    ]);
+                }
+            }
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => count($request->kelas_ids) . ' kelas berhasil diupdate jam kosong/blokirnya!'
+            ]);
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);

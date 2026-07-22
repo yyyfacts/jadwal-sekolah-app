@@ -52,6 +52,11 @@
                             Batas</button>
                     </form>
 
+                    <button onclick="bukaModalMassal()"
+                        class="px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm hover:bg-rose-100 transition">
+                        🚫 Blokir Massal
+                    </button>
+
                     <div class="relative w-48">
                         <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
                             <svg class="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor"
@@ -266,7 +271,7 @@
         </div>
     </div>
 
-    {{-- AREA MODAL JAM KOSONG / BLOKIR KELAS (Z-INDEX SUPER TINGGI AGAR GAK TUMPUK) --}}
+    {{-- AREA MODAL JAM KOSONG / BLOKIR KELAS (SATU KELAS) --}}
     <div id="modaljamkhusus"
         class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] hidden items-center justify-center p-2 sm:p-4">
         <div
@@ -297,6 +302,66 @@
                 <button onclick="simpanJamKhusus()" id="btn-simpan-jk"
                     class="px-5 py-2 rounded-lg text-[10px] font-bold uppercase text-white bg-purple-600 hover:bg-purple-700 shadow-md transition">Simpan
                     Waktu Blokir</button>
+            </div>
+        </div>
+    </div>
+
+    {{-- AREA MODAL JAM KOSONG / BLOKIR MASSAL (MULTI-KELAS) --}}
+    <div id="modaljamkhususmassal"
+        class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] hidden items-center justify-center p-2 sm:p-4">
+        <div
+            class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col border border-white/20 overflow-hidden">
+            <div class="px-4 py-3 border-b border-slate-100 flex justify-between items-start bg-slate-50 shrink-0">
+                <div>
+                    <h3 class="font-bold text-sm flex items-center gap-1.5"><span
+                            class="w-1 h-4 bg-rose-600 rounded"></span> Blokir Massal Multi-Kelas</h3>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Terapkan jam kosong/blokir yang sama ke beberapa kelas
+                        sekaligus.</p>
+                </div>
+                <button onclick="closeModal('modaljamkhususmassal')"
+                    class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+            </div>
+
+            <div class="px-4 py-2 bg-rose-50 text-[9px] text-rose-700 border-b border-rose-100 shrink-0">
+                ⚠️ Ini <b>menimpa total</b> blokir lama kelas yang dipilih, bukan menambah.
+            </div>
+
+            <div class="overflow-y-auto px-4 py-3 space-y-3 flex-1">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Pilih Kelas</label>
+                    <input type="text" id="filter-kelas-massal" oninput="filterKelasMassal()"
+                        placeholder="Ketik buat filter, mis. 'XII', lalu klik Pilih Semua yang Tampil"
+                        class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-rose-500 mb-1.5">
+                    <button type="button" onclick="pilihSemuaTampil()"
+                        class="text-[10px] text-rose-600 font-bold hover:underline">Pilih Semua yang Tampil</button>
+                    <button type="button" onclick="kosongkanPilihanMassal()"
+                        class="text-[10px] text-slate-400 font-bold hover:underline ml-3">Kosongkan</button>
+                    <div id="list-kelas-massal"
+                        class="grid grid-cols-2 sm:grid-cols-3 gap-1 max-h-32 overflow-y-auto border border-slate-200 rounded-lg p-2 mt-1.5">
+                        @foreach($kelass as $k)
+                        <label class="flex items-center gap-1.5 text-[10px] text-slate-700"
+                            data-nama="{{ strtolower($k->nama_kelas) }}">
+                            <input type="checkbox" class="chk-kelas-massal" value="{{ $k->id }}">
+                            {{ $k->nama_kelas }}
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Atur Jam</label>
+                    <div id="jk-isi-massal" class="space-y-4">
+                        <p class="text-xs text-slate-400 text-center py-4">Memuat...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-4 py-3 border-t border-slate-100 flex justify-end gap-2 shrink-0 bg-white">
+                <button onclick="closeModal('modaljamkhususmassal')"
+                    class="px-3 py-2 rounded-lg text-[10px] font-bold uppercase text-slate-500 hover:bg-slate-100">Batal</button>
+                <button onclick="simpanMassal()" id="btn-simpan-massal"
+                    class="px-5 py-2 rounded-lg text-[10px] font-bold uppercase text-white bg-rose-600 hover:bg-rose-700 shadow-md transition">Terapkan
+                    ke Kelas Terpilih</button>
             </div>
         </div>
     </div>
@@ -750,13 +815,13 @@ async function hapusJadwal(id, btn) {
 }
 
 // ================================================================
-// MODAL JAM KOSONG / BLOKIR KELAS (ANTI DOUBLE FORM & ANTI CRASH)
+// MODAL JAM KOSONG / BLOKIR — SATU KELAS
 // ================================================================
 const JK_TIPE_OPTIONS = ['Belajar', 'Kosong', 'Ujian', 'Ekstrakurikuler', 'Kegiatan Khusus'];
 let jkKelasIdAktif = null;
 
 async function bukaModalJamKhusus(kelasId, namaKelas) {
-    // 1. TUTUP MODAL UBAH KELAS SUPAYA GAK DOUBLE FORM (TUMPUK)[cite: 14]
+    // 1. TUTUP MODAL UBAH KELAS SUPAYA GAK DOUBLE FORM (TUMPUK)
     document.querySelectorAll('[id^="edit"]').forEach(el => closeModal(el.id));
 
     jkKelasIdAktif = kelasId;
@@ -778,7 +843,7 @@ async function bukaModalJamKhusus(kelasId, namaKelas) {
         }
 
         const data = await res.json();
-        renderJamKhusus(data.hari);
+        renderJamKhusus(data.hari, 'jk-isi');
     } catch (e) {
         document.getElementById('jk-isi').innerHTML =
             `<p class="text-xs text-red-500 text-center py-4 font-bold">Gagal memuat data:<br>${e.message}</p>`;
@@ -787,13 +852,15 @@ async function bukaModalJamKhusus(kelasId, namaKelas) {
 
 function tutupModalJamKhusus() {
     closeModal('modaljamkhusus');
-    // Buka lagi modal ubah kelas kalau batal, supaya user gak bingung[cite: 14]
+    // Buka lagi modal ubah kelas kalau batal, supaya user gak bingung
     if (jkKelasIdAktif) {
         openModal(`edit${jkKelasIdAktif}`);
     }
 }
 
-function renderJamKhusus(hariList) {
+// targetId dibuat parameter (default 'jk-isi') biar function ini bisa dipake bareng
+// sama modal Blokir Massal (targetId 'jk-isi-massal'), tanpa nubruk satu sama lain.
+function renderJamKhusus(hariList, targetId = 'jk-isi') {
     const opsiHtml = (selected) => JK_TIPE_OPTIONS
         .map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`)
         .join('');
@@ -819,11 +886,12 @@ function renderJamKhusus(hariList) {
                 </div>
             `).join('');
 
-    document.getElementById('jk-isi').innerHTML = html ||
+    const container = document.getElementById(targetId);
+    container.innerHTML = html ||
         '<p class="text-xs text-slate-400 text-center py-4">Belum ada hari aktif / slot Belajar di Master Hari.</p>';
 
-    // Warna dinamis pas select diganti[cite: 14]
-    document.querySelectorAll('.jk-tipe-select').forEach(sel => {
+    // Warna dinamis pas select diganti (scoped ke container ini aja)
+    container.querySelectorAll('.jk-tipe-select').forEach(sel => {
         sel.addEventListener('change', function() {
             if (this.value !== 'Belajar') {
                 this.className =
@@ -844,7 +912,7 @@ async function simpanJamKhusus() {
     btn.innerText = "Menyimpan...";
     btn.disabled = true;
 
-    const items = Array.from(document.querySelectorAll('.jk-tipe-select')).map(sel => ({
+    const items = Array.from(document.querySelectorAll('#jk-isi .jk-tipe-select')).map(sel => ({
         master_hari_id: sel.dataset.hariId,
         jam_ke: sel.dataset.jamKe,
         tipe: sel.value,
@@ -873,9 +941,99 @@ async function simpanJamKhusus() {
 
         if (data.success) {
             closeModal('modaljamkhusus');
-            window.location.reload(); // Langsung reload otomatis agar data terbaru muncul![cite: 14]
+            window.location.reload();
         } else {
             alert(data.message || 'Gagal menyimpan.');
+        }
+    } catch (e) {
+        alert('Terjadi kesalahan sistem: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = oldText;
+    }
+}
+
+// ================================================================
+// MODAL JAM KOSONG / BLOKIR — MASSAL (MULTI-KELAS)
+// ================================================================
+function filterKelasMassal() {
+    const q = document.getElementById('filter-kelas-massal').value.toLowerCase();
+    document.querySelectorAll('#list-kelas-massal label').forEach(l => {
+        l.style.display = l.dataset.nama.includes(q) ? '' : 'none';
+    });
+}
+
+function pilihSemuaTampil() {
+    document.querySelectorAll('#list-kelas-massal label').forEach(l => {
+        if (l.style.display !== 'none') l.querySelector('input').checked = true;
+    });
+}
+
+function kosongkanPilihanMassal() {
+    document.querySelectorAll('.chk-kelas-massal').forEach(c => c.checked = false);
+}
+
+async function bukaModalMassal() {
+    document.getElementById('filter-kelas-massal').value = '';
+    kosongkanPilihanMassal();
+    document.querySelectorAll('#list-kelas-massal label').forEach(l => l.style.display = '');
+
+    openModal('modaljamkhususmassal');
+    document.getElementById('jk-isi-massal').innerHTML =
+        '<p class="text-xs text-slate-400 text-center py-4">Memuat data jam...</p>';
+
+    try {
+        const res = await fetch(`{{ route('kelas.waktu-khusus.template') }}`, {
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+        const data = await res.json();
+        renderJamKhusus(data.hari, 'jk-isi-massal');
+    } catch (e) {
+        document.getElementById('jk-isi-massal').innerHTML =
+            `<p class="text-xs text-red-500 text-center py-4 font-bold">Gagal memuat data:<br>${e.message}</p>`;
+    }
+}
+
+async function simpanMassal() {
+    const kelasIds = Array.from(document.querySelectorAll('.chk-kelas-massal:checked')).map(c => c.value);
+    if (kelasIds.length === 0) {
+        alert('Pilih minimal 1 kelas dulu.');
+        return;
+    }
+
+    const btn = document.getElementById('btn-simpan-massal');
+    const oldText = btn.innerText;
+    btn.innerText = "Menerapkan...";
+    btn.disabled = true;
+
+    const items = Array.from(document.querySelectorAll('#jk-isi-massal .jk-tipe-select')).map(sel => ({
+        master_hari_id: sel.dataset.hariId,
+        jam_ke: sel.dataset.jamKe,
+        tipe: sel.value,
+    }));
+
+    try {
+        const res = await fetch(`{{ route('kelas.waktu-khusus.massal') }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                kelas_ids: kelasIds,
+                items
+            })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            closeModal('modaljamkhususmassal');
+            window.location.reload();
+        } else {
+            alert(data.message || 'Gagal menerapkan.');
         }
     } catch (e) {
         alert('Terjadi kesalahan sistem: ' + e.message);
