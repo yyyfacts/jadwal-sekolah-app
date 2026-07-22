@@ -20,17 +20,19 @@ class JadwalController extends Controller
 {
     public function index(Request $request)
     {
-        $reqGuru  = $request->input('guru_id');
+        $reqGuru = $request->input('guru_id');
         $reqKelas = $request->input('kelas_id');
 
-        $gurusList  = Guru::orderBy('nama_guru')->get();
+        $gurusList = Guru::orderBy('nama_guru')->get();
         $kelassList = Kelas::orderBy('nama_kelas')->get();
 
-        $dataHari = MasterHari::with(['waktuHaris' => function ($q) {
-            $q->orderBy('waktu_mulai');
-        }])->where('is_active', true)->get();
+        $dataHari = MasterHari::with([
+            'waktuHaris' => function ($q) {
+                $q->orderBy('waktu_mulai');
+            }
+        ])->where('is_active', true)->get();
 
-        $hariList  = $dataHari->pluck('nama_hari')->toArray();
+        $hariList = $dataHari->pluck('nama_hari')->toArray();
         $dataWaktu = WaktuHari::select('jam_ke')->distinct()->orderBy('jam_ke')->get();
 
         $kelass = $reqKelas
@@ -44,11 +46,13 @@ class JadwalController extends Controller
                 $q->where('status', 'offline')->orWhereNull('status');
             });
 
-        if ($reqGuru)  $query->where('guru_id',  $reqGuru);
-        if ($reqKelas) $query->where('kelas_id', $reqKelas);
+        if ($reqGuru)
+            $query->where('guru_id', $reqGuru);
+        if ($reqKelas)
+            $query->where('kelas_id', $reqKelas);
 
         $rawJadwals = $query->get();
-        $jadwals    = [];
+        $jadwals = [];
 
         foreach ($kelass as $k) {
             foreach ($dataHari as $hariObj) {
@@ -79,34 +83,36 @@ class JadwalController extends Controller
         $hariMap = MasterHari::pluck('nama_hari', 'id')->toArray();
 
         foreach ($rawJadwals as $row) {
-            $durasi        = $row->jumlah_jam;
+            $durasi = $row->jumlah_jam;
             $hari_id_angka = $row->hari_id;
-            $hari          = $hariMap[$hari_id_angka] ?? null;
+            $hari = $hariMap[$hari_id_angka] ?? null;
 
-            if (!$hari) continue;
+            if (!$hari)
+                continue;
 
             $jamMulaiFisik = $row->jam;
             $slotsTersedia = $belajarSlots[$hari] ?? [];
-            $startIndex    = array_search($jamMulaiFisik, $slotsTersedia);
+            $startIndex = array_search($jamMulaiFisik, $slotsTersedia);
 
             $color = match ($row->tipe_jam) {
                 'double' => 'bg-blue-100 text-blue-800 border-blue-200',
                 'triple' => 'bg-purple-100 text-purple-800 border-purple-200',
-                default  => 'bg-white text-slate-700 border-slate-200',
+                default => 'bg-white text-slate-700 border-slate-200',
             };
 
             if ($startIndex !== false) {
                 for ($i = 0; $i < $durasi; $i++) {
                     if (isset($slotsTersedia[$startIndex + $i])) {
                         $jamSekarang = $slotsTersedia[$startIndex + $i];
-                        if (!isset($jadwals[$row->kelas_id])) continue;
+                        if (!isset($jadwals[$row->kelas_id]))
+                            continue;
                         $jadwals[$row->kelas_id][$hari][$jamSekarang] = [
-                            'id'        => $row->id,
-                            'mapel'     => $row->mapel->nama_mapel ?? '-',
-                            'guru'      => $row->guru->nama_guru   ?? '-',
-                            'kode_guru' => $row->guru->kode_guru   ?? '?',
-                            'color'     => $color,
-                            'tipe'      => $row->tipe_jam,
+                            'id' => $row->id,
+                            'mapel' => $row->mapel->nama_mapel ?? '-',
+                            'guru' => $row->guru->nama_guru ?? '-',
+                            'kode_guru' => $row->guru->kode_guru ?? '?',
+                            'color' => $color,
+                            'tipe' => $row->tipe_jam,
                         ];
                     }
                 }
@@ -114,28 +120,39 @@ class JadwalController extends Controller
         }
 
         $queryOnline = Jadwal::with(['guru', 'mapel', 'kelas'])->where('status', 'online');
-        if ($reqGuru)  $queryOnline->where('guru_id',  $reqGuru);
-        if ($reqKelas) $queryOnline->where('kelas_id', $reqKelas);
+        if ($reqGuru)
+            $queryOnline->where('guru_id', $reqGuru);
+        if ($reqKelas)
+            $queryOnline->where('kelas_id', $reqKelas);
         $onlineJadwals = $queryOnline->orderBy('kelas_id')->get();
 
         $tahunAktif = TahunPelajaran::getActive();
         $judulTahun = $tahunAktif ? "{$tahunAktif->tahun} Semester {$tahunAktif->semester}" : date('Y') . '/' . (date('Y') + 1);
 
-        $latestJadwal     = Jadwal::whereNotNull('hari_id')->whereNotNull('jam')->orderBy('updated_at', 'desc')->first();
+        $latestJadwal = Jadwal::whereNotNull('hari_id')->whereNotNull('jam')->orderBy('updated_at', 'desc')->first();
         $terakhirGenerate = $latestJadwal && $latestJadwal->updated_at
             ? \Carbon\Carbon::parse($latestJadwal->updated_at)->translatedFormat('d F Y, H:i') . ' WIB'
             : 'Belum pernah';
 
         $latestMetrics = [];
-        $metricsPath   = storage_path('app/latest_metrics.json');
+        $metricsPath = storage_path('app/latest_metrics.json');
         if (file_exists($metricsPath)) {
             $latestMetrics = json_decode(file_get_contents($metricsPath), true);
         }
 
         return view('penjadwalan.jadwal', compact(
-            'kelass', 'jadwals', 'onlineJadwals', 'judulTahun',
-            'gurusList', 'kelassList', 'reqGuru', 'reqKelas',
-            'dataHari', 'dataWaktu', 'terakhirGenerate', 'latestMetrics'
+            'kelass',
+            'jadwals',
+            'onlineJadwals',
+            'judulTahun',
+            'gurusList',
+            'kelassList',
+            'reqGuru',
+            'reqKelas',
+            'dataHari',
+            'dataWaktu',
+            'terakhirGenerate',
+            'latestMetrics'
         ));
     }
 
@@ -144,9 +161,11 @@ class JadwalController extends Controller
         set_time_limit(0);
 
         try {
-            $dataHari = MasterHari::with(['waktuHaris' => function ($q) {
-                $q->orderBy('waktu_mulai');
-            }])->where('is_active', true)->get();
+            $dataHari = MasterHari::with([
+                'waktuHaris' => function ($q) {
+                    $q->orderBy('waktu_mulai');
+                }
+            ])->where('is_active', true)->get();
 
             $slotMapping = [];
 
@@ -162,12 +181,12 @@ class JadwalController extends Controller
                 return ['nama' => $hariObj->nama_hari, 'max_jam' => $counter - 1];
             });
 
-            $gurus = Guru::all()->map(fn ($guru) => [
-                'id'               => $guru->id,
-                'nama'             => $guru->nama_guru,
-                'hari_mengajar'    => $guru->hari_mengajar ?? [],
-                'jenis_hari'       => $guru->jenis_hari       ?? 'hard',
-                'limit_harian'     => $guru->limit_harian,
+            $gurus = Guru::all()->map(fn($guru) => [
+                'id' => $guru->id,
+                'nama' => $guru->nama_guru,
+                'hari_mengajar' => $guru->hari_mengajar ?? [],
+                'jenis_hari' => $guru->jenis_hari ?? 'hard',
+                'limit_harian' => $guru->limit_harian,
                 'jenis_batas_guru' => $guru->jenis_batas_guru ?? 'soft',
             ]);
 
@@ -178,42 +197,42 @@ class JadwalController extends Controller
                 ->get()
                 ->map(function ($j) {
                     return [
-                        'id'                 => $j->id,
-                        'guru_id'            => $j->guru_id,
-                        'kelas_id'           => $j->kelas_id,
-                        'mapel_id'           => $j->mapel_id,
-                        'jumlah_jam'         => $j->jumlah_jam,
-                        'nama_mapel'         => $j->mapel->nama_mapel ?? '',
+                        'id' => $j->id,
+                        'guru_id' => $j->guru_id,
+                        'kelas_id' => $j->kelas_id,
+                        'mapel_id' => $j->mapel_id,
+                        'jumlah_jam' => $j->jumlah_jam,
+                        'nama_mapel' => $j->mapel->nama_mapel ?? '',
                         'batas_maksimal_jam' => isset($j->mapel->batas_maksimal_jam)
                             ? (int) $j->mapel->batas_maksimal_jam
                             : null,
-                        'jenis_batas'        => $j->mapel->jenis_batas ?? 'soft',
+                        'jenis_batas' => $j->mapel->jenis_batas ?? 'soft',
                     ];
                 });
 
-            $kelassData = Kelas::all()->map(fn ($k) => [
-                'id'           => $k->id,
-                'nama_kelas'   => $k->nama_kelas,
+            // [FITUR BARU] Kirim kolom blocked_slots ke Python
+            $kelassData = Kelas::all()->map(fn($k) => [
+                'id' => $k->id,
+                'nama_kelas' => $k->nama_kelas,
                 'limit_harian' => $k->limit_harian ?? 10,
-                'limit_jumat'  => $k->limit_jumat  ?? 7,
+                'limit_jumat' => $k->limit_jumat ?? 7,
+                'blocked_slots' => $k->blocked_slots ?? null,
             ]);
 
-            // BATAS WAKTU MAKSIMAL DIKUNCI 5 MENIT
             $maxTimeMinutes = 5;
 
             $dataInput = [
-                'hari_aktif'       => $hariAktif,
-                'gurus'            => $gurus,
-                'kelass'           => $kelassData,
-                'assignments'      => $assignments,
+                'hari_aktif' => $hariAktif,
+                'gurus' => $gurus,
+                'kelass' => $kelassData,
+                'assignments' => $assignments,
                 'max_time_minutes' => $maxTimeMinutes,
             ];
 
-            $jsonPath   = storage_path('app/input_solver.json');
+            $jsonPath = storage_path('app/input_solver.json');
             file_put_contents($jsonPath, json_encode($dataInput));
 
             $scriptPath = base_path('python/scheduler.py');
-
             $pythonBin = env('PYTHON_PATH', 'python');
 
             $process = new Process([$pythonBin, $scriptPath, $jsonPath]);
@@ -234,17 +253,17 @@ class JadwalController extends Controller
 
                     foreach ($result['solution'] as $item) {
                         $nama_hari = $item['hari'];
-                        $tSlot     = $item['jam_mulai'];
+                        $tSlot = $item['jam_mulai'];
 
-                        $pSlot       = $slotMapping[$nama_hari][$tSlot] ?? $tSlot;
+                        $pSlot = $slotMapping[$nama_hari][$tSlot] ?? $tSlot;
                         $hari_id_int = $hariIdMap[$nama_hari] ?? null;
 
                         if ($hari_id_int) {
                             DB::table('jadwals')
                                 ->where('id', $item['id'])
                                 ->update([
-                                    'hari_id'    => $hari_id_int,
-                                    'jam'        => $pSlot,
+                                    'hari_id' => $hari_id_int,
+                                    'jam' => $pSlot,
                                     'updated_at' => now(),
                                 ]);
                         }
@@ -252,17 +271,17 @@ class JadwalController extends Controller
                     DB::commit();
 
                     $metricsToSave = [
-                        'status_solver'           => $result['status'],
-                        'status_penjelasan'       => $result['status_penjelasan']       ?? null,
-                        'waktu_komputasi'         => $metrik['waktu_komputasi_detik']   ?? null,
-                        'total_penalti'           => $metrik['total_penalti']           ?? 0,
+                        'status_solver' => $result['status'],
+                        'status_penjelasan' => $result['status_penjelasan'] ?? null,
+                        'waktu_komputasi' => $metrik['waktu_komputasi_detik'] ?? null,
+                        'total_penalti' => $metrik['total_penalti'] ?? 0,
                         'jumlah_pelanggaran_hard' => $metrik['jumlah_pelanggaran_hard'] ?? 0,
                         'jumlah_pelanggaran_soft' => $metrik['jumlah_pelanggaran_soft'] ?? 0,
                         'detail_pelanggaran_hard' => $metrik['detail_pelanggaran_hard'] ?? [],
                         'detail_pelanggaran_soft' => $metrik['detail_pelanggaran_soft'] ?? [],
-                        'breakdown_hard'          => $metrik['breakdown_hard']          ?? [],
-                        'breakdown_soft'          => $metrik['breakdown_soft']          ?? [],
-                        'kurva_solver'            => $metrik['kurva_solver']            ?? null,
+                        'breakdown_hard' => $metrik['breakdown_hard'] ?? [],
+                        'breakdown_soft' => $metrik['breakdown_soft'] ?? [],
+                        'kurva_solver' => $metrik['kurva_solver'] ?? null,
                     ];
                     file_put_contents(storage_path('app/latest_metrics.json'), json_encode($metricsToSave));
 

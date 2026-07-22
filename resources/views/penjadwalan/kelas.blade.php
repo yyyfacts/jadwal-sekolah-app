@@ -4,7 +4,7 @@
 {{-- BACKGROUND --}}
 <div class="fixed inset-0 -z-10 pointer-events-none bg-[#f4f7fb]"></div>
 
-{{-- CONTAINER UTAMA (SUPER PADAT & FULL WIDTH SEPERTI GURU) --}}
+{{-- CONTAINER UTAMA --}}
 <div class="w-full max-w-[100vw] mx-auto px-2 sm:px-4 h-[calc(100vh-4rem)] pb-2 pt-2 flex flex-col relative z-0">
 
     @if(session('success'))
@@ -93,22 +93,22 @@
                 <tbody id="tbody-kelas-main" class="divide-y divide-slate-100">
                     @forelse($kelass as $index => $k)
                     @php
-                    $totalJamOffline = $k->jadwals->where('status', 'offline')->sum('jumlah_jam');
+                    $totalJam = $k->jadwals->sum('jumlah_jam');
                     $maxJam = $k->max_jam ?? 48;
-                    $percentage = $maxJam > 0 ? ($totalJamOffline / $maxJam) * 100 : 0;
+                    $percentage = $maxJam > 0 ? ($totalJam / $maxJam) * 100 : 0;
 
                     $statusLabel = 'Kosong';
                     $statusBg = 'bg-slate-50 text-slate-500 border-slate-200';
                     $barColor = 'bg-slate-300';
                     $textColor = 'text-slate-600';
 
-                    if ($totalJamOffline == 0) {
+                    if ($totalJam == 0) {
                     $statusLabel = 'Kosong';
-                    } elseif ($totalJamOffline < $maxJam) { $statusLabel='Kurang' ;
+                    } elseif ($totalJam < $maxJam) { $statusLabel='Kurang' ;
                         $statusBg='bg-rose-50 text-rose-600 border-rose-200' ; $barColor='bg-rose-500' ;
-                        $textColor='text-rose-600' ; } elseif ($totalJamOffline==$maxJam) { $statusLabel='Sesuai' ;
+                        $textColor='text-rose-600' ; } elseif ($totalJam==$maxJam) { $statusLabel='Sesuai' ;
                         $statusBg='bg-emerald-50 text-emerald-600 border-emerald-200' ; $barColor='bg-emerald-500' ;
-                        $textColor='text-emerald-600' ; } elseif ($totalJamOffline> $maxJam) {
+                        $textColor='text-emerald-600' ; } elseif ($totalJam> $maxJam) {
                         $statusLabel = 'Lebih';
                         $statusBg = 'bg-amber-50 text-amber-600 border-amber-200';
                         $barColor = 'bg-amber-500';
@@ -118,8 +118,7 @@
                         <tr class="hover:bg-slate-50/80 transition-colors"
                             data-filter="{{ strtolower($k->nama_kelas) }} {{ strtolower($k->kode_kelas) }}">
                             <td class="px-4 py-2 text-center text-[11px] font-medium text-slate-400 align-middle">
-                                {{ $index + 1 }}
-                            </td>
+                                {{ $index + 1 }}</td>
                             <td class="px-3 py-2 align-middle">
                                 <div class="flex items-center gap-3">
                                     <div
@@ -127,11 +126,17 @@
                                         {{ substr($k->nama_kelas, 0, 2) }}
                                     </div>
                                     <div class="leading-tight">
-                                        <div class="font-bold text-slate-800 text-xs">{{ $k->nama_kelas }}</div>
+                                        <div class="font-bold text-slate-800 text-xs flex items-center gap-1">
+                                            {{ $k->nama_kelas }}
+                                            @if($k->blocked_slots)
+                                            <span
+                                                class="px-1 py-0.5 bg-rose-100 text-rose-600 text-[8px] rounded uppercase font-bold"
+                                                title="Blokir: {{ $k->blocked_slots }}">🚫 Ada Blokir</span>
+                                            @endif
+                                        </div>
                                         <div
                                             class="inline-block px-1.5 py-0.5 mt-0.5 rounded bg-slate-100 text-slate-500 font-bold text-[9px] uppercase border border-slate-200">
-                                            {{ $k->kode_kelas }}
-                                        </div>
+                                            {{ $k->kode_kelas }}</div>
                                         @if($k->waliKelas) <span class="text-[9px] text-slate-400 ml-1">Wali:
                                             {{ $k->waliKelas->nama_guru }}</span> @endif
                                     </div>
@@ -139,8 +144,8 @@
                             </td>
                             <td class="px-3 py-2 text-center align-middle">
                                 <div class="flex flex-col items-center gap-1.5">
-                                    <span class="text-[10px] font-bold {{ $textColor }}">{{ $totalJamOffline }} /
-                                        {{ $maxJam }} Jam</span>
+                                    <span class="text-[10px] font-bold {{ $textColor }}">{{ $totalJam }} / {{ $maxJam }}
+                                        Jam</span>
                                     <div class="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                         <div class="h-full {{ $barColor }}" style="width: {{ min($percentage, 100) }}%">
                                         </div>
@@ -198,7 +203,7 @@
         </div>
     </div>
 
-    {{-- AREA MODAL TAMBAH/EDIT --}}
+    {{-- AREA MODAL TAMBAH --}}
     <div id="modaltambah"
         class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[999] hidden items-center justify-center p-2">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
@@ -234,12 +239,20 @@
                             class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs text-center focus:ring-2 focus:ring-purple-500 outline-none"
                             required></div>
                 </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1"
+                        title="Contoh: Selasa:3, Rabu:3">Jam Kosong / Blokir (Opsional)</label>
+                    <input type="text" name="blocked_slots" placeholder="Contoh: Selasa:3, Rabu:3"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-purple-500 outline-none">
+                    <span class="text-[9px] text-slate-400 mt-0.5 block">Format: Hari:Jam (pisahkan dengan koma).</span>
+                </div>
                 <button type="submit"
                     class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-lg text-[10px] uppercase mt-2 hover:bg-purple-600 transition">Simpan</button>
             </form>
         </div>
     </div>
 
+    {{-- AREA MODAL EDIT --}}
     @foreach($kelass as $k)
     <div id="edit{{ $k->id }}"
         class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[999] hidden items-center justify-center p-2">
@@ -276,6 +289,14 @@
                             Jumat</label><input type="number" name="limit_jumat" value="{{ $k->limit_jumat ?? 7 }}"
                             class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs text-center focus:ring-2 focus:ring-amber-500 outline-none"
                             required></div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1"
+                        title="Contoh: Selasa:3, Rabu:3">Jam Kosong / Blokir</label>
+                    <input type="text" name="blocked_slots" value="{{ $k->blocked_slots }}"
+                        placeholder="Contoh: Selasa:3, Rabu:3"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-amber-500 outline-none">
+                    <span class="text-[9px] text-slate-400 mt-0.5 block">Format: Hari:Jam (pisahkan dengan koma).</span>
                 </div>
                 <button type="submit"
                     class="w-full bg-amber-500 text-white font-bold py-2.5 rounded-lg text-[10px] uppercase mt-2 hover:bg-amber-600 transition">Perbarui</button>
@@ -326,11 +347,9 @@
                                 @foreach($k->jadwals as $jadwal)
                                 <tr class="hover:bg-purple-50/50 group transition-colors">
                                     <td class="px-3 py-2 font-bold text-slate-700">
-                                        {{ $jadwal->mapel->nama_mapel ?? '-' }}
-                                    </td>
+                                        {{ $jadwal->mapel->nama_mapel ?? '-' }}</td>
                                     <td class="px-3 py-2 text-slate-600 font-medium">
-                                        {{ $jadwal->guru->nama_guru ?? '-' }}
-                                    </td>
+                                        {{ $jadwal->guru->nama_guru ?? '-' }}</td>
                                     <td class="px-3 py-2 text-center align-middle">
                                         <div class="flex flex-col items-center">
                                             <span

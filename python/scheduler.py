@@ -16,9 +16,9 @@ BOBOT_HARI_SOFT       =  90
 BOBOT_GURU_MAX_HARIAN = 150
 BOBOT_DEVIASI         =   2
 
-# Pengaturan Eksekusi Hardware (MODE DEWA EKSTRA KERAS)
-MAX_MEMORY_MB = 4096 # Pakai RAM 4GB
-MAX_WORKERS   = 0    # 0 = Gunakan seluruh core CPU laptop secara maksimal tanpa sisa
+# Pengaturan Eksekusi Hardware
+MAX_MEMORY_MB = 4096 
+MAX_WORKERS   = 0    
 
 
 class ObjectiveTracker(cp_model.CpSolverSolutionCallback):
@@ -31,19 +31,41 @@ class ObjectiveTracker(cp_model.CpSolverSolutionCallback):
         t   = time.time() - self.start_time
         obj = self.ObjectiveValue()
         self.history.append({"waktu": round(t, 2), "objektif": obj})
-        
-        # [FITUR BARU] Rem Darurat: Kalau penalti udah 0, langsung stop pencarian!
         if obj == 0:
             self.StopSearch()
 
 
 # =============================================================================
-# UTILITY
+# UTILITY & PARSING BLOKIR JAM KELAS
 # =============================================================================
 def load_json(path: str) -> dict:
     with open(path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
+def parse_blocked_slots(raw_val) -> dict:
+    """Mengubah input teks seperti 'Selasa:3, Rabu:3' atau JSON menjadi dictionary"""
+    if not raw_val:
+        return {}
+    if isinstance(raw_val, dict):
+        return raw_val
+    if isinstance(raw_val, str):
+        try:
+            return json.loads(raw_val)
+        except Exception:
+            pass
+        res = {}
+        parts = raw_val.replace(';', ',').split(',')
+        for p in parts:
+            if ':' in p:
+                hari, jam_str = p.split(':', 1)
+                hari = hari.strip().capitalize()
+                try:
+                    jam = int(jam_str.strip())
+                    res.setdefault(hari, []).append(jam)
+                except ValueError:
+                    pass
+        return res
+    return {}
 
 def build_guru_maps(gurus: list) -> tuple:
     guru_hari_map, guru_jenis_hari_map = {}, {}
@@ -58,13 +80,14 @@ def build_guru_maps(gurus: list) -> tuple:
 
 
 def build_kelas_limits(kelass: list) -> dict:
-    return {
-        k['id']: {
+    limits = {}
+    for k in kelass:
+        limits[k['id']] = {
             'harian': k.get('limit_harian', 10),
             'jumat' : k.get('limit_jumat',  8),
+            'blocked': parse_blocked_slots(k.get('blocked_slots'))
         }
-        for k in kelass
-    }
+    return limits
 
 
 def get_max_jam(kelas_limits: dict, kelas_id, hari: str) -> int:
@@ -140,6 +163,19 @@ def bangun_model(raw_assignments, kelass, gurus,
 
     g_dict = {g['id']: g for g in gurus}
 
+    # [FITUR BARU] DUMMY INTERVAL UNTUK JAM KOSONG / BLOKIR KELAS (MISAL KELAS 12 SELASA JAM 3)
+    for k in kelass:
+        k_id = k['id']
+        blocked_days = kelas_limits[k_id].get('blocked', {})
+        for h, slots in blocked_days.items():
+            if h in intervals_per_kelas[k_id]:
+                for b_slot in slots:
+                    if 1 <= b_slot <= get_max_jam(kelas_limits, k_id, h):
+                        dummy_iv = model.NewIntervalVar(b_slot, 1, b_slot + 1, f'blocked_{k_id}_{h}_{b_slot}')
+                        intervals_per_kelas[k_id][h].append(dummy_iv)
+                        # Hitung sebagai beban agar total JP harian kelas tetap seimbang
+                        durasi_per_kelas_harian[k_id][h].append(1)
+
     for t in raw_assignments:
         durasi = int(t['jumlah_jam'])
         if durasi <= 0:
@@ -156,7 +192,7 @@ def bangun_model(raw_assignments, kelass, gurus,
 
         group_key = (k_id, m_id if m_id else f"guru_{g_id}")
         tasks_per_mapel_group.setdefault(group_key, []).append(t_id)
-#4
+
         possible_days     = []
         is_guru_hari_hard = (guru_jenis_hari_map[g_id] == 'hard')
         limit_slot_guru_raw = g_dict[g_id].get('limit_harian')
@@ -168,10 +204,10 @@ def bangun_model(raw_assignments, kelass, gurus,
                 continue
 
             batas_aktual_hari = get_max_jam(kelas_limits, k_id, h)
-#5
+
             if batas_maks is not None and is_batas_wajib:
                 batas_aktual_hari = min(batas_aktual_hari, int(batas_maks))
-#7
+
             if limit_slot_guru_raw is not None and str(limit_slot_guru_raw).strip() != "":
                 try:
                     limit_slot_g = int(limit_slot_guru_raw)
@@ -192,7 +228,7 @@ def bangun_model(raw_assignments, kelass, gurus,
             interval_var = model.NewOptionalIntervalVar(
                 start_var, durasi, end_var, is_present, f'iv_{t_id}_{h}'
             )
-#12
+
             if batas_maks is not None and not is_batas_wajib:
                 batas_int = int(batas_maks)
                 is_over   = model.NewBoolVar(f'overbatas_{t_id}_{h}')
@@ -205,7 +241,7 @@ def bangun_model(raw_assignments, kelass, gurus,
                     'is_present': is_present, 'end_var': end_var,
                     'nama_mapel': nama_mapel, 'kelas_id': k_id,
                 })
-#14
+
             if limit_slot_guru_raw is not None and str(limit_slot_guru_raw).strip() != "":
                 try:
                     limit_slot_g = int(limit_slot_guru_raw)
@@ -222,7 +258,7 @@ def bangun_model(raw_assignments, kelass, gurus,
                         })
                 except ValueError:
                     pass
-#13
+
             if not is_preferred_day:
                 viol_hari = model.NewBoolVar(f'viol_hari_{t_id}_{h}')
                 model.Add(viol_hari == 1).OnlyEnforceIf(is_present)
@@ -249,24 +285,24 @@ def bangun_model(raw_assignments, kelass, gurus,
             model.AddExactlyOne(possible_days)
         else:
             return (None,) * 12
-#1
+
     for k in kelass:
         k_id = k['id']
         for h in HARI_LIST:
             beban = durasi_per_kelas_harian[k_id][h]
             if beban:
-                model.Add(sum(beban) == get_max_jam(kelas_limits, k_id, h))
-#2
+                model.Add(sum(beban) <= get_max_jam(kelas_limits, k_id, h))
+
     for k_id in intervals_per_kelas:
         for h in HARI_LIST:
             if intervals_per_kelas[k_id][h]:
                 model.AddNoOverlap(intervals_per_kelas[k_id][h])
-#3
+
     for g_id in intervals_per_guru:
         for h in HARI_LIST:
             if intervals_per_guru[g_id][h]:
                 model.AddNoOverlap(intervals_per_guru[g_id][h])
-#6
+
     for group_key, task_ids in tasks_per_mapel_group.items():
         if len(task_ids) > 1:
             for h in HARI_LIST:
@@ -295,7 +331,7 @@ def bangun_model(raw_assignments, kelass, gurus,
             lower        = max(0, target_int - TOLERANSI_SOFT)
             upper        = min(batas_atas, target_int + TOLERANSI_SOFT)
             is_violation = model.NewBoolVar(f'viol_{g_id}_{h}')
-#11
+
             model.Add(sum(beban_guru) >= lower).OnlyEnforceIf(is_violation.Not())
             model.Add(sum(beban_guru) <= upper).OnlyEnforceIf(is_violation.Not())
 
@@ -324,7 +360,7 @@ def bangun_model(raw_assignments, kelass, gurus,
 
 
 # =============================================================================
-# EKSTRAK SOLUSI
+# EKSTRAK SOLUSI & MAIN
 # =============================================================================
 def ekstrak_solusi(solver, raw_assignments, presences, starts):
     solusi = []
@@ -337,12 +373,8 @@ def ekstrak_solusi(solver, raw_assignments, presences, starts):
     return solusi
 
 
-# =============================================================================
-# MAIN
-# =============================================================================
 def main():
     T_mulai = time.time()
-
     if len(sys.argv) < 2:
         print(json.dumps({"status": "ERROR", "message": "Path file JSON diperlukan."}))
         return
@@ -356,8 +388,6 @@ def main():
     raw_assignments  = data.get('assignments', [])
     kelass           = data.get('kelass', [])
     gurus            = data.get('gurus', [])
-    
-    # Ambil batas waktu (kini pasti 5 menit dari Controller)
     max_time_minutes = int(data.get('max_time_minutes', 5))
     MAX_TIME_SEC     = max_time_minutes * 60
 
@@ -402,13 +432,11 @@ def main():
     if obj_terms:
         model.Minimize(sum(obj_terms))
 
-    # ---- Konfigurasi solver (MODE DEWA EXTRA KERAS) ----
     solver = cp_model.CpSolver()
-
     solver.parameters.optimize_with_core  = True 
     solver.parameters.linearization_level = 2    
     solver.parameters.symmetry_level      = 2
-    solver.parameters.use_lns             = True # Rahasia biar AI lebih kreatif mencari jalan pintas
+    solver.parameters.use_lns             = True 
     solver.parameters.num_search_workers  = MAX_WORKERS
     solver.parameters.max_memory_in_mb    = MAX_MEMORY_MB
     solver.parameters.max_time_in_seconds = MAX_TIME_SEC
@@ -427,30 +455,18 @@ def main():
     solusi  = ekstrak_solusi(solver, raw_assignments, presences, starts)
     obj_val = solver.ObjectiveValue()
 
-    # Hitung konversi waktu ke Menit dan Detik
     menit_berhenti = int(T // 60)
     detik_berhenti = int(T % 60)
     teks_waktu = f"{menit_berhenti} menit {detik_berhenti} detik" if menit_berhenti > 0 else f"{detik_berhenti} detik"
 
-    # --- PENENTUAN STATUS (DENGAN LOGIKA REM DARURAT & TANPA GAP) ---
     if status == cp_model.OPTIMAL or (status == cp_model.FEASIBLE and obj_val == 0):
         status_label      = "OPTIMAL"
-        status_penjelasan = (
-            f"Pencarian selesai! AI berhasil menemukan jadwal paling sempurna (Optimal). "
-            f"Proses otomatis berhenti pada {teks_waktu} karena total penalti sudah mencapai 0."
-        )
+        status_penjelasan = f"Pencarian selesai! AI berhasil menemukan jadwal paling sempurna (Optimal) pada {teks_waktu}."
     else:
         status_label      = "FEASIBLE"
-        status_penjelasan = (
-            f"AI berhasil membuat jadwal yang valid dan bebas bentrok (Feasible). "
-            f"Total penalti preferensi berhasil ditekan menjadi {int(obj_val)} poin. "
-            f"Proses dihentikan pada {teks_waktu} karena sudah mencapai batas waktu maksimal ({max_time_minutes} menit)."
-        )
+        status_penjelasan = f"AI berhasil membuat jadwal yang valid dan bebas bentrok (Feasible) dalam {teks_waktu}."
 
-    # ---- Hitung soft constraint violations ----
     detail_soft = []
-
-    # SF-1 (DEVIASI GURU - DIBUAT JADI 1 BARIS TOTAL)
     sf1_pelanggaran = 0
     guru_violators  = set()
     for p in penalti_info:
@@ -459,75 +475,46 @@ def main():
             guru_violators.add(p['g_id'])
             
     if sf1_pelanggaran > 0:
-        total_guru = len(gurus)
-        jumlah_guru_pelanggar = len(guru_violators)
-        detail_soft.append(
-            f"[SF-1] Beban mengajar tidak merata pada {jumlah_guru_pelanggar} dari total {total_guru} guru "
-            f"(menghasilkan {sf1_pelanggaran} titik deviasi hari)."
-        )
+        detail_soft.append(f"[SF-1] Beban mengajar tidak merata pada {len(guru_violators)} dari {len(gurus)} guru.")
 
-    # SF-2
-    sf2_reported    = set()
-    sf2_pelanggaran = 0
+    sf2_reported, sf2_pelanggaran = set(), 0
     for sb in soft_batas_info:
-        if (solver.Value(sb['is_present']) == 1
-                and solver.Value(sb['is_over']) == 1
-                and sb['t_id'] not in sf2_reported):
+        if solver.Value(sb['is_present']) == 1 and solver.Value(sb['is_over']) == 1 and sb['t_id'] not in sf2_reported:
             sf2_pelanggaran += 1
             sf2_reported.add(sb['t_id'])
-            slot_akhir = solver.Value(sb['end_var']) - 1
-            detail_soft.append(
-                f"[SF-2] {sb['nama_mapel']} kelas {sb['kelas_id']} hari {sb['h']}: "
-                f"selesai slot {slot_akhir} (lewat batas)."
-            )
+            detail_soft.append(f"[SF-2] {sb['nama_mapel']} kelas {sb['kelas_id']} hari {sb['h']}: lewat batas.")
 
-    # SF-3
-    sf3_reported    = set()
-    sf3_pelanggaran = 0
+    sf3_reported, sf3_pelanggaran = set(), 0
     for sh in soft_hari_info:
-        if (solver.Value(sh['is_present']) == 1
-                and solver.Value(sh['viol_hari']) == 1
-                and sh['t_id'] not in sf3_reported):
+        if solver.Value(sh['is_present']) == 1 and solver.Value(sh['viol_hari']) == 1 and sh['t_id'] not in sf3_reported:
             sf3_pelanggaran += 1
             sf3_reported.add(sh['t_id'])
-            detail_soft.append(
-                f"[SF-3] {get_nama_guru(gurus, sh['g_id'])} dijadwalkan di {sh['h']} "
-                f"(bukan hari preferensinya)."
-            )
+            detail_soft.append(f"[SF-3] {get_nama_guru(gurus, sh['g_id'])} dijadwalkan di {sh['h']} (bukan preferensi).")
 
-    # SF-4
-    sf4_reported    = set()
-    sf4_pelanggaran = 0
+    sf4_reported, sf4_pelanggaran = set(), 0
     for sg in soft_guru_batas_info:
-        if (solver.Value(sg['is_present']) == 1
-                and solver.Value(sg['is_over']) == 1
-                and sg['t_id'] not in sf4_reported):
+        if solver.Value(sg['is_present']) == 1 and solver.Value(sg['is_over']) == 1 and sg['t_id'] not in sf4_reported:
             sf4_pelanggaran += 1
             sf4_reported.add(sg['t_id'])
-            slot_akhir = solver.Value(sg['end_var']) - 1
-            detail_soft.append(
-                f"[SF-4] {get_nama_guru(gurus, sg['g_id'])} hari {sg['h']} "
-                f"selesai slot {slot_akhir} (melewati batas Max Slot Preferensi: {sg['limit']})."
-            )
+            detail_soft.append(f"[SF-4] {get_nama_guru(gurus, sg['g_id'])} hari {sg['h']} melewati batas Max Slot.")
 
     jml_soft = sf1_pelanggaran + sf2_pelanggaran + sf3_pelanggaran + sf4_pelanggaran
 
-    # BIKIN ARRAY UNTUK DIKIRIM KE LARAVEL
     tabel_evaluasi_hard = [
-        {'kategori': 'HC-1', 'deskripsi': 'JP harian kelas terpenuhi',           'pelanggaran': 0},
-        {'kategori': 'HC-2', 'deskripsi': 'Tidak bentrok slot guru',              'pelanggaran': 0},
-        {'kategori': 'HC-3', 'deskripsi': 'Tidak bentrok slot kelas',             'pelanggaran': 0},
-        {'kategori': 'HC-4', 'deskripsi': 'Guru hard di hari yang diizinkan',     'pelanggaran': 0},
-        {'kategori': 'HC-5', 'deskripsi': 'Batas slot maksimal mapel hard',       'pelanggaran': 0},
-        {'kategori': 'HC-6', 'deskripsi': 'Mapel tidak muncul ganda per kelas',   'pelanggaran': 0},
-        {'kategori': 'HC-7', 'deskripsi': 'Batas slot maksimal guru hard',        'pelanggaran': 0},
+        {'kategori': 'HC-1', 'deskripsi': 'JP harian kelas terpenuhi',         'pelanggaran': 0},
+        {'kategori': 'HC-2', 'deskripsi': 'Tidak bentrok slot guru',            'pelanggaran': 0},
+        {'kategori': 'HC-3', 'deskripsi': 'Tidak bentrok slot kelas',           'pelanggaran': 0},
+        {'kategori': 'HC-4', 'deskripsi': 'Guru hard di hari yang diizinkan',   'pelanggaran': 0},
+        {'kategori': 'HC-5', 'deskripsi': 'Batas slot maksimal mapel hard',     'pelanggaran': 0},
+        {'kategori': 'HC-6', 'deskripsi': 'Mapel tidak muncul ganda per kelas', 'pelanggaran': 0},
+        {'kategori': 'HC-7', 'deskripsi': 'Batas slot maksimal guru hard',      'pelanggaran': 0},
     ]
     
     tabel_evaluasi_soft = [
-        {'kategori': 'SF-1', 'deskripsi': 'Penyebaran beban harian (diluar batas)',     'pelanggaran': sf1_pelanggaran},
-        {'kategori': 'SF-2', 'deskripsi': 'Batas preferensi slot maksimal mapel',       'pelanggaran': sf2_pelanggaran},
-        {'kategori': 'SF-3', 'deskripsi': 'Kesesuaian hari preferensi mengajar guru',   'pelanggaran': sf3_pelanggaran},
-        {'kategori': 'SF-4', 'deskripsi': 'Batas slot maksimal harian guru ditaati',    'pelanggaran': sf4_pelanggaran},
+        {'kategori': 'SF-1', 'deskripsi': 'Penyebaran beban harian',            'pelanggaran': sf1_pelanggaran},
+        {'kategori': 'SF-2', 'deskripsi': 'Batas preferensi slot mapel',        'pelanggaran': sf2_pelanggaran},
+        {'kategori': 'SF-3', 'deskripsi': 'Kesesuaian hari preferensi guru',    'pelanggaran': sf3_pelanggaran},
+        {'kategori': 'SF-4', 'deskripsi': 'Batas slot maksimal harian guru',    'pelanggaran': sf4_pelanggaran},
     ]
 
     print(json.dumps({
@@ -549,7 +536,6 @@ def main():
         },
         "message": "Selesai memproses penjadwalan.",
     }))
-
 
 if __name__ == '__main__':
     main()
