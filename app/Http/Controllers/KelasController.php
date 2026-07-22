@@ -56,18 +56,19 @@ class KelasController extends Controller
         return view('penjadwalan.kelas', compact('kelass', 'mapels', 'gurus'));
     }
 
-    public function store(Request $request)
+  public function store(Request $request)
     {
         $request->validate([
-            'nama_kelas' => 'required|string',
-            'kode_kelas' => 'required|string|unique:kelas',
-            'max_jam' => 'required|integer|min:1',
-            'wali_guru_id' => 'nullable|exists:gurus,id',
-            'limit_harian' => 'required|integer|min:1',
-            'limit_jumat' => 'required|integer|min:1',
-            'blocked_slots' => 'nullable|string|max:255',
+            'nama_kelas'    => 'required|string',
+            'kode_kelas'    => 'required|string|unique:kelas',
+            'max_jam'       => 'required|integer|min:1',
+            'wali_guru_id'  => 'nullable|exists:gurus,id',
+            'limit_harian'  => 'required|integer|min:1',
+            'limit_jumat'   => 'required|integer|min:1',
+            'blocked_slots' => 'nullable|string|max:255', // <-- Pastikan ini ada
         ]);
 
+        // <-- Pastikan 'blocked_slots' ada di dalam array only()
         Kelas::create($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'wali_guru_id', 'limit_harian', 'limit_jumat', 'blocked_slots'));
         return redirect()->route('kelas.index')->with('success', 'Kelas berhasil ditambahkan.');
     }
@@ -75,17 +76,20 @@ class KelasController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'nama_kelas' => 'required|string',
-            'kode_kelas' => 'required|string|unique:kelas,kode_kelas,' . $id,
-            'max_jam' => 'required|integer|min:1',
-            'wali_guru_id' => 'nullable|exists:gurus,id',
-            'limit_harian' => 'required|integer|min:1',
-            'limit_jumat' => 'required|integer|min:1',
-            'blocked_slots' => 'nullable|string|max:255',
+            'nama_kelas'    => 'required|string',
+            'kode_kelas'    => 'required|string|unique:kelas,kode_kelas,' . $id,
+            'max_jam'       => 'required|integer|min:1',
+            'wali_guru_id'  => 'nullable|exists:gurus,id',
+            'limit_harian'  => 'required|integer|min:1',
+            'limit_jumat'   => 'required|integer|min:1',
+            'blocked_slots' => 'nullable|string|max:255', // <-- Pastikan ini ada
         ]);
 
         $kelas = Kelas::findOrFail($id);
+        
+        // <-- Pastikan 'blocked_slots' ada di dalam array only()
         $kelas->update($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'wali_guru_id', 'limit_harian', 'limit_jumat', 'blocked_slots'));
+        
         return redirect()->route('kelas.index')->with('success', 'Data kelas berhasil diperbarui.');
     }
 
