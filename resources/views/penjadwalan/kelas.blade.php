@@ -464,6 +464,7 @@
                                                 class="w-full border border-slate-200 rounded-lg px-1.5 py-1.5 bg-slate-50 outline-none focus:border-purple-500 focus:bg-white transition">
                                                 <option value="single">Satu(1x)</option>
                                                 <option value="double">Dua(2x)</option>
+                                                <option value="double">Tiga(3x)</option>
                                             </select>
                                         </div>
                                     </div>
