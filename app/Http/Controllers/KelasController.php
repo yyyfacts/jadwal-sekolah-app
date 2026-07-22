@@ -36,6 +36,48 @@ class KelasController extends Controller
         }
     }
 
+    /**
+     * [BARU] Hitung kapasitas fisik mingguan kelas (dalam JP) berdasarkan
+     * limit_harian, limit_jumat, dan jumlah slot yang diblokir.
+     * Senin-Kamis pakai limit_harian, Jumat pakai limit_jumat.
+     * Logikanya disamakan persis dengan build_kelas_limits() di scheduler.py
+     * biar hasil hitungannya konsisten sama yang dipakai solver.
+     */
+    private function hitungKapasitasMingguan($limitHarian, $limitJumat, $blockedSlotsRaw)
+    {
+        $limitHarian = (int) $limitHarian;
+        $limitJumat = (int) $limitJumat;
+
+        $hariBiasa = ['Senin', 'Selasa', 'Rabu', 'Kamis']; // pakai limit_harian
+        $totalKapasitas = (count($hariBiasa) * $limitHarian) + $limitJumat;
+
+        if (!$blockedSlotsRaw) {
+            return $totalKapasitas;
+        }
+
+        // Hitung berapa slot diblokir per hari, format: "Selasa:3, Rabu:3"
+        $blokirPerHari = [];
+        $parts = explode(',', str_replace(';', ',', $blockedSlotsRaw));
+        foreach ($parts as $p) {
+            if (strpos($p, ':') === false)
+                continue;
+            [$hari, $jam] = explode(':', $p, 2);
+            $hari = ucfirst(strtolower(trim($hari)));
+            $jam = trim($jam);
+            if ($jam === '' || !is_numeric($jam))
+                continue;
+            $blokirPerHari[$hari] = ($blokirPerHari[$hari] ?? 0) + 1;
+        }
+
+        foreach ($blokirPerHari as $hari => $jumlahBlokir) {
+            $batasHari = ($hari === 'Jumat') ? $limitJumat : $limitHarian;
+            // Gak boleh minus di bawah 0 untuk hari itu
+            $totalKapasitas -= min($jumlahBlokir, $batasHari);
+        }
+
+        return $totalKapasitas;
+    }
+
     public function index()
     {
         $this->checkAndFixDatabase();
@@ -56,17 +98,32 @@ class KelasController extends Controller
         return view('penjadwalan.kelas', compact('kelass', 'mapels', 'gurus'));
     }
 
-  public function store(Request $request)
+    public function store(Request $request)
     {
         $request->validate([
-            'nama_kelas'    => 'required|string',
-            'kode_kelas'    => 'required|string|unique:kelas',
-            'max_jam'       => 'required|integer|min:1',
-            'wali_guru_id'  => 'nullable|exists:gurus,id',
-            'limit_harian'  => 'required|integer|min:1',
-            'limit_jumat'   => 'required|integer|min:1',
+            'nama_kelas' => 'required|string',
+            'kode_kelas' => 'required|string|unique:kelas',
+            'max_jam' => 'required|integer|min:1',
+            'wali_guru_id' => 'nullable|exists:gurus,id',
+            'limit_harian' => 'required|integer|min:1',
+            'limit_jumat' => 'required|integer|min:1',
             'blocked_slots' => 'nullable|string|max:255', // <-- Pastikan ini ada
         ]);
+
+        // [BARU] Kelas baru belum punya distribusi jadwal (0 JP), tapi tetap
+        // dicek jaga-jaga kalau blocked_slots yang diisi bikin kapasitas jadi negatif/aneh.
+        $kapasitasBaru = $this->hitungKapasitasMingguan(
+            $request->limit_harian,
+            $request->limit_jumat,
+            $request->blocked_slots
+        );
+
+        if ($kapasitasBaru < 0) {
+            return redirect()->back()->withInput()->with(
+                'error',
+                "Gagal! Kombinasi Limit Harian/Jumat dan Jam Kosong/Blokir yang lu isi gak masuk akal (kapasitas mingguan jadi negatif)."
+            );
+        }
 
         // <-- Pastikan 'blocked_slots' ada di dalam array only()
         Kelas::create($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'wali_guru_id', 'limit_harian', 'limit_jumat', 'blocked_slots'));
@@ -76,20 +133,41 @@ class KelasController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'nama_kelas'    => 'required|string',
-            'kode_kelas'    => 'required|string|unique:kelas,kode_kelas,' . $id,
-            'max_jam'       => 'required|integer|min:1',
-            'wali_guru_id'  => 'nullable|exists:gurus,id',
-            'limit_harian'  => 'required|integer|min:1',
-            'limit_jumat'   => 'required|integer|min:1',
+            'nama_kelas' => 'required|string',
+            'kode_kelas' => 'required|string|unique:kelas,kode_kelas,' . $id,
+            'max_jam' => 'required|integer|min:1',
+            'wali_guru_id' => 'nullable|exists:gurus,id',
+            'limit_harian' => 'required|integer|min:1',
+            'limit_jumat' => 'required|integer|min:1',
             'blocked_slots' => 'nullable|string|max:255', // <-- Pastikan ini ada
         ]);
 
         $kelas = Kelas::findOrFail($id);
-        
+
+        // [BARU] Validasi kapasitas mingguan vs total jam yang UDAH didistribusikan.
+        // Ini yang bikin kegagalan "Solusi mustahil ditemukan" kejadian kalau gak dicek dari awal.
+        $kapasitasBaru = $this->hitungKapasitasMingguan(
+            $request->limit_harian,
+            $request->limit_jumat,
+            $request->blocked_slots
+        );
+
+        $totalOfflineSaatIni = $kelas->jadwals()->where('status', 'offline')->sum('jumlah_jam');
+
+        if ($totalOfflineSaatIni > $kapasitasBaru) {
+            $selisih = $totalOfflineSaatIni - $kapasitasBaru;
+            return redirect()->back()->withInput()->with(
+                'error',
+                "Gagal! Total jam yang sudah didistribusikan ke {$kelas->nama_kelas} adalah {$totalOfflineSaatIni} JP, " .
+                "tapi kapasitas mingguan setelah pengaturan Limit Harian/Jumat & Blokir ini cuma {$kapasitasBaru} JP. " .
+                "Kurangi distribusi mapel kelas ini sebanyak {$selisih} JP, atau longgarkan blokir/limit hariannya. " .
+                "Kalau ini gak dibenerin dulu, tombol Jalankan Solver bakal selalu gagal (Infeasible)."
+            );
+        }
+
         // <-- Pastikan 'blocked_slots' ada di dalam array only()
         $kelas->update($request->only('nama_kelas', 'kode_kelas', 'max_jam', 'wali_guru_id', 'limit_harian', 'limit_jumat', 'blocked_slots'));
-        
+
         return redirect()->route('kelas.index')->with('success', 'Data kelas berhasil diperbarui.');
     }
 
