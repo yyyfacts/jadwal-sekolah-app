@@ -111,15 +111,15 @@
                         $textColor='text-emerald-600' ; } elseif ($totalJamOffline> $maxJam) {
                         $statusLabel = 'Lebih';
                         $statusBg = 'bg-amber-50 text-amber-600 border-amber-200';
-                        $barColor =
-                        'bg-amber-500';
+                        $barColor = 'bg-amber-500';
                         $textColor = 'text-amber-600';
                         }
                         @endphp
                         <tr class="hover:bg-slate-50/80 transition-colors"
                             data-filter="{{ strtolower($k->nama_kelas) }} {{ strtolower($k->kode_kelas) }}">
                             <td class="px-4 py-2 text-center text-[11px] font-medium text-slate-400 align-middle">
-                                {{ $index + 1 }}</td>
+                                {{ $index + 1 }}
+                            </td>
                             <td class="px-3 py-2 align-middle">
                                 <div class="flex items-center gap-3">
                                     <div
@@ -130,7 +130,8 @@
                                         <div class="font-bold text-slate-800 text-xs">{{ $k->nama_kelas }}</div>
                                         <div
                                             class="inline-block px-1.5 py-0.5 mt-0.5 rounded bg-slate-100 text-slate-500 font-bold text-[9px] uppercase border border-slate-200">
-                                            {{ $k->kode_kelas }}</div>
+                                            {{ $k->kode_kelas }}
+                                        </div>
                                         @if($k->waliKelas) <span class="text-[9px] text-slate-400 ml-1">Wali:
                                             {{ $k->waliKelas->nama_guru }}</span> @endif
                                     </div>
@@ -325,9 +326,11 @@
                                 @foreach($k->jadwals as $jadwal)
                                 <tr class="hover:bg-purple-50/50 group transition-colors">
                                     <td class="px-3 py-2 font-bold text-slate-700">
-                                        {{ $jadwal->mapel->nama_mapel ?? '-' }}</td>
+                                        {{ $jadwal->mapel->nama_mapel ?? '-' }}
+                                    </td>
                                     <td class="px-3 py-2 text-slate-600 font-medium">
-                                        {{ $jadwal->guru->nama_guru ?? '-' }}</td>
+                                        {{ $jadwal->guru->nama_guru ?? '-' }}
+                                    </td>
                                     <td class="px-3 py-2 text-center align-middle">
                                         <div class="flex flex-col items-center">
                                             <span
@@ -464,7 +467,7 @@
                                                 class="w-full border border-slate-200 rounded-lg px-1.5 py-1.5 bg-slate-50 outline-none focus:border-purple-500 focus:bg-white transition">
                                                 <option value="single">Satu(1x)</option>
                                                 <option value="double">Dua(2x)</option>
-                                                <option value="double">Tiga(3x)</option>
+                                                <option value="triple">Tiga(3x)</option>
                                             </select>
                                         </div>
                                     </div>

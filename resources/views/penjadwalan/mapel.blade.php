@@ -53,7 +53,8 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
                             </path>
-                        </svg> Tambah </button>
+                        </svg> Tambah
+                    </button>
                 </div>
             </div>
         </div>
@@ -96,8 +97,7 @@
                     <tr class="hover:bg-slate-50/80 transition-colors"
                         data-filter="{{ strtolower($m->nama_mapel) }} {{ strtolower($m->kode_mapel) }}">
                         <td class="px-4 py-2 text-center text-[11px] font-medium text-slate-400 align-middle">
-                            {{ $index + 1 }}
-                        </td>
+                            {{ $index + 1 }}</td>
                         <td class="px-3 py-2 align-middle">
                             <div class="flex items-center gap-3">
                                 <div
@@ -108,8 +108,7 @@
                                     <div class="font-bold text-slate-800 text-xs">{{ $m->nama_mapel }}</div>
                                     <div
                                         class="inline-block px-1.5 py-0.5 mt-0.5 rounded bg-slate-100 text-slate-500 font-bold text-[9px] uppercase border border-slate-200">
-                                        {{ $m->kode_mapel }}
-                                    </div>
+                                        {{ $m->kode_mapel }}</div>
                                 </div>
                             </div>
                         </td>
@@ -318,7 +317,7 @@
                                                     </path>
                                                 </svg>
                                             </button>
-                                            <button onclick="hapusJadwal({{ $jadwal->id }}, this)"
+                                            <button type="button" onclick="hapusJadwal('{{ $jadwal->id }}', this)"
                                                 class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
@@ -431,6 +430,7 @@
                                                 class="w-full border border-slate-200 rounded-lg px-1.5 py-1.5 bg-slate-50 outline-none focus:border-blue-500 focus:bg-white transition">
                                                 <option value="single">Satu(1x)</option>
                                                 <option value="double">Dua(2x)</option>
+                                                <option value="triple">Tiga(3x)</option>
                                             </select>
                                         </div>
                                     </div>
@@ -622,10 +622,14 @@ async function hapusJadwal(id, btn) {
     if (!confirm('Hapus jadwal ini?')) return;
     try {
         const res = await fetch(`/mapel/jadwal/${id}`, {
-            method: 'DELETE',
+            method: 'POST',
             headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            }
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                _method: 'DELETE'
+            })
         });
         if (res.ok) btn.closest('tr').remove();
     } catch (e) {}
