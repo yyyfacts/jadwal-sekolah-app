@@ -304,6 +304,7 @@
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1"
                         title="Contoh: Selasa:3, Rabu:3">Jam Kosong / Blokir</label>
+                    {{-- TAMBAHKAN value="{{ $k->blocked_slots }}" DI BAWAH INI --}}
                     <input type="text" name="blocked_slots" value="{{ $k->blocked_slots }}"
                         placeholder="Contoh: Selasa:3, Rabu:3"
                         class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-amber-500 outline-none">
