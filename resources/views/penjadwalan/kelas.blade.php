@@ -93,22 +93,24 @@
                 <tbody id="tbody-kelas-main" class="divide-y divide-slate-100">
                     @forelse($kelass as $index => $k)
                     @php
-                    $totalJam = $k->jadwals->sum('jumlah_jam');
+                    // PERBAIKAN: Pisahkan Offline (Fisik) dan Online (Daring)
+                    $totalOffline = $k->jadwals->where('status', 'offline')->sum('jumlah_jam');
+                    $totalOnline = $k->jadwals->where('status', 'online')->sum('jumlah_jam');
                     $maxJam = $k->max_jam ?? 48;
-                    $percentage = $maxJam > 0 ? ($totalJam / $maxJam) * 100 : 0;
+                    $percentage = $maxJam > 0 ? ($totalOffline / $maxJam) * 100 : 0;
 
                     $statusLabel = 'Kosong';
                     $statusBg = 'bg-slate-50 text-slate-500 border-slate-200';
                     $barColor = 'bg-slate-300';
                     $textColor = 'text-slate-600';
 
-                    if ($totalJam == 0) {
+                    if ($totalOffline == 0) {
                     $statusLabel = 'Kosong';
-                    } elseif ($totalJam < $maxJam) { $statusLabel='Kurang' ;
+                    } elseif ($totalOffline < $maxJam) { $statusLabel='Kurang' ;
                         $statusBg='bg-rose-50 text-rose-600 border-rose-200' ; $barColor='bg-rose-500' ;
-                        $textColor='text-rose-600' ; } elseif ($totalJam==$maxJam) { $statusLabel='Sesuai' ;
+                        $textColor='text-rose-600' ; } elseif ($totalOffline==$maxJam) { $statusLabel='Sesuai' ;
                         $statusBg='bg-emerald-50 text-emerald-600 border-emerald-200' ; $barColor='bg-emerald-500' ;
-                        $textColor='text-emerald-600' ; } elseif ($totalJam> $maxJam) {
+                        $textColor='text-emerald-600' ; } elseif ($totalOffline> $maxJam) {
                         $statusLabel = 'Lebih';
                         $statusBg = 'bg-amber-50 text-amber-600 border-amber-200';
                         $barColor = 'bg-amber-500';
@@ -144,17 +146,26 @@
                             </td>
                             <td class="px-3 py-2 text-center align-middle">
                                 <div class="flex flex-col items-center gap-1.5">
-                                    <span class="text-[10px] font-bold {{ $textColor }}">{{ $totalJam }} / {{ $maxJam }}
-                                        Jam</span>
+                                    <span class="text-[10px] font-bold {{ $textColor }}">{{ $totalOffline }} /
+                                        {{ $maxJam }} Jam</span>
                                     <div class="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                         <div class="h-full {{ $barColor }}" style="width: {{ min($percentage, 100) }}%">
                                         </div>
                                     </div>
-                                    <span
-                                        class="px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide border {{ $statusBg }}"
-                                        title="Kapasitas Optimal: {{ $maxJam }} Jam">
-                                        {{ $statusLabel }}
-                                    </span>
+                                    <div class="flex items-center gap-1">
+                                        <span
+                                            class="px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide border {{ $statusBg }}"
+                                            title="Kapasitas Fisik/Offline: {{ $maxJam }} Jam">
+                                            {{ $statusLabel }}
+                                        </span>
+                                        @if($totalOnline > 0)
+                                        <span
+                                            class="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wide bg-blue-50 text-blue-600 border border-blue-200"
+                                            title="Jadwal Daring/Online">
+                                            +{{ $totalOnline }} Daring
+                                        </span>
+                                        @endif
+                                    </div>
                                 </div>
                             </td>
                             <td class="px-3 py-2 text-center align-middle">
@@ -319,8 +330,9 @@
                         </svg></div>
                     <div>
                         <h3 class="font-bold text-sm text-slate-800">{{ $k->nama_kelas }}</h3>
-                        <p class="text-[10px] text-slate-500 font-medium">Terisi: {{ $k->jadwals->sum('jumlah_jam') }}
-                            Jam</p>
+                        <p class="text-[10px] text-slate-500 font-medium">Fisik (Offline):
+                            {{ $k->jadwals->where('status', 'offline')->sum('jumlah_jam') }} JP | Daring (Online):
+                            {{ $k->jadwals->where('status', 'online')->sum('jumlah_jam') }} JP</p>
                     </div>
                 </div>
                 <button onclick="closeModal('modaljadwal{{ $k->id }}')"
@@ -347,7 +359,12 @@
                                 @foreach($k->jadwals as $jadwal)
                                 <tr class="hover:bg-purple-50/50 group transition-colors">
                                     <td class="px-3 py-2 font-bold text-slate-700">
-                                        {{ $jadwal->mapel->nama_mapel ?? '-' }}</td>
+                                        {{ $jadwal->mapel->nama_mapel ?? '-' }}
+                                        @if($jadwal->status == 'online')
+                                        <span
+                                            class="ml-1 px-1 py-0.2 bg-blue-100 text-blue-600 text-[8px] rounded uppercase font-extrabold">Daring</span>
+                                        @endif
+                                    </td>
                                     <td class="px-3 py-2 text-slate-600 font-medium">
                                         {{ $jadwal->guru->nama_guru ?? '-' }}</td>
                                     <td class="px-3 py-2 text-center align-middle">
