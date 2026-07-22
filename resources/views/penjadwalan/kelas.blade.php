@@ -15,6 +15,14 @@
     </div>
     @endif
 
+    @if(session('error'))
+    <div x-data="{ show: true }" x-show="show" x-transition
+        class="mb-2 flex items-center justify-between p-3 bg-rose-50 border border-rose-100 rounded-lg shadow-sm text-rose-800 shrink-0">
+        <span class="font-bold text-xs">❌ {{ session('error') }}</span>
+        <button @click="show = false" class="text-rose-400 hover:text-rose-700">&times;</button>
+    </div>
+    @endif
+
     {{-- UNIFIED CARD --}}
     <div class="bg-white rounded-xl border border-slate-200 shadow-md flex flex-col flex-1 overflow-hidden">
 
@@ -93,7 +101,6 @@
                 <tbody id="tbody-kelas-main" class="divide-y divide-slate-100">
                     @forelse($kelass as $index => $k)
                     @php
-                    // PERBAIKAN: Pisahkan Offline (Fisik) dan Online (Daring)
                     $totalOffline = $k->jadwals->where('status', 'offline')->sum('jumlah_jam');
                     $totalOnline = $k->jadwals->where('status', 'online')->sum('jumlah_jam');
                     $maxJam = $k->max_jam ?? 48;
@@ -120,8 +127,7 @@
                         <tr class="hover:bg-slate-50/80 transition-colors"
                             data-filter="{{ strtolower($k->nama_kelas) }} {{ strtolower($k->kode_kelas) }}">
                             <td class="px-4 py-2 text-center text-[11px] font-medium text-slate-400 align-middle">
-                                {{ $index + 1 }}
-                            </td>
+                                {{ $index + 1 }}</td>
                             <td class="px-3 py-2 align-middle">
                                 <div class="flex items-center gap-3">
                                     <div
@@ -140,8 +146,7 @@
                                         </div>
                                         <div
                                             class="inline-block px-1.5 py-0.5 mt-0.5 rounded bg-slate-100 text-slate-500 font-bold text-[9px] uppercase border border-slate-200">
-                                            {{ $k->kode_kelas }}
-                                        </div>
+                                            {{ $k->kode_kelas }}</div>
                                         @if($k->waliKelas) <span class="text-[9px] text-slate-400 ml-1">Wali:
                                             {{ $k->waliKelas->nama_guru }}</span> @endif
                                     </div>
@@ -261,25 +266,25 @@
         </div>
     </div>
 
-    {{-- AREA MODAL JAM KOSONG / BLOKIR KELAS (satu instance, dipake bareng buat semua kelas) --}}
+    {{-- AREA MODAL JAM KOSONG / BLOKIR KELAS (Z-INDEX SUPER TINGGI AGAR GAK TUMPUK) --}}
     <div id="modaljamkhusus"
-        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[999] hidden items-center justify-center p-2 sm:p-4">
+        class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[9999] hidden items-center justify-center p-2 sm:p-4">
         <div
-            class="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[85vh] flex flex-col border border-white/20 overflow-hidden">
+            class="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col border border-white/20 overflow-hidden">
             <div class="px-4 py-3 border-b border-slate-100 flex justify-between items-start bg-slate-50 shrink-0">
                 <div>
                     <h3 class="font-bold text-sm flex items-center gap-1.5"><span
-                            class="w-1 h-4 bg-purple-600 rounded"></span> Jam Kosong / Blokir Kelas</h3>
+                            class="w-1 h-4 bg-purple-600 rounded"></span> Atur Jam Kosong / Blokir</h3>
                     <p class="text-[10px] text-slate-400 mt-0.5">Kelas: <span id="jk-nama-kelas"
-                            class="font-bold text-slate-600"></span></p>
+                            class="font-bold text-purple-700"></span></p>
                 </div>
-                <button onclick="closeModal('modaljamkhusus')"
+                <button onclick="tutupModalJamKhusus()"
                     class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
             </div>
 
             <div class="px-4 py-2 bg-purple-50 text-[9px] text-purple-700 border-b border-purple-100 shrink-0">
-                💡 Default semua <b>"Belajar"</b> (normal). Pilih tipe lain di jam yang kelas ini gak bisa dipakai
-                (ujian, ekskul, dll) - otomatis di-skip pas generate, kelas lain gak kepengaruh.
+                💡 <b>Langsung Tersimpan Otomatis!</b> Pilih jam yang tidak boleh diisi jadwal (misal: Ujian/Ekskul). AI
+                otomatis melewatinya saat generate.
             </div>
 
             <div id="jk-isi" class="overflow-y-auto px-4 py-3 space-y-4 flex-1">
@@ -287,10 +292,11 @@
             </div>
 
             <div class="px-4 py-3 border-t border-slate-100 flex justify-end gap-2 shrink-0 bg-white">
-                <button onclick="closeModal('modaljamkhusus')"
-                    class="px-3 py-2 rounded-lg text-[10px] font-bold uppercase text-slate-500 hover:bg-slate-100">Batal</button>
-                <button onclick="simpanJamKhusus()"
-                    class="px-4 py-2 rounded-lg text-[10px] font-bold uppercase text-white bg-purple-600 hover:bg-purple-700">Simpan</button>
+                <button onclick="tutupModalJamKhusus()"
+                    class="px-3 py-2 rounded-lg text-[10px] font-bold uppercase text-slate-500 hover:bg-slate-100">Tutup</button>
+                <button onclick="simpanJamKhusus()" id="btn-simpan-jk"
+                    class="px-5 py-2 rounded-lg text-[10px] font-bold uppercase text-white bg-purple-600 hover:bg-purple-700 shadow-md transition">Simpan
+                    Waktu Blokir</button>
             </div>
         </div>
     </div>
@@ -334,22 +340,22 @@
                             required></div>
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Jam Kosong /
-                        Blokir</label>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Jam Kosong / Blokir</label>
                     <button type="button" onclick="bukaModalJamKhusus({{ $k->id }}, '{{ addslashes($k->nama_kelas) }}')"
-                        class="w-full flex items-center justify-between border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-600 hover:bg-slate-50 transition">
+                        class="w-full flex items-center justify-between border border-purple-300 bg-purple-50/50 rounded-lg px-3 py-2 text-xs text-purple-700 font-bold hover:bg-purple-100 transition">
                         <span>Atur jam kosong / blokir
                             @if($k->waktuKhusus->isNotEmpty())
                             <b class="text-rose-600">({{ $k->waktuKhusus->count() }} jam)</b>
                             @endif
                         </span>
-                        <span class="text-slate-400">›</span>
+                        <span class="text-purple-500 font-extrabold">›</span>
                     </button>
-                    <span class="text-[9px] text-slate-400 mt-0.5 block">Pilih jam yang kelas ini gak bisa dipakai
-                        (misal lagi ujian/ekskul) - otomatis di-skip pas generate.</span>
+                    <span class="text-[9px] text-emerald-600 font-bold mt-0.5 block">⚡ Langsung tersimpan otomatis &
+                        tidak perlu klik Perbarui.</span>
                 </div>
                 <button type="submit"
-                    class="w-full bg-amber-500 text-white font-bold py-2.5 rounded-lg text-[10px] uppercase mt-2 hover:bg-amber-600 transition">Perbarui</button>
+                    class="w-full bg-amber-500 text-white font-bold py-2.5 rounded-lg text-[10px] uppercase mt-2 hover:bg-amber-600 transition">Perbarui
+                    Data Kelas</button>
             </form>
         </div>
     </div>
@@ -371,8 +377,7 @@
                         <h3 class="font-bold text-sm text-slate-800">{{ $k->nama_kelas }}</h3>
                         <p class="text-[10px] text-slate-500 font-medium">Fisik (Offline):
                             {{ $k->jadwals->where('status', 'offline')->sum('jumlah_jam') }} JP | Daring (Online):
-                            {{ $k->jadwals->where('status', 'online')->sum('jumlah_jam') }} JP
-                        </p>
+                            {{ $k->jadwals->where('status', 'online')->sum('jumlah_jam') }} JP</p>
                     </div>
                 </div>
                 <button onclick="closeModal('modaljadwal{{ $k->id }}')"
@@ -406,8 +411,7 @@
                                         @endif
                                     </td>
                                     <td class="px-3 py-2 text-slate-600 font-medium">
-                                        {{ $jadwal->guru->nama_guru ?? '-' }}
-                                    </td>
+                                        {{ $jadwal->guru->nama_guru ?? '-' }}</td>
                                     <td class="px-3 py-2 text-center align-middle">
                                         <div class="flex flex-col items-center">
                                             <span
@@ -746,25 +750,46 @@ async function hapusJadwal(id, btn) {
 }
 
 // ================================================================
-// MODAL JAM KOSONG / BLOKIR KELAS
+// MODAL JAM KOSONG / BLOKIR KELAS (ANTI DOUBLE FORM & ANTI CRASH)
 // ================================================================
 const JK_TIPE_OPTIONS = ['Belajar', 'Kosong', 'Ujian', 'Ekstrakurikuler', 'Kegiatan Khusus'];
 let jkKelasIdAktif = null;
 
 async function bukaModalJamKhusus(kelasId, namaKelas) {
+    // 1. TUTUP MODAL UBAH KELAS SUPAYA GAK DOUBLE FORM (TUMPUK)[cite: 14]
+    document.querySelectorAll('[id^="edit"]').forEach(el => closeModal(el.id));
+
     jkKelasIdAktif = kelasId;
     document.getElementById('jk-nama-kelas').innerText = namaKelas;
     document.getElementById('jk-isi').innerHTML =
-    '<p class="text-xs text-slate-400 text-center py-4">Memuat...</p>';
+        '<p class="text-xs text-slate-400 text-center py-4">Memuat data jam...</p>';
+
     openModal('modaljamkhusus');
 
     try {
-        const res = await fetch(`/kelas/${kelasId}/waktu-khusus`);
+        const res = await fetch(`/kelas/${kelasId}/waktu-khusus`, {
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!res.ok) {
+            throw new Error(`Server Error (${res.status}): Rute tidak ditemukan atau sesi habis.`);
+        }
+
         const data = await res.json();
         renderJamKhusus(data.hari);
     } catch (e) {
         document.getElementById('jk-isi').innerHTML =
-            '<p class="text-xs text-red-500 text-center py-4">Gagal memuat data. Coba lagi.</p>';
+            `<p class="text-xs text-red-500 text-center py-4 font-bold">Gagal memuat data:<br>${e.message}</p>`;
+    }
+}
+
+function tutupModalJamKhusus() {
+    closeModal('modaljamkhusus');
+    // Buka lagi modal ubah kelas kalau batal, supaya user gak bingung[cite: 14]
+    if (jkKelasIdAktif) {
+        openModal(`edit${jkKelasIdAktif}`);
     }
 }
 
@@ -774,32 +799,50 @@ function renderJamKhusus(hariList) {
         .join('');
 
     const html = (hariList || []).map(hari => `
-            <div>
-                <p class="text-[10px] font-bold text-slate-500 uppercase mb-1.5">${hari.nama_hari}</p>
-                <div class="space-y-1">
-                    ${hari.slots.map(s => `
-                        <div class="flex items-center gap-2 text-xs">
-                            <span class="w-24 shrink-0 text-slate-500">
-                                Jam ke-${s.jam_ke}
-                                <span class="text-slate-300 mx-0.5">·</span>
-                                <span class="text-slate-400 text-[10px]">${(s.waktu_mulai || '').slice(0, 5)}</span>
-                            </span>
-                            <select data-hari-id="${hari.master_hari_id}" data-jam-ke="${s.jam_ke}"
-                                class="jk-tipe-select flex-1 border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:ring-2 focus:ring-purple-500 outline-none">
-                                ${opsiHtml(s.tipe_khusus)}
-                            </select>
-                        </div>
-                    `).join('')}
+                <div>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase mb-1.5">${hari.nama_hari}</p>
+                    <div class="space-y-1">
+                        ${hari.slots.map(s => `
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="w-24 shrink-0 text-slate-500 font-medium">
+                                    Jam ke-${s.jam_ke}
+                                    <span class="text-slate-300 mx-0.5">·</span>
+                                    <span class="text-slate-400 text-[10px]">${(s.waktu_mulai || '').slice(0, 5)}</span>
+                                </span>
+                                <select data-hari-id="${hari.master_hari_id}" data-jam-ke="${s.jam_ke}"
+                                    class="jk-tipe-select flex-1 border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-bold focus:ring-2 focus:ring-purple-500 outline-none ${s.tipe_khusus !== 'Belajar' ? 'text-rose-600 bg-rose-50 border-rose-200' : 'text-slate-700'}">
+                                    ${opsiHtml(s.tipe_khusus)}
+                                </select>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `).join('');
 
     document.getElementById('jk-isi').innerHTML = html ||
-        '<p class="text-xs text-slate-400 text-center py-4">Belum ada hari aktif / slot Belajar.</p>';
+        '<p class="text-xs text-slate-400 text-center py-4">Belum ada hari aktif / slot Belajar di Master Hari.</p>';
+
+    // Warna dinamis pas select diganti[cite: 14]
+    document.querySelectorAll('.jk-tipe-select').forEach(sel => {
+        sel.addEventListener('change', function() {
+            if (this.value !== 'Belajar') {
+                this.className =
+                    "jk-tipe-select flex-1 border rounded-lg px-2 py-1.5 text-xs font-bold focus:ring-2 focus:ring-purple-500 outline-none text-rose-600 bg-rose-50 border-rose-200";
+            } else {
+                this.className =
+                    "jk-tipe-select flex-1 border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-bold focus:ring-2 focus:ring-purple-500 outline-none text-slate-700";
+            }
+        });
+    });
 }
 
 async function simpanJamKhusus() {
     if (!jkKelasIdAktif) return;
+
+    const btn = document.getElementById('btn-simpan-jk');
+    const oldText = btn.innerText;
+    btn.innerText = "Menyimpan...";
+    btn.disabled = true;
 
     const items = Array.from(document.querySelectorAll('.jk-tipe-select')).map(sel => ({
         master_hari_id: sel.dataset.hariId,
@@ -812,22 +855,33 @@ async function simpanJamKhusus() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
             body: JSON.stringify({
                 items
             })
         });
+
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            throw new Error(
+                "Server mengembalikan HTML, bukan JSON (Periksa rute di web.php atau log error Laravel).");
+        }
+
         const data = await res.json();
 
         if (data.success) {
             closeModal('modaljamkhusus');
-            window.location.reload();
+            window.location.reload(); // Langsung reload otomatis agar data terbaru muncul![cite: 14]
         } else {
             alert(data.message || 'Gagal menyimpan.');
         }
     } catch (e) {
-        alert('Error: ' + e.message);
+        alert('Terjadi kesalahan sistem: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = oldText;
     }
 }
 </script>
