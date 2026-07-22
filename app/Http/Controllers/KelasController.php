@@ -62,9 +62,9 @@ class KelasController extends Controller
 
         // Hitung berapa jam dikecualikan per hari dari tabel kelas_waktu_khusus
         $blokirPerHari = KelasWaktuKhusus::where('kelas_id', $kelasId)
-            ->join('master_haris', 'kelas_waktu_khusus.master_hari_id', '=', 'master_haris.id')
-            ->selectRaw('master_haris.nama_hari as nama_hari, COUNT(*) as jumlah')
-            ->groupBy('master_haris.nama_hari')
+            ->join('master_hari', 'kelas_waktu_khusus.master_hari_id', '=', 'master_hari.id')
+            ->selectRaw('master_hari.nama_hari as nama_hari, COUNT(*) as jumlah')
+            ->groupBy('master_hari.nama_hari')
             ->pluck('jumlah', 'nama_hari');
 
         foreach ($blokirPerHari as $hari => $jumlahBlokir) {
@@ -338,7 +338,7 @@ class KelasController extends Controller
 
         $request->validate([
             'items'                  => 'array',
-            'items.*.master_hari_id' => 'required|exists:master_haris,id',
+            'items.*.master_hari_id' => 'required|exists:master_hari,id',
             'items.*.jam_ke'         => 'required|integer',
             'items.*.tipe'           => 'required|string|in:Belajar,Kosong,Ujian,Ekstrakurikuler,Kegiatan Khusus',
             'items.*.keterangan'     => 'nullable|string|max:255',
