@@ -45,12 +45,13 @@
                     </form>
 
                     <div class="relative w-48">
-                        <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none"><svg
-                                class="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor"
+                        <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                            <svg class="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg></div>
+                            </svg>
+                        </div>
                         <input type="text" id="search-kelas-main" oninput="searchMainTable()"
                             class="block w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-purple-500 focus:bg-white transition"
                             placeholder="Cari Kelas...">
@@ -61,7 +62,8 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
                             </path>
-                        </svg> Tambah </button>
+                        </svg> Tambah
+                    </button>
                 </div>
             </div>
         </div>
@@ -109,7 +111,8 @@
                         $textColor='text-emerald-600' ; } elseif ($totalJamOffline> $maxJam) {
                         $statusLabel = 'Lebih';
                         $statusBg = 'bg-amber-50 text-amber-600 border-amber-200';
-                        $barColor = 'bg-amber-500';
+                        $barColor =
+                        'bg-amber-500';
                         $textColor = 'text-amber-600';
                         }
                         @endphp
@@ -194,7 +197,7 @@
         </div>
     </div>
 
-    {{-- AREA MODAL --}}
+    {{-- AREA MODAL TAMBAH/EDIT --}}
     <div id="modaltambah"
         class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[999] hidden items-center justify-center p-2">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
@@ -279,6 +282,7 @@
         </div>
     </div>
 
+    {{-- AREA MODAL JADWAL KELAS --}}
     <div id="modaljadwal{{ $k->id }}"
         class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[999] hidden items-center justify-center p-2 sm:p-4 transition-opacity">
         <div
@@ -336,7 +340,6 @@
                                     <td class="px-3 py-2 text-right align-middle">
                                         <div
                                             class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {{-- TOMBOL EDIT BARU --}}
                                             <button type="button"
                                                 onclick="editJadwalInline('{{ $k->id }}', '{{ $jadwal->id }}', '{{ $jadwal->mapel_id }}', '{{ $jadwal->guru_id }}', '{{ $jadwal->jumlah_jam }}', '{{ $jadwal->tipe_jam }}', '{{ $jadwal->status ?? 'offline' }}')"
                                                 class="p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition">
@@ -348,7 +351,6 @@
                                                     </path>
                                                 </svg>
                                             </button>
-                                            {{-- TOMBOL HAPUS LAMA --}}
                                             <button onclick="hapusJadwal({{ $jadwal->id }}, this)"
                                                 class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
@@ -376,7 +378,6 @@
                                 <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Input Distribusi
                             </h4>
 
-                            {{-- FORM DIMODIFIKASI --}}
                             <form id="form-jadwal-{{ $k->id }}"
                                 data-store-url="{{ route('kelas.simpanJadwal', $k->id) }}"
                                 action="{{ route('kelas.simpanJadwal', $k->id) }}" method="POST"
@@ -384,22 +385,72 @@
                                 @csrf
                                 <div id="method-spoof-{{ $k->id }}"></div>
                                 <div class="space-y-3.5 text-[10px]">
-                                    <div>
+
+                                    <div class="relative custom-select-wrapper" id="wrapper-mapel-{{ $k->id }}">
                                         <label class="font-bold text-slate-500 block mb-1">MAPEL</label>
-                                        <select name="mapel_id" id="select-mapel-{{ $k->id }}"
-                                            class="w-full border border-slate-200 rounded-lg px-2.5 py-2 bg-slate-50 outline-none focus:border-purple-500 focus:bg-white transition">
-                                            @foreach($mapels as $m)<option value="{{ $m->id }}">{{ $m->nama_mapel }}
-                                            </option>@endforeach
-                                        </select>
+                                        <input type="hidden" name="mapel_id" id="real-input-mapel-{{ $k->id }}"
+                                            required>
+                                        <button type="button" onclick="toggleCustomDropdown('mapel', '{{ $k->id }}')"
+                                            class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-left flex justify-between items-center outline-none focus:border-purple-500 transition">
+                                            <span id="display-mapel-{{ $k->id }}" class="truncate text-slate-700">Pilih
+                                                Mapel...</span>
+                                            <svg class="w-3 h-3 shrink-0 text-slate-400" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </button>
+                                        <div id="dropdown-mapel-{{ $k->id }}"
+                                            class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto flex flex-col">
+                                            <div class="p-1.5 sticky top-0 bg-white border-b border-slate-100 z-10">
+                                                <input type="text" placeholder="Cari Mapel..."
+                                                    onkeyup="filterCustomDropdown('mapel', '{{ $k->id }}', this)"
+                                                    class="w-full px-2 py-1.5 text-[10px] bg-slate-50 border border-slate-200 rounded outline-none focus:border-purple-500">
+                                            </div>
+                                            <div id="list-mapel-{{ $k->id }}" class="p-1">
+                                                @foreach($mapels as $m)
+                                                <div class="option-item p-1.5 hover:bg-purple-50 rounded cursor-pointer text-slate-700 transition-colors"
+                                                    data-value="{{ $m->id }}" data-label="{{ $m->nama_mapel }}"
+                                                    onclick="selectCustomOption('mapel', '{{ $k->id }}', this)">
+                                                    {{ $m->nama_mapel }}
+                                                </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
+
+                                    <div class="relative custom-select-wrapper" id="wrapper-guru-{{ $k->id }}">
                                         <label class="font-bold text-slate-500 block mb-1">GURU</label>
-                                        <select name="guru_id" id="select-guru-{{ $k->id }}"
-                                            class="w-full border border-slate-200 rounded-lg px-2.5 py-2 bg-slate-50 outline-none focus:border-purple-500 focus:bg-white transition">
-                                            @foreach($gurus as $g)<option value="{{ $g->id }}">{{ $g->nama_guru }}
-                                            </option>@endforeach
-                                        </select>
+                                        <input type="hidden" name="guru_id" id="real-input-guru-{{ $k->id }}" required>
+                                        <button type="button" onclick="toggleCustomDropdown('guru', '{{ $k->id }}')"
+                                            class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-left flex justify-between items-center outline-none focus:border-purple-500 transition">
+                                            <span id="display-guru-{{ $k->id }}" class="truncate text-slate-700">Pilih
+                                                Guru...</span>
+                                            <svg class="w-3 h-3 shrink-0 text-slate-400" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </button>
+                                        <div id="dropdown-guru-{{ $k->id }}"
+                                            class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto flex flex-col">
+                                            <div class="p-1.5 sticky top-0 bg-white border-b border-slate-100 z-10">
+                                                <input type="text" placeholder="Cari Guru..."
+                                                    onkeyup="filterCustomDropdown('guru', '{{ $k->id }}', this)"
+                                                    class="w-full px-2 py-1.5 text-[10px] bg-slate-50 border border-slate-200 rounded outline-none focus:border-purple-500">
+                                            </div>
+                                            <div id="list-guru-{{ $k->id }}" class="p-1">
+                                                @foreach($gurus as $g)
+                                                <div class="option-item p-1.5 hover:bg-purple-50 rounded cursor-pointer text-slate-700 transition-colors"
+                                                    data-value="{{ $g->id }}" data-label="{{ $g->nama_guru }}"
+                                                    onclick="selectCustomOption('guru', '{{ $k->id }}', this)">
+                                                    {{ $g->nama_guru }}
+                                                </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
                                     </div>
+
                                     <div class="grid grid-cols-2 gap-2">
                                         <div>
                                             <label class="font-bold text-slate-500 block mb-1">JAM</label>
@@ -473,10 +524,62 @@ function closeModal(id) {
     document.getElementById(id).classList.remove('flex');
 }
 
+// LOGIKA CUSTOM DROPDOWN
+function toggleCustomDropdown(type, id) {
+    const wrapper = document.getElementById(`wrapper-${type}-${id}`);
+    const dropdown = document.getElementById(`dropdown-${type}-${id}`);
+    document.querySelectorAll('.custom-select-wrapper').forEach(el => {
+        if (el !== wrapper) {
+            el.style.zIndex = "0";
+            el.querySelector('[id^="dropdown-"]')?.classList.add('hidden');
+        }
+    });
+    dropdown.classList.toggle('hidden');
+    wrapper.style.zIndex = dropdown.classList.contains('hidden') ? "0" : "50";
+}
+
+function filterCustomDropdown(type, id, input) {
+    const filter = input.value.toLowerCase();
+    document.querySelectorAll(`#list-${type}-${id} .option-item`).forEach(item => {
+        const label = (item.getAttribute('data-label') || '').toLowerCase();
+        item.style.display = label.includes(filter) ? "" : "none";
+    });
+}
+
+function selectCustomOption(type, entityId, element) {
+    document.getElementById(`real-input-${type}-${entityId}`).value = element.getAttribute('data-value');
+    document.getElementById(`display-${type}-${entityId}`).innerText = element.getAttribute('data-label');
+    document.getElementById(`dropdown-${type}-${entityId}`).classList.add('hidden');
+    document.getElementById(`wrapper-${type}-${entityId}`).style.zIndex = "0";
+}
+
+function setCustomDropdownValue(type, entityId, value) {
+    const option = document.querySelector(`#list-${type}-${entityId} .option-item[data-value="${value}"]`);
+    if (option) selectCustomOption(type, entityId, option);
+}
+
+function resetCustomDropdown(type, entityId, defaultText) {
+    document.getElementById(`real-input-${type}-${entityId}`).value = '';
+    document.getElementById(`display-${type}-${entityId}`).innerText = defaultText;
+    const searchInput = document.querySelector(`#dropdown-${type}-${entityId} input[type="text"]`);
+    if (searchInput) {
+        searchInput.value = '';
+        filterCustomDropdown(type, entityId, searchInput);
+    }
+}
+
+document.addEventListener('click', e => {
+    if (!e.target.closest('.custom-select-wrapper')) {
+        document.querySelectorAll('.custom-select-wrapper [id^="dropdown-"]').forEach(el => el.classList.add(
+            'hidden'));
+        document.querySelectorAll('.custom-select-wrapper').forEach(el => el.style.zIndex = "0");
+    }
+});
+
 // LOGIKA EDIT INLINE FORM JADWAL KELAS
 function editJadwalInline(kelasId, jadwalId, mapelId, guruId, jam, tipe, status) {
-    document.getElementById(`select-mapel-${kelasId}`).value = mapelId;
-    document.getElementById(`select-guru-${kelasId}`).value = guruId;
+    setCustomDropdownValue('mapel', kelasId, mapelId);
+    setCustomDropdownValue('guru', kelasId, guruId);
     document.getElementById(`input-jam-${kelasId}`).value = jam;
     document.getElementById(`select-tipe-${kelasId}`).value = tipe;
     document.getElementById(`select-status-${kelasId}`).value = status;
@@ -495,6 +598,9 @@ function editJadwalInline(kelasId, jadwalId, mapelId, guruId, jam, tipe, status)
 function resetFormJadwal(kelasId) {
     const form = document.getElementById(`form-jadwal-${kelasId}`);
     form.reset();
+    resetCustomDropdown('mapel', kelasId, 'Pilih Mapel...');
+    resetCustomDropdown('guru', kelasId, 'Pilih Guru...');
+
     form.action = form.getAttribute('data-store-url');
     document.getElementById(`method-spoof-${kelasId}`).innerHTML = '';
 

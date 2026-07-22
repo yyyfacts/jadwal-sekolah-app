@@ -100,20 +100,22 @@
                     $jam = $g->total_jam_mengajar;
                     $statusPegawai = $g->status_pegawai ?? 'PNS/P3K';
 
-                    // EVALUASI DINAMIS BERDASARKAN STATUS
                     $statusLabel = 'Kosong';
                     $statusBg = 'bg-slate-50 text-slate-500 border-slate-200';
                     $titleStatus = '';
 
                     if ($jam > 0) {
                     if ($statusPegawai == 'PNS/P3K') {
-                    $min = 24; $max = 40;
+                    $min = 24;
+                    $max = 40;
                     $titleStatus = 'Standar: 24 - 40 Jam';
                     } elseif ($statusPegawai == 'Guru Tamu') {
-                    $min = 16; $max = 30;
+                    $min = 16;
+                    $max = 30;
                     $titleStatus = 'Standar: 16 - 30 Jam';
                     } else {
-                    $min = 1; $max = 999;
+                    $min = 1;
+                    $max = 999;
                     $titleStatus = 'Tergantung Kebutuhan';
                     }
 
@@ -140,7 +142,8 @@
                                 <div class="flex items-center gap-3">
                                     <div
                                         class="h-7 w-7 shrink-0 rounded-full {{ $theme['avatar'] }} text-white flex items-center justify-center font-bold text-[10px] shadow-sm">
-                                        {{ substr($g->nama_guru, 0, 1) }}</div>
+                                        {{ substr($g->nama_guru, 0, 1) }}
+                                    </div>
                                     <div class="leading-tight">
                                         <div class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
                                             {{ $g->nama_guru }}
@@ -168,9 +171,7 @@
                                     </div>
                                     <span
                                         class="px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wide border {{ $statusBg }}"
-                                        title="{{ $titleStatus }}">
-                                        {{ $statusLabel }}
-                                    </span>
+                                        title="{{ $titleStatus }}">{{ $statusLabel }}</span>
                                     @else
                                     <div
                                         class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-50 text-slate-400 border border-slate-100">
@@ -181,7 +182,7 @@
                                     <div
                                         class="text-[9px] text-slate-500 font-medium mt-1 bg-slate-50 border border-slate-200 px-1.5 py-0.5 rounded">
                                         Max Slot: <b
-                                            class="text-indigo-600">{{ $g->limit_harian ? 'Jam ke-'.$g->limit_harian : 'Bebas' }}</b>
+                                            class="text-indigo-600">{{ $g->limit_harian ? 'Jam ke-' . $g->limit_harian : 'Bebas' }}</b>
                                         @if($g->limit_harian)
                                         <span
                                             class="{{ $g->jenis_batas_guru == 'hard' ? 'text-rose-500' : 'text-emerald-500' }}">({{ $g->jenis_batas_guru == 'hard' ? 'Mutlak' : 'Fleksibel' }})</span>
@@ -200,30 +201,35 @@
                             <td class="px-4 py-2 align-middle text-right">
                                 <div class="flex items-center justify-end gap-1.5">
                                     <button type="button" onclick="openModal('modaljadwal{{ $g->id }}')"
-                                        class="flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600 text-[10px] font-bold rounded-lg transition-colors bg-white shadow-sm"><svg
-                                            class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor"
+                                        class="flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600 text-[10px] font-bold rounded-lg transition-colors bg-white shadow-sm">
+                                        <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
                                             </path>
-                                        </svg> Jadwal</button>
+                                        </svg> Jadwal
+                                    </button>
                                     <button type="button" onclick="openModal('edit{{ $g->id }}')"
-                                        class="p-1.5 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg transition-colors bg-white"><svg
-                                            class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        class="p-1.5 border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-300 rounded-lg transition-colors bg-white">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
                                             </path>
-                                        </svg></button>
+                                        </svg>
+                                    </button>
                                     <form action="{{ route('guru.destroy', $g->id) }}" method="POST"
                                         onsubmit="return confirm('Hapus data {{ $g->nama_guru }}?')" class="inline">
-                                        @csrf @method('DELETE')<button type="submit"
-                                            class="p-1.5 border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300 rounded-lg transition-colors bg-white"><svg
-                                                class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                        @csrf @method('DELETE')
+                                        <button type="submit"
+                                            class="p-1.5 border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-300 rounded-lg transition-colors bg-white">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
                                                 </path>
-                                            </svg></button></form>
+                                            </svg>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
@@ -251,8 +257,8 @@
     <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
         <div class="px-4 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
             <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5"><span
-                    class="w-1 h-4 bg-indigo-600 rounded-full"></span> Tambah Guru</h3><button type="button"
-                onclick="closeModal('modaltambah')"
+                    class="w-1 h-4 bg-indigo-600 rounded-full"></span> Tambah Guru</h3>
+            <button type="button" onclick="closeModal('modaltambah')"
                 class="text-slate-400 hover:text-slate-600 text-lg leading-none">&times;</button>
         </div>
         <form action="{{ route('guru.store') }}" method="POST" class="p-4 space-y-3">
@@ -332,8 +338,8 @@
     <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-white/20">
         <div class="px-4 py-3 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
             <h3 class="font-bold text-amber-800 text-sm flex items-center gap-1.5"><span
-                    class="w-1 h-4 bg-amber-500 rounded-full"></span> Ubah Guru</h3><button type="button"
-                onclick="closeModal('edit{{ $g->id }}')"
+                    class="w-1 h-4 bg-amber-500 rounded-full"></span> Ubah Guru</h3>
+            <button type="button" onclick="closeModal('edit{{ $g->id }}')"
                 class="text-amber-400 hover:text-amber-600 text-lg leading-none">&times;</button>
         </div>
         <form action="{{ route('guru.update', $g->id) }}" method="POST" class="p-4 space-y-3">
@@ -459,29 +465,35 @@
                                 <td class="px-2 py-1.5 text-slate-600 kelas-text font-medium">
                                     {{ $jadwal->kelas->nama_kelas ?? '-' }}</td>
                                 <td class="px-2 py-1.5 text-center">
-                                    <div class="flex flex-col items-center"><span
+                                    <div class="flex flex-col items-center">
+                                        <span
                                             class="bg-white text-indigo-700 px-1 py-0.5 rounded text-[9px] font-bold border border-indigo-100 jam-text">{{ $jadwal->jumlah_jam }}
-                                            JP</span><span
+                                            JP</span>
+                                        <span
                                             class="text-[8px] text-slate-400 mt-0.5 tipe-text uppercase">{{ $jadwal->tipe_jam }}</span>
                                     </div>
                                 </td>
                                 <td class="px-2 py-1.5 text-right">
-                                    <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100"><button
-                                            type="button"
+                                    <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100">
+                                        {{-- TOMBOL EDIT JADWAL --}}
+                                        <button type="button"
                                             onclick="editJadwalInline('{{ $g->id }}', '{{ $jadwal->id }}', '{{ $jadwal->mapel_id }}', '{{ $jadwal->kelas_id }}', '{{ $jadwal->jumlah_jam }}', '{{ $jadwal->tipe_jam }}', '{{ $jadwal->status ?? 'offline' }}')"
-                                            class="p-1 text-indigo-600 hover:bg-indigo-100 rounded"><svg class="w-3 h-3"
-                                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            class="p-1 text-indigo-600 hover:bg-indigo-100 rounded">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
                                                 </path>
-                                            </svg></button><button type="button"
-                                            onclick="hapusJadwal('{{ $jadwal->id }}', this)"
-                                            class="p-1 text-red-500 hover:bg-red-50 rounded"><svg class="w-3 h-3"
-                                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            </svg>
+                                        </button>
+                                        <button type="button" onclick="hapusJadwal('{{ $jadwal->id }}', this)"
+                                            class="p-1 text-red-500 hover:bg-red-50 rounded">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
                                                 </path>
-                                            </svg></button></div>
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             @endforeach
@@ -492,84 +504,118 @@
 
             <div class="w-full lg:w-[280px] bg-slate-50 flex flex-col h-[40vh] lg:h-full">
                 <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                    <div id="form-container-{{ $g->id }}" class="bg-white p-3 rounded-lg border border-slate-200">
+                    <div id="form-container-{{ $g->id }}"
+                        class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
                         <h4 id="form-title-{{ $g->id }}"
                             class="font-bold text-slate-700 text-[10px] uppercase mb-3 border-b pb-1">Input Jadwal</h4>
-                        <form id="form-jadwal-{{ $g->id }}" action="{{ route('guru.simpanJadwal', $g->id) }}"
-                            method="POST" onsubmit="handleFormJadwal(event, this, '{{ $g->id }}')">
+
+                        <form id="form-jadwal-{{ $g->id }}" data-store-url="{{ route('guru.simpanJadwal', $g->id) }}"
+                            action="{{ route('guru.simpanJadwal', $g->id) }}" method="POST"
+                            onsubmit="handleFormJadwal(event, this, '{{ $g->id }}', 'guru')">
+                            @csrf
                             <div id="method-spoof-{{ $g->id }}"></div>
-                            <div class="space-y-3 text-[10px]">
+                            <div class="space-y-3.5 text-[10px]">
+
                                 <div class="relative custom-select-wrapper" id="wrapper-mapel-{{ $g->id }}">
-                                    <label class="font-bold text-slate-500 uppercase block mb-0.5">Mapel</label>
+                                    <label class="font-bold text-slate-500 block mb-1">MAPEL</label>
                                     <input type="hidden" name="mapel_id" id="real-input-mapel-{{ $g->id }}" required>
                                     <button type="button" onclick="toggleCustomDropdown('mapel', '{{ $g->id }}')"
-                                        class="w-full px-2 py-1.5 bg-slate-50 border rounded text-left flex justify-between items-center"><span
-                                            id="display-mapel-{{ $g->id }}">Pilih...</span><svg class="w-3 h-3"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path d="M19 9l-7 7-7-7"></path>
-                                        </svg></button>
+                                        class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-left flex justify-between items-center outline-none focus:border-indigo-500 transition">
+                                        <span id="display-mapel-{{ $g->id }}" class="truncate text-slate-700">Pilih
+                                            Mapel...</span>
+                                        <svg class="w-3 h-3 shrink-0 text-slate-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
                                     <div id="dropdown-mapel-{{ $g->id }}"
-                                        class="hidden absolute z-50 w-full bg-white border rounded shadow-md mt-1 max-h-40 overflow-y-auto">
-                                        <input type="text" placeholder="Cari..."
-                                            onkeyup="filterCustomDropdown('mapel', '{{ $g->id }}', this)"
-                                            class="w-full p-1 text-[10px] border-b">
+                                        class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto flex flex-col">
+                                        <div class="p-1.5 sticky top-0 bg-white border-b border-slate-100 z-10">
+                                            <input type="text" placeholder="Cari Mapel..."
+                                                onkeyup="filterCustomDropdown('mapel', '{{ $g->id }}', this)"
+                                                class="w-full px-2 py-1.5 text-[10px] bg-slate-50 border border-slate-200 rounded outline-none focus:border-indigo-500">
+                                        </div>
                                         <div id="list-mapel-{{ $g->id }}" class="p-1">
-                                            @foreach ($mapels as $m)
-                                            <div class="option-item p-1 hover:bg-indigo-50 cursor-pointer"
+                                            @foreach($mapels as $m)
+                                            <div class="option-item p-1.5 hover:bg-indigo-50 rounded cursor-pointer text-slate-700 transition-colors"
                                                 data-value="{{ $m->id }}" data-label="{{ $m->nama_mapel }}"
-                                                onclick="selectCustomOption('mapel', '{{ $g->id }}', '{{ $m->id }}', '{{ $m->nama_mapel }}')">
-                                                {{ $m->nama_mapel }}</div>
+                                                onclick="selectCustomOption('mapel', '{{ $g->id }}', this)">
+                                                {{ $m->nama_mapel }}
+                                            </div>
                                             @endforeach
                                         </div>
                                     </div>
                                 </div>
+
                                 <div class="relative custom-select-wrapper" id="wrapper-kelas-{{ $g->id }}">
-                                    <label class="font-bold text-slate-500 uppercase block mb-0.5">Kelas</label>
+                                    <label class="font-bold text-slate-500 block mb-1">KELAS</label>
                                     <input type="hidden" name="kelas_id" id="real-input-kelas-{{ $g->id }}" required>
                                     <button type="button" onclick="toggleCustomDropdown('kelas', '{{ $g->id }}')"
-                                        class="w-full px-2 py-1.5 bg-slate-50 border rounded text-left flex justify-between items-center"><span
-                                            id="display-kelas-{{ $g->id }}">Pilih...</span><svg class="w-3 h-3"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path d="M19 9l-7 7-7-7"></path>
-                                        </svg></button>
+                                        class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-left flex justify-between items-center outline-none focus:border-indigo-500 transition">
+                                        <span id="display-kelas-{{ $g->id }}" class="truncate text-slate-700">Pilih
+                                            Kelas...</span>
+                                        <svg class="w-3 h-3 shrink-0 text-slate-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
                                     <div id="dropdown-kelas-{{ $g->id }}"
-                                        class="hidden absolute z-50 w-full bg-white border rounded shadow-md mt-1 max-h-40 overflow-y-auto">
-                                        <input type="text" placeholder="Cari..."
-                                            onkeyup="filterCustomDropdown('kelas', '{{ $g->id }}', this)"
-                                            class="w-full p-1 text-[10px] border-b">
-                                        <div id="list-kelas-{{ $g->id }}" class="p-1 grid grid-cols-2 gap-1">
-                                            @foreach ($kelases as $k)
-                                            <div class="option-item p-1 hover:bg-indigo-50 cursor-pointer text-center border rounded"
+                                        class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto flex flex-col">
+                                        <div class="p-1.5 sticky top-0 bg-white border-b border-slate-100 z-10">
+                                            <input type="text" placeholder="Cari Kelas..."
+                                                onkeyup="filterCustomDropdown('kelas', '{{ $g->id }}', this)"
+                                                class="w-full px-2 py-1.5 text-[10px] bg-slate-50 border border-slate-200 rounded outline-none focus:border-indigo-500">
+                                        </div>
+                                        <div id="list-kelas-{{ $g->id }}" class="p-1">
+                                            @foreach($kelases as $k)
+                                            <div class="option-item p-1.5 hover:bg-indigo-50 rounded cursor-pointer text-slate-700 transition-colors"
                                                 data-value="{{ $k->id }}" data-label="{{ $k->nama_kelas }}"
-                                                onclick="selectCustomOption('kelas', '{{ $g->id }}', '{{ $k->id }}', '{{ $k->nama_kelas }}')">
-                                                {{ $k->nama_kelas }}</div>
+                                                onclick="selectCustomOption('kelas', '{{ $g->id }}', this)">
+                                                {{ $k->nama_kelas }}
+                                            </div>
                                             @endforeach
                                         </div>
                                     </div>
                                 </div>
+
                                 <div class="grid grid-cols-2 gap-2">
-                                    <div><label class="font-bold text-slate-500 block mb-0.5">Jam</label><input
-                                            type="number" name="jumlah_jam" id="input-jam-{{ $g->id }}"
-                                            class="w-full px-2 py-1 bg-slate-50 border rounded text-center" min="1"
-                                            max="10" required></div>
-                                    <div><label class="font-bold text-slate-500 block mb-0.5">Tipe</label><select
-                                            name="tipe_jam" id="select-tipe-{{ $g->id }}"
-                                            class="w-full px-1 py-1 bg-slate-50 border rounded">
+                                    <div>
+                                        <label class="font-bold text-slate-500 block mb-1">JAM</label>
+                                        <input type="number" name="jumlah_jam" id="input-jam-{{ $g->id }}"
+                                            class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 text-center outline-none focus:border-indigo-500 focus:bg-white transition"
+                                            min="1" max="10" required>
+                                    </div>
+                                    <div>
+                                        <label class="font-bold text-slate-500 block mb-1">TIPE</label>
+                                        <select name="tipe_jam" id="select-tipe-{{ $g->id }}"
+                                            class="w-full border border-slate-200 rounded-lg px-1.5 py-1.5 bg-slate-50 outline-none focus:border-indigo-500 focus:bg-white transition">
                                             <option value="single">Satu(1x)</option>
                                             <option value="double">Dua(2x)</option>
                                             <option value="triple">Tiga(3x)</option>
-                                        </select></div>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div><label class="font-bold text-slate-500 block mb-0.5">Pelaksanaan</label><select
-                                        name="status" id="select-status-{{ $g->id }}"
-                                        class="w-full px-2 py-1.5 bg-slate-50 border rounded">
-                                        <option value="offline">LURING (Jadwal Utama)</option>
-                                        <option value="online">DARING</option>
-                                    </select></div>
-                                <button type="submit" id="btn-submit-{{ $g->id }}"
-                                    class="w-full py-2 bg-slate-900 text-white rounded font-bold uppercase mt-2">Simpan</button>
+                                <div>
+                                    <label class="font-bold text-slate-500 block mb-1">STATUS</label>
+                                    <select name="status" id="select-status-{{ $g->id }}"
+                                        class="w-full border border-slate-200 rounded-lg px-2.5 py-2 bg-slate-50 outline-none focus:border-indigo-500 focus:bg-white transition">
+                                        <option value="offline">Luring (Jadwal Tetap)</option>
+                                        <option value="online">Daring</option>
+                                    </select>
+                                </div>
+
+                                <div class="flex gap-2 mt-2">
+                                    <button type="button" id="btn-cancel-{{ $g->id }}"
+                                        onclick="resetFormJadwal('{{ $g->id }}')"
+                                        class="hidden w-1/3 bg-slate-200 hover:bg-slate-300 text-slate-700 py-2.5 rounded-lg font-bold uppercase tracking-wider shadow-md transition">Batal</button>
+                                    <button type="submit" id="btn-submit-{{ $g->id }}"
+                                        class="flex-1 bg-slate-900 hover:bg-indigo-600 text-white py-2.5 rounded-lg font-bold uppercase tracking-wider shadow-md transition">Simpan</button>
+                                </div>
                             </div>
                         </form>
+
                     </div>
                 </div>
             </div>
@@ -602,6 +648,7 @@ function closeModal(id) {
     document.getElementById(id)?.classList.remove('flex');
     if (id.includes('modaljadwal')) resetFormJadwal(id.replace('modaljadwal', ''));
 }
+
 window.onclick = e => {
     if (e.target.classList.contains('fixed')) closeModal(e.target.id);
 }
@@ -615,9 +662,10 @@ function searchTable(id) {
     }
 }
 
+// LOGIKA CUSTOM DROPDOWN
 function toggleCustomDropdown(type, id) {
-    const wrapper = document.getElementById(`wrapper-${type}-${id}`),
-        dropdown = document.getElementById(`dropdown-${type}-${id}`);
+    const wrapper = document.getElementById(`wrapper-${type}-${id}`);
+    const dropdown = document.getElementById(`dropdown-${type}-${id}`);
     document.querySelectorAll('.custom-select-wrapper').forEach(el => {
         if (el !== wrapper) {
             el.style.zIndex = "0";
@@ -629,78 +677,111 @@ function toggleCustomDropdown(type, id) {
 }
 
 function filterCustomDropdown(type, id, input) {
-    const filter = input.value.toLowerCase(),
-        items = document.getElementById(`list-${type}-${id}`).children;
-    for (let item of items) item.style.display = (item.getAttribute('data-label') || '').toLowerCase().includes(
-        filter) ? "" : "none";
+    const filter = input.value.toLowerCase();
+    document.querySelectorAll(`#list-${type}-${id} .option-item`).forEach(item => {
+        const label = (item.getAttribute('data-label') || '').toLowerCase();
+        item.style.display = label.includes(filter) ? "" : "none";
+    });
 }
 
-function selectCustomOption(type, id, value, label) {
-    document.getElementById(`real-input-${type}-${id}`).value = value;
-    document.getElementById(`display-${type}-${id}`).innerText = label;
-    document.getElementById(`dropdown-${type}-${id}`).classList.add('hidden');
-    document.getElementById(`wrapper-${type}-${id}`).style.zIndex = "0";
+function selectCustomOption(type, entityId, element) {
+    document.getElementById(`real-input-${type}-${entityId}`).value = element.getAttribute('data-value');
+    document.getElementById(`display-${type}-${entityId}`).innerText = element.getAttribute('data-label');
+    document.getElementById(`dropdown-${type}-${entityId}`).classList.add('hidden');
+    document.getElementById(`wrapper-${type}-${entityId}`).style.zIndex = "0";
 }
 
-function setCustomDropdownValue(type, id, value) {
-    const option = document.querySelector(`#list-${type}-${id} .option-item[data-value="${value}"]`);
-    if (option) selectCustomOption(type, id, value, option.getAttribute('data-label'));
+function setCustomDropdownValue(type, entityId, value) {
+    const option = document.querySelector(`#list-${type}-${entityId} .option-item[data-value="${value}"]`);
+    if (option) selectCustomOption(type, entityId, option);
 }
 
-function resetCustomDropdown(type, id) {
-    document.getElementById(`real-input-${type}-${id}`).value = '';
-    document.getElementById(`display-${type}-${id}`).innerText = 'Pilih...';
+function resetCustomDropdown(type, entityId, defaultText) {
+    document.getElementById(`real-input-${type}-${entityId}`).value = '';
+    document.getElementById(`display-${type}-${entityId}`).innerText = defaultText;
+    const searchInput = document.querySelector(`#dropdown-${type}-${entityId} input[type="text"]`);
+    if (searchInput) {
+        searchInput.value = '';
+        filterCustomDropdown(type, entityId, searchInput);
+    }
 }
 
+document.addEventListener('click', e => {
+    if (!e.target.closest('.custom-select-wrapper')) {
+        document.querySelectorAll('.custom-select-wrapper [id^="dropdown-"]').forEach(el => el.classList.add(
+            'hidden'));
+        document.querySelectorAll('.custom-select-wrapper').forEach(el => el.style.zIndex = "0");
+    }
+});
+
+// LOGIKA EDIT INLINE FORM JADWAL GURU
 function editJadwalInline(guruId, jadwalId, mapelId, kelasId, jam, tipe, status) {
-    document.getElementById(`form-title-${guruId}`).innerText = "Ubah Distribusi";
-    document.getElementById(`btn-submit-${guruId}`).innerText = "Perbarui";
-    document.getElementById(`btn-submit-${guruId}`).classList.replace('bg-slate-900', 'bg-amber-500');
     setCustomDropdownValue('mapel', guruId, mapelId);
     setCustomDropdownValue('kelas', guruId, kelasId);
     document.getElementById(`input-jam-${guruId}`).value = jam;
     document.getElementById(`select-tipe-${guruId}`).value = tipe;
     document.getElementById(`select-status-${guruId}`).value = status;
+
+    document.getElementById(`form-title-${guruId}`).innerText = "Ubah Distribusi";
     const form = document.getElementById(`form-jadwal-${guruId}`);
     form.action = `/guru/jadwal/${jadwalId}`;
-    form.dataset.mode = 'edit';
     document.getElementById(`method-spoof-${guruId}`).innerHTML = `<input type="hidden" name="_method" value="PUT">`;
+
+    const btnSubmit = document.getElementById(`btn-submit-${guruId}`);
+    btnSubmit.innerText = "Perbarui";
+    btnSubmit.classList.replace('bg-slate-900', 'bg-amber-500');
+    btnSubmit.classList.replace('hover:bg-indigo-600', 'hover:bg-amber-600');
+    document.getElementById(`btn-cancel-${guruId}`).classList.remove('hidden');
 }
 
 function resetFormJadwal(guruId) {
     document.getElementById(`form-title-${guruId}`).innerText = "Input Jadwal";
-    const btn = document.getElementById(`btn-submit-${guruId}`);
-    btn.innerText = "Simpan";
-    btn.classList.replace('bg-amber-500', 'bg-slate-900');
     const form = document.getElementById(`form-jadwal-${guruId}`);
     form.reset();
-    resetCustomDropdown('mapel', guruId);
-    resetCustomDropdown('kelas', guruId);
-    form.action = `/guru/${guruId}/jadwal`;
-    delete form.dataset.mode;
+    resetCustomDropdown('mapel', guruId, 'Pilih Mapel...');
+    resetCustomDropdown('kelas', guruId, 'Pilih Kelas...');
+
+    form.action = form.getAttribute('data-store-url');
     document.getElementById(`method-spoof-${guruId}`).innerHTML = '';
+
+    const btnSubmit = document.getElementById(`btn-submit-${guruId}`);
+    btnSubmit.innerText = "Simpan";
+    btnSubmit.classList.replace('bg-amber-500', 'bg-slate-900');
+    btnSubmit.classList.replace('hover:bg-amber-600', 'hover:bg-indigo-600');
+    document.getElementById(`btn-cancel-${guruId}`).classList.add('hidden');
 }
 
-async function handleFormJadwal(e, form, guruId) {
+// SIMPAN ATAU UPDATE TANPA RELOAD HALAMAN
+async function handleFormJadwal(e, form, entityId, type) {
     e.preventDefault();
     const btn = form.querySelector('button[type="submit"]');
     const oldText = btn.innerText;
     btn.innerText = "...";
     btn.disabled = true;
+
     try {
         const res = await fetch(form.action, {
             method: 'POST',
+            body: new FormData(form),
             headers: {
-                'X-CSRF-TOKEN': CSRF_TOKEN,
-                'Accept': 'application/json'
-            },
-            body: new FormData(form)
+                'X-Requested-With': 'XMLHttpRequest'
+            } // Mengurangi limit redirect issue
         });
-        const json = await res.json();
-        if (res.ok && json.success) {
-            updateTableUI(guruId, json.jadwal, form.dataset.mode === 'edit');
-            resetFormJadwal(guruId);
-        } else alert(json.message || "Gagal.");
+
+        if (res.ok) {
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newTbody = doc.getElementById(`tbody-${type}-${entityId}`);
+                    const oldTbody = document.getElementById(`tbody-${type}-${entityId}`);
+                    if (newTbody && oldTbody) oldTbody.innerHTML = newTbody.innerHTML;
+                });
+            resetFormJadwal(entityId);
+        } else {
+            alert("Gagal menyimpan data.");
+        }
     } catch (err) {
         alert("Error sistem.");
     } finally {
@@ -709,25 +790,22 @@ async function handleFormJadwal(e, form, guruId) {
     }
 }
 
-function updateTableUI(guruId, jadwal, isEdit) {
-    // 1. Hapus location.reload() agar halaman tidak memuat ulang penuh
-
-    // 2. Ambil ulang halaman saat ini di background
-    fetch(window.location.href)
-        .then(response => response.text())
-        .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-
-            // 3. Cari elemen tabel jadwal (tbody) yang baru dari hasil render server
-            const newTbody = doc.getElementById(`tbody-guru-${guruId}`);
-            const oldTbody = document.getElementById(`tbody-guru-${guruId}`);
-
-            // 4. Timpa isi tabel lama dengan yang baru tanpa menutup modal
-            if (newTbody && oldTbody) {
-                oldTbody.innerHTML = newTbody.innerHTML;
-            }
-        })
-        .catch(err => console.error('Gagal memperbarui tabel:', err));
+// HAPUS TANPA RELOAD HALAMAN
+async function hapusJadwal(id, btn) {
+    if (!confirm('Hapus jadwal ini?')) return;
+    try {
+        const res = await fetch(`/guru/jadwal/${id}`, {
+            method: 'POST', // Form spoofing delete route Laravel default di form sebelumnya
+            headers: {
+                'X-CSRF-TOKEN': CSRF_TOKEN,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                _method: 'DELETE'
+            })
+        });
+        if (res.ok) btn.closest('tr').remove();
+    } catch (e) {}
 }
+</script>
 @endpush
