@@ -156,7 +156,7 @@ def bangun_model(raw_assignments, kelass, gurus,
 
         group_key = (k_id, m_id if m_id else f"guru_{g_id}")
         tasks_per_mapel_group.setdefault(group_key, []).append(t_id)
-
+#4
         possible_days     = []
         is_guru_hari_hard = (guru_jenis_hari_map[g_id] == 'hard')
         limit_slot_guru_raw = g_dict[g_id].get('limit_harian')
@@ -168,10 +168,10 @@ def bangun_model(raw_assignments, kelass, gurus,
                 continue
 
             batas_aktual_hari = get_max_jam(kelas_limits, k_id, h)
-
+#5
             if batas_maks is not None and is_batas_wajib:
                 batas_aktual_hari = min(batas_aktual_hari, int(batas_maks))
-
+#7
             if limit_slot_guru_raw is not None and str(limit_slot_guru_raw).strip() != "":
                 try:
                     limit_slot_g = int(limit_slot_guru_raw)
@@ -192,7 +192,7 @@ def bangun_model(raw_assignments, kelass, gurus,
             interval_var = model.NewOptionalIntervalVar(
                 start_var, durasi, end_var, is_present, f'iv_{t_id}_{h}'
             )
-
+#12
             if batas_maks is not None and not is_batas_wajib:
                 batas_int = int(batas_maks)
                 is_over   = model.NewBoolVar(f'overbatas_{t_id}_{h}')
@@ -205,7 +205,7 @@ def bangun_model(raw_assignments, kelass, gurus,
                     'is_present': is_present, 'end_var': end_var,
                     'nama_mapel': nama_mapel, 'kelas_id': k_id,
                 })
-
+#14
             if limit_slot_guru_raw is not None and str(limit_slot_guru_raw).strip() != "":
                 try:
                     limit_slot_g = int(limit_slot_guru_raw)
@@ -222,7 +222,7 @@ def bangun_model(raw_assignments, kelass, gurus,
                         })
                 except ValueError:
                     pass
-
+#13
             if not is_preferred_day:
                 viol_hari = model.NewBoolVar(f'viol_hari_{t_id}_{h}')
                 model.Add(viol_hari == 1).OnlyEnforceIf(is_present)
@@ -249,24 +249,24 @@ def bangun_model(raw_assignments, kelass, gurus,
             model.AddExactlyOne(possible_days)
         else:
             return (None,) * 12
-
+#1
     for k in kelass:
         k_id = k['id']
         for h in HARI_LIST:
             beban = durasi_per_kelas_harian[k_id][h]
             if beban:
                 model.Add(sum(beban) == get_max_jam(kelas_limits, k_id, h))
-
+#2
     for k_id in intervals_per_kelas:
         for h in HARI_LIST:
             if intervals_per_kelas[k_id][h]:
                 model.AddNoOverlap(intervals_per_kelas[k_id][h])
-
+#3
     for g_id in intervals_per_guru:
         for h in HARI_LIST:
             if intervals_per_guru[g_id][h]:
                 model.AddNoOverlap(intervals_per_guru[g_id][h])
-
+#6
     for group_key, task_ids in tasks_per_mapel_group.items():
         if len(task_ids) > 1:
             for h in HARI_LIST:
@@ -295,7 +295,7 @@ def bangun_model(raw_assignments, kelass, gurus,
             lower        = max(0, target_int - TOLERANSI_SOFT)
             upper        = min(batas_atas, target_int + TOLERANSI_SOFT)
             is_violation = model.NewBoolVar(f'viol_{g_id}_{h}')
-
+#11
             model.Add(sum(beban_guru) >= lower).OnlyEnforceIf(is_violation.Not())
             model.Add(sum(beban_guru) <= upper).OnlyEnforceIf(is_violation.Not())
 

@@ -710,23 +710,24 @@ async function handleFormJadwal(e, form, guruId) {
 }
 
 function updateTableUI(guruId, jadwal, isEdit) {
-    location.reload();
+    // 1. Hapus location.reload() agar halaman tidak memuat ulang penuh
+
+    // 2. Ambil ulang halaman saat ini di background
+    fetch(window.location.href)
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            // 3. Cari elemen tabel jadwal (tbody) yang baru dari hasil render server
+            const newTbody = doc.getElementById(`tbody-guru-${guruId}`);
+            const oldTbody = document.getElementById(`tbody-guru-${guruId}`);
+
+            // 4. Timpa isi tabel lama dengan yang baru tanpa menutup modal
+            if (newTbody && oldTbody) {
+                oldTbody.innerHTML = newTbody.innerHTML;
+            }
+        })
+        .catch(err => console.error('Gagal memperbarui tabel:', err));
 }
-async function hapusJadwal(id, btn) {
-    if (!confirm("Hapus?")) return;
-    try {
-        const res = await fetch(`/guru/jadwal/${id}`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': CSRF_TOKEN,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                _method: 'DELETE'
-            })
-        });
-        if (res.ok) btn.closest('tr').remove();
-    } catch (e) {}
-}
-</script>
 @endpush
